@@ -1,0 +1,42 @@
+{
+  "baseline": "sparse full PostRecord, duplicate validation already removed",
+  "candidate": "compact metadata and optional context; full PostPublished unchanged",
+  "publicGas": {
+    "anonymousRoot": {
+      "before": 482531,
+      "after": 211720,
+      "l2ReductionPercent": 56.12302629261125,
+      "beforeDA": 2400,
+      "afterDA": 1888,
+      "postStorageWritesBefore": 10,
+      "postStorageWritesAfter": 2
+    },
+    "namedSubboardReplyQuote": {
+      "before": 648091,
+      "after": 303623,
+      "l2ReductionPercent": 53.151177843852174,
+      "beforeDA": 2656,
+      "afterDA": 2016,
+      "postStorageWritesBefore": 14,
+      "postStorageWritesAfter": 4
+    }
+  },
+  "cases": [
+    "29-byte actual receipt text",
+    "22-byte ASCII",
+    "992-byte ASCII",
+    "992-byte UTF8"
+  ],
+  "tests": {
+    "metadataPure": 5,
+    "historyTXE": 12,
+    "nativeAVM": "pass; full event fields/messages, timestamp zero and absent, foreign caller, duplicate identity, mutable parent/policy/subboard rejection, plugin reply, empty repost, 3 linked rows and later-row rollback, overflow rollback, repeated paidlikes and removed target",
+    "ownerDeliveryTXE": 1
+  },
+  "limitations": [
+    "Native proofs-disabled focused component tests; not remote prover/testnet acceptance",
+    "Private admission circuits and VKs changed; prior byte-identical private-circuit claim no longer applies",
+    "Gas excludes private execution, fee setup and teardown; whole transaction cost needs fresh native lifecycle measurement"
+  ],
+  "artifact": "9cc151053858d66932e5bb5ac67dbd6e61a9b28f16c06932b12c584062ddae41"
+}

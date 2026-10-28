@@ -69,7 +69,7 @@ unconstrained fn actual_named_post_preserves_note_count_and_restores_every_self_
     assert_private_notes(3);
     assert_effects(3,3);
     let (exists,record,_,_,_)=env.view_public(RollingBoard::at(board).get_post(post_id(board,201)));
-    assert(exists); assert_eq(record.name_id,name);
+    assert(exists); assert_eq(record.root,post_id(board,201));
     forget_private_state();
     assert_eq(env.execute_utility(RollingBoard::at(board).owned_names(owner,0))[0],name);
     assert_eq(env.execute_utility(RollingBoard::at(board).get_deposit_ids(owner,0))[0],deposit);

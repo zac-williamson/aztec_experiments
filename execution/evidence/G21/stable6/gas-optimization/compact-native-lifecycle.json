@@ -1,0 +1,932 @@
+{
+  "passed": true,
+  "proofs": false,
+  "fixturePortal": "disposable EOA canonical Inbox messages; token custody not tested",
+  "transactions": [
+    {
+      "label": "deploy-fpc",
+      "txHash": "0x0786909feb70cf4317654aaa21fabd118251ed1086e1cbbf52f61ff11df4d5c3",
+      "executionResult": "success",
+      "blockNumber": 1
+    },
+    {
+      "label": "deploy-board",
+      "txHash": "0x210ead6e6466a48ddd4bc2ce19d5a35a7ef6e0b9866961e7e54049b247a853e4",
+      "executionResult": "success",
+      "blockNumber": 2
+    },
+    {
+      "label": "private-credit-bootstrap",
+      "privateTailGas": {
+        "phases": {
+          "nonRevertibleAccumulatedData": {
+            "notes": 1,
+            "nullifiers": 4,
+            "l2ToL1Messages": 0,
+            "privateLogs": 1,
+            "privateLogFields": 8,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 1
+          },
+          "revertibleAccumulatedData": {
+            "notes": 0,
+            "nullifiers": 0,
+            "l2ToL1Messages": 0,
+            "privateLogs": 0,
+            "privateLogFields": 0,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 0
+          }
+        },
+        "counts": {
+          "notes": 1,
+          "nullifiers": 4,
+          "l2ToL1Messages": 0,
+          "privateLogs": 1,
+          "privateLogFields": 8,
+          "contractClassLogs": 0,
+          "contractClassLogFields": 0,
+          "publicCalls": 1
+        },
+        "rows": [
+          {
+            "name": "transaction overhead",
+            "l2Gas": 540000,
+            "daGas": 96
+          },
+          {
+            "name": "private note hashes",
+            "count": 1,
+            "l2Gas": 19275,
+            "daGas": 32
+          },
+          {
+            "name": "private nullifiers including protocol nullifier",
+            "count": 4,
+            "l2Gas": 123200,
+            "daGas": 128
+          },
+          {
+            "name": "private L2-to-L1 messages",
+            "count": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "private logs",
+            "count": 1,
+            "fields": 8,
+            "l2Gas": 2500,
+            "daGas": 256
+          },
+          {
+            "name": "contract-class logs",
+            "count": 0,
+            "fields": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "public call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "refund call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "reserved refund allocation",
+            "l2Gas": 40000,
+            "daGas": 512
+          }
+        ],
+        "total": {
+          "l2Gas": 764975,
+          "daGas": 1024
+        }
+      },
+      "txHash": "0x09eebdd6383be82c3ecadcbd04187fcf638a7b65cda054183145162543a18850",
+      "executionResult": "success",
+      "transactionFee": "918868315229800000",
+      "maximumFee": "13740121200000000000",
+      "blockNumber": 4
+    },
+    {
+      "label": "paid-like-configure-board",
+      "txHash": "0x27fedb2aed7693c92be49c298d188ddbc0d998252635acb215d50df5ddc1f62a",
+      "executionResult": "success",
+      "blockNumber": 5
+    },
+    {
+      "label": "tip-author-collateral",
+      "txHash": "0x10429ee17ed355ab617734b83605c182f50fdf407bcfc93f7b4149decf126482",
+      "executionResult": "success",
+      "blockNumber": 7
+    },
+    {
+      "label": "tip-recipient-post",
+      "txHash": "0x1bc8e5e62196b9efd24c354ed1a76f8fd8cbcf9cbca666dbd2085dc40a27e343",
+      "executionResult": "success",
+      "blockNumber": 9
+    },
+    {
+      "label": "paid-like-first",
+      "privateTailGas": {
+        "phases": {
+          "nonRevertibleAccumulatedData": {
+            "notes": 1,
+            "nullifiers": 3,
+            "l2ToL1Messages": 0,
+            "privateLogs": 1,
+            "privateLogFields": 8,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 0
+          },
+          "revertibleAccumulatedData": {
+            "notes": 1,
+            "nullifiers": 0,
+            "l2ToL1Messages": 0,
+            "privateLogs": 0,
+            "privateLogFields": 0,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 1
+          }
+        },
+        "counts": {
+          "notes": 2,
+          "nullifiers": 3,
+          "l2ToL1Messages": 0,
+          "privateLogs": 1,
+          "privateLogFields": 8,
+          "contractClassLogs": 0,
+          "contractClassLogFields": 0,
+          "publicCalls": 1
+        },
+        "rows": [
+          {
+            "name": "transaction overhead",
+            "l2Gas": 540000,
+            "daGas": 96
+          },
+          {
+            "name": "private note hashes",
+            "count": 2,
+            "l2Gas": 38550,
+            "daGas": 64
+          },
+          {
+            "name": "private nullifiers including protocol nullifier",
+            "count": 3,
+            "l2Gas": 92400,
+            "daGas": 96
+          },
+          {
+            "name": "private L2-to-L1 messages",
+            "count": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "private logs",
+            "count": 1,
+            "fields": 8,
+            "l2Gas": 2500,
+            "daGas": 256
+          },
+          {
+            "name": "contract-class logs",
+            "count": 0,
+            "fields": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "public call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "refund call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "reserved refund allocation",
+            "l2Gas": 40000,
+            "daGas": 512
+          }
+        ],
+        "total": {
+          "l2Gas": 753450,
+          "daGas": 1024
+        }
+      },
+      "txHash": "0x2d7ab141d16e5ae684182104936a495eed34bf2c2a4540677625de767ec73832",
+      "executionResult": "success",
+      "transactionFee": "49731897756200000",
+      "maximumFee": "786898181832000000",
+      "blockNumber": 10
+    },
+    {
+      "label": "author-spends-tip-on-post",
+      "privateTailGas": {
+        "phases": {
+          "nonRevertibleAccumulatedData": {
+            "notes": 1,
+            "nullifiers": 3,
+            "l2ToL1Messages": 0,
+            "privateLogs": 1,
+            "privateLogFields": 8,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 0
+          },
+          "revertibleAccumulatedData": {
+            "notes": 2,
+            "nullifiers": 1,
+            "l2ToL1Messages": 0,
+            "privateLogs": 2,
+            "privateLogFields": 34,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 1
+          }
+        },
+        "counts": {
+          "notes": 3,
+          "nullifiers": 4,
+          "l2ToL1Messages": 0,
+          "privateLogs": 3,
+          "privateLogFields": 42,
+          "contractClassLogs": 0,
+          "contractClassLogFields": 0,
+          "publicCalls": 1
+        },
+        "rows": [
+          {
+            "name": "transaction overhead",
+            "l2Gas": 540000,
+            "daGas": 96
+          },
+          {
+            "name": "private note hashes",
+            "count": 3,
+            "l2Gas": 57825,
+            "daGas": 96
+          },
+          {
+            "name": "private nullifiers including protocol nullifier",
+            "count": 4,
+            "l2Gas": 123200,
+            "daGas": 128
+          },
+          {
+            "name": "private L2-to-L1 messages",
+            "count": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "private logs",
+            "count": 3,
+            "fields": 42,
+            "l2Gas": 7500,
+            "daGas": 1344
+          },
+          {
+            "name": "contract-class logs",
+            "count": 0,
+            "fields": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "public call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "refund call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "reserved refund allocation",
+            "l2Gas": 40000,
+            "daGas": 512
+          }
+        ],
+        "total": {
+          "l2Gas": 808525,
+          "daGas": 2176
+        }
+      },
+      "txHash": "0x0ee311827cb9247b8ebd31dbf5b9a35b9c620a87fb60e7d745d19e2c26f90bfa",
+      "executionResult": "success",
+      "transactionFee": "58920271019500000",
+      "maximumFee": "786898181832000000",
+      "blockNumber": 11
+    },
+    {
+      "label": "paid-like-repeat",
+      "privateTailGas": {
+        "phases": {
+          "nonRevertibleAccumulatedData": {
+            "notes": 1,
+            "nullifiers": 3,
+            "l2ToL1Messages": 0,
+            "privateLogs": 1,
+            "privateLogFields": 8,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 0
+          },
+          "revertibleAccumulatedData": {
+            "notes": 1,
+            "nullifiers": 0,
+            "l2ToL1Messages": 0,
+            "privateLogs": 0,
+            "privateLogFields": 0,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 1
+          }
+        },
+        "counts": {
+          "notes": 2,
+          "nullifiers": 3,
+          "l2ToL1Messages": 0,
+          "privateLogs": 1,
+          "privateLogFields": 8,
+          "contractClassLogs": 0,
+          "contractClassLogFields": 0,
+          "publicCalls": 1
+        },
+        "rows": [
+          {
+            "name": "transaction overhead",
+            "l2Gas": 540000,
+            "daGas": 96
+          },
+          {
+            "name": "private note hashes",
+            "count": 2,
+            "l2Gas": 38550,
+            "daGas": 64
+          },
+          {
+            "name": "private nullifiers including protocol nullifier",
+            "count": 3,
+            "l2Gas": 92400,
+            "daGas": 96
+          },
+          {
+            "name": "private L2-to-L1 messages",
+            "count": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "private logs",
+            "count": 1,
+            "fields": 8,
+            "l2Gas": 2500,
+            "daGas": 256
+          },
+          {
+            "name": "contract-class logs",
+            "count": 0,
+            "fields": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "public call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "refund call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "reserved refund allocation",
+            "l2Gas": 40000,
+            "daGas": 512
+          }
+        ],
+        "total": {
+          "l2Gas": 753450,
+          "daGas": 1024
+        }
+      },
+      "txHash": "0x266ca6dc739e5985299890fa012e09723e31671f7e34996926152ed4dbb808f2",
+      "executionResult": "success",
+      "transactionFee": "49731897756200000",
+      "maximumFee": "786898181832000000",
+      "blockNumber": 12
+    },
+    {
+      "label": "mixed-ordinary-and-tip-inputs",
+      "privateTailGas": {
+        "phases": {
+          "nonRevertibleAccumulatedData": {
+            "notes": 1,
+            "nullifiers": 4,
+            "l2ToL1Messages": 0,
+            "privateLogs": 1,
+            "privateLogFields": 8,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 0
+          },
+          "revertibleAccumulatedData": {
+            "notes": 0,
+            "nullifiers": 0,
+            "l2ToL1Messages": 0,
+            "privateLogs": 0,
+            "privateLogFields": 0,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 0
+          }
+        },
+        "counts": {
+          "notes": 1,
+          "nullifiers": 4,
+          "l2ToL1Messages": 0,
+          "privateLogs": 1,
+          "privateLogFields": 8,
+          "contractClassLogs": 0,
+          "contractClassLogFields": 0,
+          "publicCalls": 0
+        },
+        "rows": [
+          {
+            "name": "transaction overhead",
+            "l2Gas": 540000,
+            "daGas": 96
+          },
+          {
+            "name": "private note hashes",
+            "count": 1,
+            "l2Gas": 19275,
+            "daGas": 32
+          },
+          {
+            "name": "private nullifiers including protocol nullifier",
+            "count": 4,
+            "l2Gas": 123200,
+            "daGas": 128
+          },
+          {
+            "name": "private L2-to-L1 messages",
+            "count": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "private logs",
+            "count": 1,
+            "fields": 8,
+            "l2Gas": 2500,
+            "daGas": 256
+          },
+          {
+            "name": "contract-class logs",
+            "count": 0,
+            "fields": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "public call startup",
+            "count": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "refund call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "reserved refund allocation",
+            "l2Gas": 40000,
+            "daGas": 512
+          }
+        ],
+        "total": {
+          "l2Gas": 744975,
+          "daGas": 1024
+        }
+      },
+      "txHash": "0x252c8284adae6f4ba5327f2d8b9828e64ef40a78b1f0a536af539be47444a5d5",
+      "executionResult": "success",
+      "transactionFee": "43023125722500000",
+      "maximumFee": "786898181832000000",
+      "blockNumber": 13
+    },
+    {
+      "label": "paid-like-public-revert-restores-principal",
+      "privateTailGas": {
+        "phases": {
+          "nonRevertibleAccumulatedData": {
+            "notes": 1,
+            "nullifiers": 3,
+            "l2ToL1Messages": 0,
+            "privateLogs": 1,
+            "privateLogFields": 8,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 0
+          },
+          "revertibleAccumulatedData": {
+            "notes": 1,
+            "nullifiers": 0,
+            "l2ToL1Messages": 0,
+            "privateLogs": 0,
+            "privateLogFields": 0,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 1
+          }
+        },
+        "counts": {
+          "notes": 2,
+          "nullifiers": 3,
+          "l2ToL1Messages": 0,
+          "privateLogs": 1,
+          "privateLogFields": 8,
+          "contractClassLogs": 0,
+          "contractClassLogFields": 0,
+          "publicCalls": 1
+        },
+        "rows": [
+          {
+            "name": "transaction overhead",
+            "l2Gas": 540000,
+            "daGas": 96
+          },
+          {
+            "name": "private note hashes",
+            "count": 2,
+            "l2Gas": 38550,
+            "daGas": 64
+          },
+          {
+            "name": "private nullifiers including protocol nullifier",
+            "count": 3,
+            "l2Gas": 92400,
+            "daGas": 96
+          },
+          {
+            "name": "private L2-to-L1 messages",
+            "count": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "private logs",
+            "count": 1,
+            "fields": 8,
+            "l2Gas": 2500,
+            "daGas": 256
+          },
+          {
+            "name": "contract-class logs",
+            "count": 0,
+            "fields": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "public call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "refund call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "reserved refund allocation",
+            "l2Gas": 40000,
+            "daGas": 512
+          }
+        ],
+        "total": {
+          "l2Gas": 753450,
+          "daGas": 1024
+        }
+      },
+      "txHash": "0x2fc17014654f56619b877bf2d7290a3ca4ad39771f175774915ac9e04480815b",
+      "executionResult": "reverted",
+      "transactionFee": "45483495835800000",
+      "maximumFee": "693013200000000000",
+      "blockNumber": 14
+    },
+    {
+      "label": "ordinary-credit-on-post",
+      "privateTailGas": {
+        "phases": {
+          "nonRevertibleAccumulatedData": {
+            "notes": 1,
+            "nullifiers": 3,
+            "l2ToL1Messages": 0,
+            "privateLogs": 1,
+            "privateLogFields": 8,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 0
+          },
+          "revertibleAccumulatedData": {
+            "notes": 2,
+            "nullifiers": 1,
+            "l2ToL1Messages": 0,
+            "privateLogs": 2,
+            "privateLogFields": 34,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 1
+          }
+        },
+        "counts": {
+          "notes": 3,
+          "nullifiers": 4,
+          "l2ToL1Messages": 0,
+          "privateLogs": 3,
+          "privateLogFields": 42,
+          "contractClassLogs": 0,
+          "contractClassLogFields": 0,
+          "publicCalls": 1
+        },
+        "rows": [
+          {
+            "name": "transaction overhead",
+            "l2Gas": 540000,
+            "daGas": 96
+          },
+          {
+            "name": "private note hashes",
+            "count": 3,
+            "l2Gas": 57825,
+            "daGas": 96
+          },
+          {
+            "name": "private nullifiers including protocol nullifier",
+            "count": 4,
+            "l2Gas": 123200,
+            "daGas": 128
+          },
+          {
+            "name": "private L2-to-L1 messages",
+            "count": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "private logs",
+            "count": 3,
+            "fields": 42,
+            "l2Gas": 7500,
+            "daGas": 1344
+          },
+          {
+            "name": "contract-class logs",
+            "count": 0,
+            "fields": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "public call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "refund call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "reserved refund allocation",
+            "l2Gas": 40000,
+            "daGas": 512
+          }
+        ],
+        "total": {
+          "l2Gas": 808525,
+          "daGas": 2176
+        }
+      },
+      "txHash": "0x07915f3bcb1d05b016ba4f7ab3356a0c86bfdde310558b0a0f48a2115b9ba7a8",
+      "executionResult": "success",
+      "transactionFee": "15641580144000000",
+      "maximumFee": "208896969720000000",
+      "blockNumber": 15
+    },
+    {
+      "label": "first-competing-spend",
+      "privateTailGas": {
+        "phases": {
+          "nonRevertibleAccumulatedData": {
+            "notes": 1,
+            "nullifiers": 3,
+            "l2ToL1Messages": 0,
+            "privateLogs": 1,
+            "privateLogFields": 8,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 0
+          },
+          "revertibleAccumulatedData": {
+            "notes": 0,
+            "nullifiers": 0,
+            "l2ToL1Messages": 0,
+            "privateLogs": 0,
+            "privateLogFields": 0,
+            "contractClassLogs": 0,
+            "contractClassLogFields": 0,
+            "publicCalls": 0
+          }
+        },
+        "counts": {
+          "notes": 1,
+          "nullifiers": 3,
+          "l2ToL1Messages": 0,
+          "privateLogs": 1,
+          "privateLogFields": 8,
+          "contractClassLogs": 0,
+          "contractClassLogFields": 0,
+          "publicCalls": 0
+        },
+        "rows": [
+          {
+            "name": "transaction overhead",
+            "l2Gas": 540000,
+            "daGas": 96
+          },
+          {
+            "name": "private note hashes",
+            "count": 1,
+            "l2Gas": 19275,
+            "daGas": 32
+          },
+          {
+            "name": "private nullifiers including protocol nullifier",
+            "count": 3,
+            "l2Gas": 92400,
+            "daGas": 96
+          },
+          {
+            "name": "private L2-to-L1 messages",
+            "count": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "private logs",
+            "count": 1,
+            "fields": 8,
+            "l2Gas": 2500,
+            "daGas": 256
+          },
+          {
+            "name": "contract-class logs",
+            "count": 0,
+            "fields": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "public call startup",
+            "count": 0,
+            "l2Gas": 0,
+            "daGas": 0
+          },
+          {
+            "name": "refund call startup",
+            "count": 1,
+            "l2Gas": 20000,
+            "daGas": 0
+          },
+          {
+            "name": "reserved refund allocation",
+            "l2Gas": 40000,
+            "daGas": 512
+          }
+        ],
+        "total": {
+          "l2Gas": 714175,
+          "daGas": 992
+        }
+      },
+      "txHash": "0x0f47c9fb21967c6f0a0ac16131a5c886df0f86dc264a31412ee79749ea5a2834",
+      "executionResult": "success",
+      "transactionFee": "10949159760000000",
+      "maximumFee": "208896969720000000",
+      "blockNumber": 16
+    }
+  ],
+  "checks": [
+    "each repeated like transfers20 FEE plus actual gas",
+    "author spends received tip directly on a post",
+    "ordinary and tip inputs consumed together",
+    "application revert restores20 principal while charging actual gas",
+    "native admission rejects competing note spend",
+    "fresh tag reader reconstructs remaining balance"
+  ],
+  "stage": "first-competing-spend",
+  "postGas": [
+    {
+      "label": "author-spends-tip-on-post",
+      "bytes": 29,
+      "txHash": "0x0ee311827cb9247b8ebd31dbf5b9a35b9c620a87fb60e7d745d19e2c26f90bfa",
+      "privateIncludingTeardown": {
+        "daGas": 2176,
+        "l2Gas": 808525
+      },
+      "allocatedTeardown": {
+        "daGas": 512,
+        "l2Gas": 40000
+      },
+      "totalGas": {
+        "daGas": 3872,
+        "l2Gas": 1010581
+      },
+      "publicGas": {
+        "daGas": 2208,
+        "l2Gas": 242056
+      },
+      "teardownGas": {
+        "daGas": 320,
+        "l2Gas": 30336
+      },
+      "billedGas": {
+        "daGas": 4064,
+        "l2Gas": 1020245
+      },
+      "feePrices": {
+        "feePerDaGas": "0",
+        "feePerL2Gas": "57751100000"
+      },
+      "transactionFee": "58920271019500000"
+    },
+    {
+      "label": "ordinary-credit-on-post",
+      "bytes": 29,
+      "txHash": "0x07915f3bcb1d05b016ba4f7ab3356a0c86bfdde310558b0a0f48a2115b9ba7a8",
+      "privateIncludingTeardown": {
+        "daGas": 2176,
+        "l2Gas": 808525
+      },
+      "allocatedTeardown": {
+        "daGas": 512,
+        "l2Gas": 40000
+      },
+      "totalGas": {
+        "daGas": 3872,
+        "l2Gas": 1010581
+      },
+      "publicGas": {
+        "daGas": 2208,
+        "l2Gas": 242056
+      },
+      "teardownGas": {
+        "daGas": 320,
+        "l2Gas": 30336
+      },
+      "billedGas": {
+        "daGas": 4064,
+        "l2Gas": 1020245
+      },
+      "feePrices": {
+        "feePerDaGas": "0",
+        "feePerL2Gas": "15331200000"
+      },
+      "transactionFee": "15641580144000000"
+    }
+  ]
+}

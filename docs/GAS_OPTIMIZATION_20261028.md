@@ -1,5 +1,7 @@
 # Posting gas: measured reductions, 28 October 2026
 
+Follow-up: [29 October compact state and full-transaction measurement](GAS_OPTIMIZATION_20261029.md). The figures below describe the earlier candidate.
+
 The changes are implemented and native-VM tested on the integration branch. They are **not yet active on the website**. Operations owns the current live acceptance window. The refund setting can be published without changing contracts; the public execution changes require deployment of the newly compiled Board and coherent runtime/prover registration. Do not label calculated fees as new live receipts.
 
 ## Exact baseline and result

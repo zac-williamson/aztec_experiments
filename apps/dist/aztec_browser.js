@@ -124960,59 +124960,59 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   }
   function captureAggregateFundingIntent(input2) {
     if (input2 === void 0) return void 0;
-    const invalid7 = "PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH";
+    const invalid8 = "PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH";
     const capture = (value, keys) => {
-      check11(value && [Object.prototype, null].includes(Object.getPrototypeOf(value)), invalid7);
+      check11(value && [Object.prototype, null].includes(Object.getPrototypeOf(value)), invalid8);
       const result = {};
       for (const key of keys) {
         const d = Object.getOwnPropertyDescriptor(value, key);
-        check11(d && "value" in d, invalid7);
+        check11(d && "value" in d, invalid8);
         result[key] = d.value;
       }
       return result;
     };
     const r = capture(input2, ["from", "to", "nonce", "chainId", "data", "value", "expected"]);
-    check11(r.expected && Reflect.ownKeys(r.expected).length === 7, invalid7);
+    check11(r.expected && Reflect.ownKeys(r.expected).length === 7, invalid8);
     r.expected = capture(r.expected, ["kind", "routerCodeHash", "collateralPortal", "feePortal", "bokPortal", "privateFpc", "planHash"]);
-    for (const key of ["from", "to"]) check11(typeof r[key] === "string" && /^0x[0-9a-f]{40}$/.test(r[key]) && BigInt(r[key]) > 0n, invalid7);
-    check11(Number.isSafeInteger(r.nonce) && r.nonce >= 0 && typeof r.chainId === "string" && /^[1-9][0-9]{0,19}$/.test(r.chainId) && BigInt(r.chainId) < 2n ** 64n, invalid7);
-    check11(typeof r.data === "string" && /^0x(?:[0-9a-f]{2})+$/.test(r.data) && r.data.length <= 16384 && typeof r.value === "string" && /^(0|[1-9][0-9]{0,77})$/.test(r.value) && (r.expected.kind === "aggregate-usdc-funding" || r.value !== "0"), invalid7);
+    for (const key of ["from", "to"]) check11(typeof r[key] === "string" && /^0x[0-9a-f]{40}$/.test(r[key]) && BigInt(r[key]) > 0n, invalid8);
+    check11(Number.isSafeInteger(r.nonce) && r.nonce >= 0 && typeof r.chainId === "string" && /^[1-9][0-9]{0,19}$/.test(r.chainId) && BigInt(r.chainId) < 2n ** 64n, invalid8);
+    check11(typeof r.data === "string" && /^0x(?:[0-9a-f]{2})+$/.test(r.data) && r.data.length <= 16384 && typeof r.value === "string" && /^(0|[1-9][0-9]{0,77})$/.test(r.value) && (r.expected.kind === "aggregate-usdc-funding" || r.value !== "0"), invalid8);
     const hash14 = Object.getOwnPropertyDescriptor(input2, "txHash");
     if (hash14) {
-      check11("value" in hash14 && (hash14.value === null || typeof hash14.value === "string" && /^0x[0-9a-f]{64}$/.test(hash14.value)), invalid7);
+      check11("value" in hash14 && (hash14.value === null || typeof hash14.value === "string" && /^0x[0-9a-f]{64}$/.test(hash14.value)), invalid8);
       r.txHash = hash14.value;
     }
     try {
       validateAggregateFundingIntent(r);
     } catch {
-      throw new PrivateFeeFundingError(invalid7);
+      throw new PrivateFeeFundingError(invalid8);
     }
     Object.freeze(r.expected);
     return Object.freeze(r);
   }
   function captureAggregateFundingCustody(input2, intent) {
-    const invalid7 = "PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH";
+    const invalid8 = "PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH";
     const usdc = intent?.expected.kind === "aggregate-usdc-funding";
     if (!usdc) {
-      check11(input2 === void 0, invalid7);
+      check11(input2 === void 0, invalid8);
       return void 0;
     }
     const keys = ["kind", "planHash", "beneficiary", "privateFeeSalt"];
-    check11(input2 && [Object.prototype, null].includes(Object.getPrototypeOf(input2)) && Reflect.ownKeys(input2).length === keys.length, invalid7);
+    check11(input2 && [Object.prototype, null].includes(Object.getPrototypeOf(input2)) && Reflect.ownKeys(input2).length === keys.length, invalid8);
     const r = {};
     for (const key of keys) {
       const d = Object.getOwnPropertyDescriptor(input2, key);
-      check11(d && "value" in d, invalid7);
+      check11(d && "value" in d, invalid8);
       r[key] = d.value;
     }
-    check11(r.kind === "aggregate-usdc-custody-v1" && r.planHash === intent.expected.planHash && typeof r.beneficiary === "string" && /^0x[0-9a-f]{40}$/.test(r.beneficiary) && BigInt(r.beneficiary) > 0n && typeof r.privateFeeSalt === "string" && /^0x[0-9a-f]{64}$/.test(r.privateFeeSalt) && BigInt(r.privateFeeSalt) > 0n && BigInt(r.privateFeeSalt) < 21888242871839275222246405745257275088548364400416034343698204186575808495617n, invalid7);
+    check11(r.kind === "aggregate-usdc-custody-v1" && r.planHash === intent.expected.planHash && typeof r.beneficiary === "string" && /^0x[0-9a-f]{40}$/.test(r.beneficiary) && BigInt(r.beneficiary) > 0n && typeof r.privateFeeSalt === "string" && /^0x[0-9a-f]{64}$/.test(r.privateFeeSalt) && BigInt(r.privateFeeSalt) > 0n && BigInt(r.privateFeeSalt) < 21888242871839275222246405745257275088548364400416034343698204186575808495617n, invalid8);
     let plan;
     try {
       plan = validateAggregateFundingIntent(intent);
     } catch {
-      throw new PrivateFeeFundingError(invalid7);
+      throw new PrivateFeeFundingError(invalid8);
     }
-    check11(plan.beneficiary.toLowerCase() === r.beneficiary, invalid7);
+    check11(plan.beneficiary.toLowerCase() === r.beneficiary, invalid8);
     return Object.freeze(r);
   }
   function validRecord(record8) {
@@ -150062,10 +150062,34 @@ See docs for context: https://docs.aztec.network/errors/14`);
   init_dirname();
   init_buffer2();
   init_process2();
+
+  // shared/rolling/post-metadata.mjs
+  init_dirname();
+  init_buffer2();
+  init_process2();
+  var invalid6 = () => Object.assign(new Error("Invalid post metadata"), { code: "ROLLING_INVALID_RESPONSE" });
+  var integer8 = (value) => {
+    if (typeof value !== "bigint" && !(typeof value === "string" && /^(?:0x[0-9a-f]+|[0-9]+)$/i.test(value))) throw invalid6();
+    return BigInt(value);
+  };
+  function decodePostMetadata(value) {
+    const packed = integer8(value);
+    if (packed < 0n || packed >= 1n << 128n) throw invalid6();
+    const published = packed & (1n << 64n) - 1n, policyVersion = packed >> 64n, mainVersion = policyVersion & 0xffffffffn, localVersion = policyVersion >> 32n;
+    if (packed !== 0n && (mainVersion === 0n || localVersion > 1n)) throw invalid6();
+    return { exists: packed !== 0n, published, policyVersion, mainVersion, localVersion };
+  }
+  function postMetadataDeadline(value, censorWindow) {
+    const metadata = decodePostMetadata(value), window2 = integer8(censorWindow);
+    if (!metadata.exists || window2 < 0n || window2 > 0xffffffffn || metadata.published + window2 >= 1n << 63n) throw invalid6();
+    return metadata.published + window2;
+  }
+
+  // shared/ordinary-post-witnesses.mjs
   init_bn254();
   init_hash2();
   init_contract();
-  async function prefetchOrdinaryPostWitnesses({ wallet, node: node2, board: board2, artifact, hints, owner, noteHashWitnessHints }) {
+  async function prefetchOrdinaryPostWitnesses({ wallet, node: node2, board: board2, artifact, hints, owner, noteHashWitnessHints, censorWindow }) {
     const pxe = wallet?.pxe;
     if (!isPrivatePXEForNode(pxe, node2) || !board2?.address || !board2?.currentContractClassId || artifact?.name !== "RollingBoard" || !Array.isArray(hints) || hints.length !== 2)
       throw Object.assign(Error("Invalid ordinary post witness context"), { code: "BB_POST_FEE_PROFILE_MISMATCH" });
@@ -150082,7 +150106,7 @@ See docs for context: https://docs.aztec.network/errors/14`);
     const configSlot = BigInt(artifact.storageLayout?.config?.slot ?? -1), depositsSlot = BigInt(artifact.storageLayout?.deposits?.slot ?? -1);
     if (configSlot < 1n || depositsSlot !== configSlot + 11n) throw Error("Invalid ordinary post config layout");
     const configLeaf = await computePublicDataTreeLeafSlot(board2.address, new Fr(configSlot + 10n));
-    const historyEntries = await Promise.all(posts.flatMap(({ post, index }) => ["post_exists", "post_time", "post_flag_deadline"].map(async (name) => {
+    const historyEntries = await Promise.all(posts.flatMap(({ post, index }) => ["post_metadata"].map(async (name) => {
       const slot = artifact.storageLayout?.[name]?.slot;
       if (slot === void 0) throw Error("Missing ordinary post storage layout");
       const storageSlot = await deriveStorageSlotInMap(new Fr(BigInt(slot)), post);
@@ -150105,7 +150129,11 @@ See docs for context: https://docs.aztec.network/errors/14`);
     const failed = reads.find((result) => result.status === "rejected");
     if (failed) throw failed.reason;
     guard();
-    const mature = reads.map((result) => result.value).filter((entry) => entry.name === "post_flag_deadline" && entry.witness?.leafPreimage.leaf.slot.equals(entry.leaf) && entry.witness.leafPreimage.leaf.value.toBigInt() <= BigInt(header.globalVariables.timestamp));
+    for (const result of reads) {
+      const entry = result.value;
+      if (entry.name !== "screened-note" && !entry.witness?.leafPreimage?.leaf?.slot?.equals(entry.leaf)) throw Error("Invalid ordinary post storage witness");
+    }
+    const mature = reads.map((result) => result.value).filter((entry) => entry.name === "post_metadata" && postMetadataDeadline(entry.witness?.leafPreimage?.leaf?.value?.toBigInt?.(), censorWindow) <= BigInt(header.globalVariables.timestamp));
     const childMature = hints[0]?.note.is_dummy || mature.some((entry) => entry.index === 0);
     const flags = await Promise.allSettled(mature.filter((entry) => entry.index === 0 || childMature).map(async (entry) => {
       const slot = artifact.storageLayout?.post_flagged?.slot;
@@ -152842,7 +152870,7 @@ See docs for context: https://docs.aztec.network/errors/14`);
     html5Email: () => html5Email5,
     httpProtocol: () => httpProtocol5,
     idnEmail: () => idnEmail5,
-    integer: () => integer8,
+    integer: () => integer9,
     ipv4: () => ipv49,
     ipv6: () => ipv69,
     ksuid: () => ksuid9,
@@ -152948,7 +152976,7 @@ See docs for context: https://docs.aztec.network/errors/14`);
     return new RegExp(`^${regex}$`);
   };
   var bigint13 = /^-?\d+n?$/;
-  var integer8 = /^-?\d+$/;
+  var integer9 = /^-?\d+$/;
   var number14 = /^-?\d+(?:\.\d+)?$/;
   var boolean13 = /^(?:true|false)$/i;
   var _null13 = /^null$/i;
@@ -153080,7 +153108,7 @@ See docs for context: https://docs.aztec.network/errors/14`);
       bag.minimum = minimum;
       bag.maximum = maximum;
       if (isInt)
-        bag.pattern = integer8;
+        bag.pattern = integer9;
     });
     inst._zod.check = (payload) => {
       const input2 = payload.value;
@@ -167635,7 +167663,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     html5Email: () => html5Email6,
     httpProtocol: () => httpProtocol6,
     idnEmail: () => idnEmail6,
-    integer: () => integer9,
+    integer: () => integer10,
     ipv4: () => ipv411,
     ipv6: () => ipv611,
     ksuid: () => ksuid11,
@@ -167741,7 +167769,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     return new RegExp(`^${regex}$`);
   };
   var bigint16 = /^-?\d+n?$/;
-  var integer9 = /^-?\d+$/;
+  var integer10 = /^-?\d+$/;
   var number17 = /^-?\d+(?:\.\d+)?$/;
   var boolean16 = /^(?:true|false)$/i;
   var _null16 = /^null$/i;
@@ -167873,7 +167901,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       bag.minimum = minimum;
       bag.maximum = maximum;
       if (isInt)
-        bag.pattern = integer9;
+        bag.pattern = integer10;
     });
     inst._zod.check = (payload) => {
       const input2 = payload.value;
@@ -182487,51 +182515,51 @@ ${context2.join("\n")}`;
   init_buffer2();
   init_process2();
   var fail6 = () => transactionError("BB_RECOVERY_REQUIRED", "Recover the saved transaction before starting another operation.");
-  var invalid6 = () => transactionError("BB_JOURNAL_INVALID", "Transaction recovery storage could not be authenticated. Preserve it before continuing.");
+  var invalid7 = () => transactionError("BB_JOURNAL_INVALID", "Transaction recovery storage could not be authenticated. Preserve it before continuing.");
   function replacementOptions(options = {}) {
     try {
-      if (!options || ![Object.prototype, null].includes(Object.getPrototypeOf(options)) || Reflect.ownKeys(options).some((key) => key !== "requireMissingAnchor")) throw invalid6();
+      if (!options || ![Object.prototype, null].includes(Object.getPrototypeOf(options)) || Reflect.ownKeys(options).some((key) => key !== "requireMissingAnchor")) throw invalid7();
       const property = Object.getOwnPropertyDescriptor(options, "requireMissingAnchor");
-      if (property && (!Object.hasOwn(property, "value") || typeof property.value !== "boolean")) throw invalid6();
+      if (property && (!Object.hasOwn(property, "value") || typeof property.value !== "boolean")) throw invalid7();
       return property?.value ?? false;
     } catch {
-      throw invalid6();
+      throw invalid7();
     }
   }
   function expectedOperation(value) {
-    if (typeof value !== "string" || !value.length || value.length > 16384) throw invalid6();
+    if (typeof value !== "string" || !value.length || value.length > 16384) throw invalid7();
     return value;
   }
   function recoveryOptions(options) {
     if (options === void 0) return null;
     try {
-      if (!options || ![Object.prototype, null].includes(Object.getPrototypeOf(options))) throw invalid6();
+      if (!options || ![Object.prototype, null].includes(Object.getPrototypeOf(options))) throw invalid7();
       const keys = Reflect.ownKeys(options);
-      if (keys.some((key) => !["expectedOperation", "expectedTxHash", "beforeSubmit"].includes(key)) || !keys.includes("expectedOperation") || !keys.includes("expectedTxHash")) throw invalid6();
+      if (keys.some((key) => !["expectedOperation", "expectedTxHash", "beforeSubmit"].includes(key)) || !keys.includes("expectedOperation") || !keys.includes("expectedTxHash")) throw invalid7();
       const out = Object.fromEntries(keys.map((key) => {
         const d = Object.getOwnPropertyDescriptor(options, key);
-        if (!d || !Object.hasOwn(d, "value")) throw invalid6();
+        if (!d || !Object.hasOwn(d, "value")) throw invalid7();
         return [key, d.value];
       }));
       expectedOperation(out.expectedOperation);
-      if (typeof out.expectedTxHash !== "string" || !/^0x[0-9a-f]{64}$/.test(out.expectedTxHash) || "beforeSubmit" in out && typeof out.beforeSubmit !== "function") throw invalid6();
+      if (typeof out.expectedTxHash !== "string" || !/^0x[0-9a-f]{64}$/.test(out.expectedTxHash) || "beforeSubmit" in out && typeof out.beforeSubmit !== "function") throw invalid7();
       return out;
     } catch {
-      throw invalid6();
+      throw invalid7();
     }
   }
   var scopeNames = ["account", "chainId", "rollup", "version", "board", "portal"];
   function l2JournalScopeText(scope) {
-    if (!scope || Object.keys(scope).sort().join() !== [...scopeNames].sort().join()) throw invalid6();
-    for (const name of ["account", "board"]) if (!/^0x[0-9a-f]{64}$/.test(scope[name])) throw invalid6();
-    for (const name of ["rollup", "portal"]) if (!/^0x[0-9a-f]{40}$/.test(scope[name])) throw invalid6();
-    for (const name of ["chainId", "version"]) if (!/^[1-9][0-9]{0,19}$/.test(scope[name])) throw invalid6();
+    if (!scope || Object.keys(scope).sort().join() !== [...scopeNames].sort().join()) throw invalid7();
+    for (const name of ["account", "board"]) if (!/^0x[0-9a-f]{64}$/.test(scope[name])) throw invalid7();
+    for (const name of ["rollup", "portal"]) if (!/^0x[0-9a-f]{40}$/.test(scope[name])) throw invalid7();
+    for (const name of ["chainId", "version"]) if (!/^[1-9][0-9]{0,19}$/.test(scope[name])) throw invalid7();
     return JSON.stringify(["AZTEC_BB_L2_JOURNAL_V1", ...scopeNames.map((name) => scope[name])]);
   }
   async function createL2Journal({ storage, walletSecret, walletSalt, scope, Tx: Tx2, node: node2, acknowledgeTx, crypto: crypto3 = globalThis.crypto, waitOptions = {}, contextGuard, reconcileOnly = false, operationScope, confirmationTier = "checkpointed", predecessorAnchor }) {
-    if (!["checkpointed", "proposed"].includes(confirmationTier) || confirmationTier === "proposed" && typeof predecessorAnchor !== "function" || confirmationTier === "checkpointed" && predecessorAnchor !== void 0) throw invalid6();
+    if (!["checkpointed", "proposed"].includes(confirmationTier) || confirmationTier === "proposed" && typeof predecessorAnchor !== "function" || confirmationTier === "checkpointed" && predecessorAnchor !== void 0) throw invalid7();
     const receiptOptions = (saved) => ({ ...waitOptions, confirmationTier: confirmationTier === "proposed" && saved.value?.confirmationTier === "proposed" ? "proposed" : "checkpointed" });
-    if (typeof reconcileOnly !== "boolean" || operationScope !== void 0 && typeof operationScope !== "function") throw invalid6();
+    if (typeof reconcileOnly !== "boolean" || operationScope !== void 0 && typeof operationScope !== "function") throw invalid7();
     const slot = await createEncryptedJournalSlot({ storage, walletSecret, walletSalt, scopeText: l2JournalScopeText(scope), keyDomain: "AZTEC_BB_L2_JOURNAL_KEY_V1", crypto: crypto3 });
     let acknowledged = acknowledgeTx, lastHash = null, operation = null, operationTier = "checkpointed", replacement = null;
     function containsApplicationNullifier(tx, value) {
@@ -182542,34 +182570,34 @@ ${context2.join("\n")}`;
       if (saved.value === null) return { ...saved, tx: null };
       try {
         const record8 = saved.value;
-        if (record8.confirmationTier !== void 0 && !["checkpointed", "proposed"].includes(record8.confirmationTier)) throw invalid6();
-        if (record8.version !== 1 || typeof record8.txHash !== "string" || !/^0x[0-9a-f]{64}$/.test(record8.txHash) || typeof record8.tx !== "string" || !/^(?:[0-9a-f]{2})+$/.test(record8.tx)) throw invalid6();
-        if (record8.replacementPolicy !== void 0 && (record8.replacementPolicy !== "missing-anchor" || !Array.isArray(record8.replacements) || !record8.replacements.length)) throw invalid6();
-        if (record8.operation !== void 0 && record8.operation !== null && (typeof record8.operation !== "string" || !record8.operation.length || record8.operation.length > 16384)) throw invalid6();
+        if (record8.confirmationTier !== void 0 && !["checkpointed", "proposed"].includes(record8.confirmationTier)) throw invalid7();
+        if (record8.version !== 1 || typeof record8.txHash !== "string" || !/^0x[0-9a-f]{64}$/.test(record8.txHash) || typeof record8.tx !== "string" || !/^(?:[0-9a-f]{2})+$/.test(record8.tx)) throw invalid7();
+        if (record8.replacementPolicy !== void 0 && (record8.replacementPolicy !== "missing-anchor" || !Array.isArray(record8.replacements) || !record8.replacements.length)) throw invalid7();
+        if (record8.operation !== void 0 && record8.operation !== null && (typeof record8.operation !== "string" || !record8.operation.length || record8.operation.length > 16384)) throw invalid7();
         if (record8.replacements !== void 0) {
-          if (!Array.isArray(record8.replacements) || record8.replacements.length > 8) throw invalid6();
+          if (!Array.isArray(record8.replacements) || record8.replacements.length > 8) throw invalid7();
           const seen = /* @__PURE__ */ new Set([record8.txHash]);
           for (const prior of record8.replacements) {
-            if (!prior || Object.keys(prior).sort().join() !== "tx,txHash" || typeof prior.tx !== "string" || !/^(?:[0-9a-f]{2})+$/.test(prior.tx) || typeof prior.txHash !== "string" || seen.has(prior.txHash)) throw invalid6();
+            if (!prior || Object.keys(prior).sort().join() !== "tx,txHash" || typeof prior.tx !== "string" || !/^(?:[0-9a-f]{2})+$/.test(prior.tx) || typeof prior.txHash !== "string" || seen.has(prior.txHash)) throw invalid7();
             const old = Tx2.fromBuffer(Buffer2.from(prior.tx, "hex"));
-            if (record8.applicationNullifier !== void 0 && !containsApplicationNullifier(old, record8.applicationNullifier)) throw invalid6();
-            if (old.getTxHash().toString() !== prior.txHash || Buffer2.from(old.toBuffer()).toString("hex") !== prior.tx) throw invalid6();
+            if (record8.applicationNullifier !== void 0 && !containsApplicationNullifier(old, record8.applicationNullifier)) throw invalid7();
+            if (old.getTxHash().toString() !== prior.txHash || Buffer2.from(old.toBuffer()).toString("hex") !== prior.tx) throw invalid7();
             seen.add(prior.txHash);
           }
         }
         const tx = Tx2.fromBuffer(Buffer2.from(record8.tx, "hex"));
-        if (record8.applicationNullifier !== void 0 && !containsApplicationNullifier(tx, record8.applicationNullifier)) throw invalid6();
-        if (tx.getTxHash().toString() !== record8.txHash || Buffer2.from(tx.toBuffer()).toString("hex") !== record8.tx) throw invalid6();
+        if (record8.applicationNullifier !== void 0 && !containsApplicationNullifier(tx, record8.applicationNullifier)) throw invalid7();
+        if (tx.getTxHash().toString() !== record8.txHash || Buffer2.from(tx.toBuffer()).toString("hex") !== record8.tx) throw invalid7();
         return { ...saved, tx };
       } catch {
-        throw invalid6();
+        throw invalid7();
       }
     }
     let canonicalPermit = null, inspectionPermit = null, completionPermit = null;
     const ownedScope = () => {
       try {
         const value = operationScope?.();
-        if (value != null && typeof value !== "object") throw invalid6();
+        if (value != null && typeof value !== "object") throw invalid7();
         return value ?? null;
       } catch (error312) {
         canonicalPermit = null;
@@ -182615,21 +182643,21 @@ ${context2.join("\n")}`;
       }
     }
     async function checkedCanStart(options = {}) {
-      if (!options || typeof options !== "object" || Reflect.ownKeys(options).some((key) => !["fresh", "predecessor"].includes(key))) throw invalid6();
+      if (!options || typeof options !== "object" || Reflect.ownKeys(options).some((key) => !["fresh", "predecessor"].includes(key))) throw invalid7();
       const requested = Object.getOwnPropertyDescriptor(options, "fresh");
-      if (requested && (!Object.hasOwn(requested, "value") || typeof requested.value !== "boolean")) throw invalid6();
+      if (requested && (!Object.hasOwn(requested, "value") || typeof requested.value !== "boolean")) throw invalid7();
       let predecessor;
       if (Object.hasOwn(options, "predecessor")) {
         const descriptor = Object.getOwnPropertyDescriptor(options, "predecessor"), value = descriptor?.value;
-        if (!descriptor || !Object.hasOwn(descriptor, "value") || !value || ![Object.prototype, null].includes(Object.getPrototypeOf(value)) || Reflect.ownKeys(value).sort().join() !== "operation,txHash") throw invalid6();
+        if (!descriptor || !Object.hasOwn(descriptor, "value") || !value || ![Object.prototype, null].includes(Object.getPrototypeOf(value)) || Reflect.ownKeys(value).sort().join() !== "operation,txHash") throw invalid7();
         const entries = ["operation", "txHash"].map((key) => {
           const d = Object.getOwnPropertyDescriptor(value, key);
-          if (!d || !Object.hasOwn(d, "value")) throw invalid6();
+          if (!d || !Object.hasOwn(d, "value")) throw invalid7();
           return [key, d.value];
         });
         predecessor = Object.fromEntries(entries);
         if (predecessor.operation !== null) expectedOperation(predecessor.operation);
-        if (typeof predecessor.txHash !== "string" || !/^0x[0-9a-f]{64}$/.test(predecessor.txHash)) throw invalid6();
+        if (typeof predecessor.txHash !== "string" || !/^0x[0-9a-f]{64}$/.test(predecessor.txHash)) throw invalid7();
       }
       const owner = ownedScope();
       await checkedScope(owner);
@@ -182724,9 +182752,9 @@ ${context2.join("\n")}`;
     async function prepare2(tx, previous, { applicationNullifier } = {}) {
       const authenticated = await read2();
       const encoded = Object.getOwnPropertyDescriptor(previous ?? {}, "encoded");
-      if (!encoded || !Object.hasOwn(encoded, "value") || authenticated.encoded !== encoded.value) throw invalid6();
+      if (!encoded || !Object.hasOwn(encoded, "value") || authenticated.encoded !== encoded.value) throw invalid7();
       previous = authenticated;
-      if (applicationNullifier !== void 0 && !containsApplicationNullifier(tx, applicationNullifier)) throw invalid6();
+      if (applicationNullifier !== void 0 && !containsApplicationNullifier(tx, applicationNullifier)) throw invalid7();
       let replacements = [];
       const authorization = replacement, selectedOperation = operation, selectedTier = operationTier;
       if (authorization) {
@@ -182741,7 +182769,7 @@ ${context2.join("\n")}`;
       replacement = null;
     }
     async function included(receipt) {
-      if (confirmationTier !== "proposed" || receipt?.status !== "proposed" || receipt.executionResult !== "success") throw invalid6();
+      if (confirmationTier !== "proposed" || receipt?.status !== "proposed" || receipt.executionResult !== "success") throw invalid7();
       const owner = ownedScope();
       await checkedScope(owner);
       const saved = await read2();
@@ -182751,7 +182779,7 @@ ${context2.join("\n")}`;
       lastHash = acknowledged;
     }
     function confirmed(receipt) {
-      if (!["checkpointed", "proven", "finalized"].includes(receipt?.status)) throw invalid6();
+      if (!["checkpointed", "proven", "finalized"].includes(receipt?.status)) throw invalid7();
       acknowledged = receipt.txHash.toString();
       lastHash = acknowledged;
     }
@@ -182841,7 +182869,7 @@ ${context2.join("\n")}`;
         const saved = await read2();
         await checkedScope(owner);
         if (typeof txHash !== "string" || !saved.tx || saved.value.txHash !== txHash) throw fail6();
-        if (selectedOptions.confirmationTier !== void 0 && selectedOptions.confirmationTier !== receiptOptions(saved).confirmationTier) throw invalid6();
+        if (selectedOptions.confirmationTier !== void 0 && selectedOptions.confirmationTier !== receiptOptions(saved).confirmationTier) throw invalid7();
         const receipt = await waitForSuccessfulReceipt(node2, saved.tx, { ...waitOptions, ...selectedOptions, confirmationTier: receiptOptions(saved).confirmationTier });
         const observed = Object.freeze({
           txHash: receipt.txHash.toString(),
@@ -182879,10 +182907,10 @@ ${context2.join("\n")}`;
         }
       },
       async inspectOutcome({ reuse = false, completion = false } = {}) {
-        if (typeof completion !== "boolean") throw invalid6();
+        if (typeof completion !== "boolean") throw invalid7();
         const completed = completionPermit;
         completionPermit = null;
-        if (typeof reuse !== "boolean") throw invalid6();
+        if (typeof reuse !== "boolean") throw invalid7();
         const owner = ownedScope();
         await checkedScope(owner);
         const saved = await read2();
@@ -182961,7 +182989,7 @@ ${context2.join("\n")}`;
        * Persisted strict policy cannot be downgraded after restart. */
       async assertReplacementPredecessors(operationInput, currentTxHash, options) {
         const expected = expectedOperation(operationInput), requested = replacementOptions(options);
-        if (typeof currentTxHash !== "string" || !/^0x[0-9a-f]{64}$/.test(currentTxHash)) throw invalid6();
+        if (typeof currentTxHash !== "string" || !/^0x[0-9a-f]{64}$/.test(currentTxHash)) throw invalid7();
         const saved = await read2();
         if (!saved.tx || saved.value.operation !== expected || saved.value.txHash !== currentTxHash || !saved.value.replacements?.length) throw fail6();
         await rejectedAttempts(saved, { requireMissingAnchor: requested, priorOnly: true });
@@ -182969,7 +182997,7 @@ ${context2.join("\n")}`;
         return true;
       },
       setOperation(value, { confirmationTier: minimum = "checkpointed" } = {}) {
-        if (typeof value !== "string" || !value.length || value.length > 16384 || !["checkpointed", "proposed"].includes(minimum) || minimum === "proposed" && confirmationTier !== "proposed") throw invalid6();
+        if (typeof value !== "string" || !value.length || value.length > 16384 || !["checkpointed", "proposed"].includes(minimum) || minimum === "proposed" && confirmationTier !== "proposed") throw invalid7();
         operation = value;
         operationTier = minimum;
       },

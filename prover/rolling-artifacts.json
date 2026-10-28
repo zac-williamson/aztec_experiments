@@ -5,7 +5,7 @@
     {
       "name": "RollingBoard",
       "path": "billboard/target/rolling_contract-RollingBoard.json",
-      "sha256": "4bca57e75da0c1afa81ad22af01a137d81221b1fcb946d7209bed019d453ef6b"
+      "sha256": "9cc151053858d66932e5bb5ac67dbd6e61a9b28f16c06932b12c584062ddae41"
     },
     {
       "name": "PrivateBok",
@@ -15,7 +15,7 @@
   ],
   "inputs": {
     "apps/src/billboard/private_fee_artifact.json": "3e7e809dc8634444519616f66925ab271e65e12808e80b89bec3ac12ed87d74a",
-    "noir-dependencies.json": "8190024419beab13baab25d0e02c96605de0a1d8354afcac046d82af66122c54",
+    "noir-dependencies.json": "9ea66b3583ace2edc5362b30e68ae40c584f60c3498d20f65718c45800c4517d",
     "toolchain.json": "54a5bf67f67ceab2f8894b834a88ecac221bfeef5021cb7cd399ea10901598e4",
     "package-lock.json": "bfe89933145d2a6de03603c1726df9c235d19717779eeb04ac70e7a0c862ef7b",
     "scripts/build-contracts.mjs": "d57edcc3fac542a18b731e694296369246cff216999d3b4b11842996fae894ea",
@@ -33,8 +33,8 @@
     "scripts/owner-delivery-noir-sources.json": "e1cdbbc98f254799fd63db119fffa491813943db1ffd64ca099a9b3ea34e5dad",
     "billboard/rolling_contract/src/admission.nr": "5b4cb9af637f8bf0b213a396f36b93096f94ca4022e692176f08650927848eb4",
     "billboard/rolling_contract/src/encoding.nr": "32d1ddbca7c6cdf607a24ad1ecdf7ab4be6667877cf7c34b3cf370a02efcfd07",
-    "billboard/rolling_contract/src/main.nr": "4a2ceb101ae6357ae242f8d04d0c25534cbbd74d8bb5eb0797cc3dc5dc6c0457",
-    "billboard/rolling_contract/src/posting.nr": "c6123659ba8497aa2fdece72ae3bd3fabe7a20a29f3c4e7b7262db2feb40204e",
+    "billboard/rolling_contract/src/main.nr": "96565d11ec8bc63189051e8c31ee74b678fc7472828cd248e47cdb4edbc2b5f0",
+    "billboard/rolling_contract/src/posting.nr": "cc4bd73a9a8d772dd6f01d5036114f8fac28b17f816d7bcce443351a375e4760",
     "billboard/rolling_contract/src/profiles.nr": "b12124ca50d181f9798c24e3373f9ba358697fdb433cc7d696c3a69ac9d53efd",
     ".build/owner-delivery/aztec-nr/aztec/src/context/note_existence_request.nr": "836e89da0ad9b361aeabdefaabde70a9c72df96774df2bb06a4e0a999b0ef6f9",
     ".build/owner-delivery/aztec-nr/aztec/src/context/nullifier_existence_request.nr": "31aca4abf88163d5e527c8b2012a4ea5fe7f80f8e31e1ec20d9c44e4ef9da2cb",

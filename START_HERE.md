@@ -4,7 +4,7 @@ Current handover: 28 October 2026. The owner's current request takes precedence 
 
 ## Live work and next action
 
-Latest owner task: [gas optimization](docs/GAS_OPTIMIZATION_20261028.md). Public execution reductions and a40,000-gas refund allowance are implemented and native-tested, but not yet deployed. Coordinate with launch-operations maintenance before any runtime changes. Measured public gas1,241,359→482,531; calculated same-price total3.507→1.587 FEE. Existing latency goal remains paused.
+Latest owner task: [compact post state and complete gas breakdown](docs/GAS_OPTIMIZATION_20261029.md). Implemented and native-tested, not yet deployed: root storage writes10→2; public gas482,531→211,720; complete29-byte post1,020,245 billedL2 /4,064DA, with fees matching two native inclusion receipts. Refund40000/512 passes structural/context qualification and full native payment lifecycle. NewBoard, SDK and readers require a coherent deployment after the operations maintenance window. Existing latency goal remains paused.
 
 **Performance work remains paused by the owner.** Harry feedback wallet/account/payment UX and Home ranking are published. Images and the moderation-information item were dropped. MetaMask’s official hostname scanner returns BLOCK for the current CloudFront hostname; manual classification review is needed. See docs/METAMASK_ALERT_20261028.md. No external report has been sent. [Current release report](docs/HARRY_FEEDBACK_20261028.md).
 

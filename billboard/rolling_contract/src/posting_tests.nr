@@ -1,4 +1,4 @@
-use crate::{RollingBoard, posting::{PostDraft, invocation_preimage, invocation_target, validate_draft, like_tag}, encoding::{pack_bytes, name_id}, admission::{deposit_chain_id, get_deposit_msg_hash, post_id}};
+use crate::{RollingBoard, posting::{PostMetadata, PostDraft, invocation_preimage, invocation_target, validate_draft, like_tag}, encoding::{pack_bytes, name_id}, admission::{deposit_chain_id, get_deposit_msg_hash, post_id}};
 use private_bok::{PrivateBok, words, recipient_commitment};
 use aztec::{test::helpers::test_environment::TestEnvironment, protocol::{address::{AztecAddress, EthAddress}, hash::sha256_to_field, traits::{FromField, ToField}}};
 
@@ -78,12 +78,13 @@ unconstrained fn funded_anonymous_post_and_reply_have_canonical_thread() {
     let (env, board, _, alice, bob) = setup(); let chain = fund(env, board, alice, 101);
     let root = publish(env, board, alice, chain, 201, draft());
     let (exists, record, status, _, _) = env.view_public(RollingBoard::at(board).get_post(root));
-    assert(exists); assert_eq(record.root, root); assert_eq(record.name_id, 0); assert_eq(status, 0);
+    assert(exists); assert_eq(record.root, root); assert_eq(status, 0);
     let bob_chain = fund(env, board, bob, 102); let mut reply = draft(); reply.parent = root; reply.root_reference = root;
     let id = publish(env, board, bob, bob_chain, 202, reply);
     let (_, child, _, _, _) = env.view_public(RollingBoard::at(board).get_post(id));
-    assert_eq(child.root, root); assert_eq(child.parent, root); assert_eq(child.name_id, 0);
-    assert_eq(env.view_public(RollingBoard::at(board).get_post_count()), 2);
+    assert_eq(child.root, root); assert_eq(child.subboard, 0);
+    assert(env.view_public(RollingBoard::at(board).get_post(root)).0);
+    assert(env.view_public(RollingBoard::at(board).get_post(id)).0);
 }
 #[test]
 unconstrained fn named_post_requires_and_retains_private_ownership() {
@@ -91,7 +92,7 @@ unconstrained fn named_post_requires_and_retains_private_ownership() {
     env.call_private(alice, RollingBoard::at(board).register_name(fixed("John"), 4, fixed("Doe"), 3));
     let mut d = draft(); d.name_id = name_id(fixed("John"), 4, fixed("Doe"), 3);
     let id = publish(env, board, alice, chain, 201, d);
-    let (_, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(id)); assert_eq(record.name_id, d.name_id);
+    let (_, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(id)); assert_eq(record.root, id);
     env.call_private(alice, RollingBoard::at(board).authenticate_name(d.name_id));
 }
 #[test(should_fail_with="No owned name")]
@@ -184,7 +185,7 @@ unconstrained fn mature_post_screening_retains_recovery_and_exit() {
     env.mine_block_at(env.last_block_timestamp() + 11);
     env.call_private(alice, RollingBoard::at(board).withdraw(chain));
     assert_eq(env.execute_utility(RollingBoard::at(board).get_deposit_info(alice, chain)), [0; 11]);
-    assert_eq(env.view_public(RollingBoard::at(board).get_post_count()), 1);
+    assert(env.view_public(RollingBoard::at(board).get_post(post_id(board, 201))).0);
 }
 #[test(should_fail_with="Plugin disabled")]
 unconstrained fn funded_invocation_cannot_use_disabled_plugin() {
@@ -194,17 +195,17 @@ unconstrained fn funded_invocation_cannot_use_disabled_plugin() {
     env.call_private(alice, RollingBoard::at(board).post_with_bok(chain, 201, draft(), Option::none(), Option::none(), 1, 99));
 }
 #[test]
-unconstrained fn quote_and_empty_repost_keep_explicit_reference() {
+unconstrained fn quote_and_empty_repost_keep_independent_canonical_roots() {
     let (env, board, _, alice, bob) = setup(); let chain = fund(env, board, alice, 101);
     let root = publish(env, board, alice, chain, 201, draft()); let other = fund(env, board, bob, 102);
     let mut quote_draft = draft(); quote_draft.kind = 2; quote_draft.reference = root;
     let quoted = publish(env, board, bob, other, 202, quote_draft);
     let (_, q, _, _, _) = env.view_public(RollingBoard::at(board).get_post(quoted));
-    assert_eq(q.kind, 2); assert_eq(q.reference, root); assert_eq(q.root, quoted);
+    assert_eq(q.root, quoted);
     let mut repost = draft(); repost.kind = 3; repost.reference = root; repost.message = [0; 32]; repost.length = 0;
     let repeated = publish(env, board, alice, chain, 203, repost);
     let (_, r, _, _, _) = env.view_public(RollingBoard::at(board).get_post(repeated));
-    assert_eq(r.kind, 3); assert_eq(r.reference, root); assert_eq(r.root, repeated);
+    assert_eq(r.root, repeated);
 }
 #[test(should_fail_with="Referenced post removed")]
 unconstrained fn removed_quote_target_rejected() {
@@ -391,9 +392,9 @@ unconstrained fn actual_private_bok_callback_activates_exact_funded_named_post()
     assert_eq(request.state, 2); assert_eq(request.invocation_hash, target);
     assert_eq(request.available, 0); assert_eq(request.reserved, 600); assert_eq(request.charged, 0);
     assert_eq(env.execute_utility(PrivateBok::at(bok).balance_of(alice)), 400);
-    assert_eq(env.view_public(RollingBoard::at(board).get_post_count()), 1);
+    assert(env.view_public(RollingBoard::at(board).get_post(post_id(board, 201))).0);
     let (exists, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(post_id(board, 201)));
-    assert(exists); assert_eq(record.name_id, d.name_id);
+    assert(exists); assert_eq(record.root, post_id(board, 201));
     let deposit = env.execute_utility(RollingBoard::at(board).get_deposit_info(alice, chain));
     assert_eq(deposit[5], 1); assert_eq(deposit[8], 1);
     env.call_private(alice, RollingBoard::at(board).authenticate_name(d.name_id));
@@ -493,11 +494,10 @@ unconstrained fn authenticated_bok_reply_preserves_thread_moderation_and_account
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 1));
     let id = crate::posting::bot_reply_id(board, bok, 401);
     let (exists, record, flag, _, _) = env.view_public(RollingBoard::at(board).get_post(id));
-    assert(exists); assert_eq(flag, 0); assert_eq(record.kind, 4); assert_eq(record.name_id, 0);
-    assert_eq(record.parent, post_id(board, 201)); assert_eq(record.root, post_id(board, 201));
-    assert_eq(record.subboard, subboard); assert_eq(record.reference, 0);
-    assert_eq(record.content_digest, crate::encoding::text_hash(text::<4, 32>("Done"), 4));
-    assert_eq(env.view_public(RollingBoard::at(board).get_post_count()), 2);
+    assert(exists); assert_eq(flag, 0);
+    assert_eq(record.root, post_id(board, 201));
+    assert_eq(record.subboard, subboard);
+    assert(env.view_public(RollingBoard::at(board).get_post(post_id(board, 201))).0);
     assert_eq(env.view_public(PrivateBok::at(bok).request(401)), before);
     env.call_public(op, RollingBoard::at(board).remove_post(id, 1, 1, text("Unsafe"), 6));
     let (_, removed, status, _, reason) = env.view_public(RollingBoard::at(board).get_post(id));
@@ -602,8 +602,8 @@ unconstrained fn bot_reply_to_nested_invocation_keeps_original_thread_root() {
     env.call_public(op, PrivateBok::at(bok).settle(401, 0, 0, 999));
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
     let (exists, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(crate::posting::bot_reply_id(board, bok, 401)));
-    assert(exists); assert_eq(record.parent, post_id(board, 201)); assert_eq(record.root, root);
-    assert(record.parent != record.root); assert_eq(record.kind, 4);
+    assert(exists); assert_eq(record.root, root);
+    assert(post_id(board, 201) != record.root);
 }
 #[test]
 fn reply_callback_has_39_fields_and_private_entrypoint_has_37() {
@@ -697,7 +697,8 @@ unconstrained fn history_seeded_1002_tail_authentication_and_exit() {
     env.call_private(owner, RollingBoard::at(board).post(chain, 202, draft(), child, grandchild));
     let after = env.execute_utility(RollingBoard::at(board).get_deposit_info(owner, chain));
     assert_eq(after[5], 1003); assert_eq(after[7], 1002); assert_eq(after[8], 1003);
-    assert_eq(env.view_public(RollingBoard::at(board).get_post_count()), 2);
+    assert(env.view_public(RollingBoard::at(board).get_post(post_id(board, 201))).0);
+    assert(env.view_public(RollingBoard::at(board).get_post(post_id(board, 202))).0);
     env.mine_block_at(env.last_block_timestamp() + 201);
     let (last, none) = env.execute_utility(RollingBoard::at(board).get_screen_hints(owner, chain));
     assert_eq(last.unwrap_unchecked().note.sequence, 1003); assert(none.is_none());
@@ -765,12 +766,12 @@ unconstrained fn atomic_thread_from_fresh_deposit_preserves_every_history_link()
     let now = env.last_block_timestamp();
     assert_eq(env.execute_utility(RollingBoard::at(board).get_thread_ready_time(owner, chain, 4, now)), now);
     env.call_private(owner, RollingBoard::at(board).post_thread(chain, nonces, drafts, 4, history, [0; 4], [0; 4]));
-    assert_eq(env.view_public(RollingBoard::at(board).get_post_count()), 4);
+    for nonce in [201, 202, 203, 204] { assert(env.view_public(RollingBoard::at(board).get_post(post_id(board, nonce))).0); }
     let deposit = env.execute_utility(RollingBoard::at(board).get_deposit_info(owner, chain));
     assert_eq(deposit[5], 4); assert_eq(deposit[7], 0); assert_eq(deposit[8], 4);
     for i in 0..4 {
         let (exists, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(post_id(board, nonces[i])));
-        assert(exists); assert_eq(record.parent, drafts[i].parent); assert_eq(record.root, post_id(board, 201));
+        assert(exists); assert_eq(record.root, post_id(board, 201));
         let key = author_tip_key(env, board, owner, post_id(board, nonces[i]));
         assert_eq(env.view_public(RollingBoard::at(board).get_tip_key_hash(post_id(board, nonces[i]))),
             private_credit::tip_key_hash(aztec::protocol::point::EmbeddedCurvePoint { x: key.x, y: key.y }));
@@ -886,7 +887,29 @@ unconstrained fn thread_three_posts_activate_exact_bok_request() {
     let request = env.view_public(PrivateBok::at(bok).request(401));
     assert_eq(request.state, 2); assert_eq(request.invocation_hash, target);
     assert_eq(request.reserved, 600); assert_eq(request.available, 0);
-    assert_eq(env.view_public(RollingBoard::at(board).get_post_count()), 3);
+    for nonce in [301, 302, 303] { assert(env.view_public(RollingBoard::at(board).get_post(post_id(board, nonce))).0); }
     let (_, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(post_id(board, 302)));
-    assert_eq(record.parent, post_id(board, 301)); assert_eq(record.root, post_id(board, 301));
+    assert_eq(record.root, post_id(board, 301));
 }
+
+// Event-only full-record checks (all seven fields and exact message bytes) live in
+// scripts/rolling-post-gas.test.mjs against the compiled native public program.
+#[test]
+fn publication_metadata_roundtrips_zero_time_and_maximum_widths() {
+    let zero = PostMetadata::encode(0, 1, 0);
+    assert(zero != 0);
+    assert_eq(PostMetadata::decode(zero).timestamp, 0);
+    assert_eq(PostMetadata::decode(zero).policy, 1);
+    let full = PostMetadata::encode(0xffffffffffffffff, 0xffffffff, 0xffffffff);
+    assert_eq(PostMetadata::decode(full).timestamp, 0xffffffffffffffff);
+    assert_eq(PostMetadata::decode(full).policy, 0xffffffffffffffff);
+    assert_eq(crate::admission::checked_time_add(0x7fffffffffffffff, 0), 0x7fffffffffffffff);
+}
+#[test(should_fail_with="Invalid publication policy")]
+fn publication_metadata_cannot_encode_absence() { let _ = crate::posting::PostMetadata::encode(0, 0, 0); }
+#[test(should_fail_with="Invalid publication policy")]
+fn publication_metadata_cannot_decode_absence() { let _ = crate::posting::PostMetadata::decode(0); }
+#[test(should_fail_with="Invalid post metadata")]
+fn publication_metadata_rejects_out_of_range_field() { let _ = crate::posting::PostMetadata::decode(0x100000000000000000000000000000000); }
+#[test(should_fail_with="Eligibility timestamp overflow")]
+fn publication_deadline_still_rejects_overflow() { let _ = crate::admission::checked_time_add(0x7fffffffffffffff, 1); }

@@ -1,6 +1,7 @@
 // Component of bok-atomic-native's existing disposable native lifecycle.
 // Actual contracts, bridge, kernel, AVM, node admission and tag discovery; no proof doubles.
 import assert from 'node:assert/strict';
+import {privateTailGasBreakdown} from './private-tail-gas.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {publicActions} from 'viem';
@@ -12,6 +13,7 @@ import {poseidon2HashWithSeparator as hash} from '@aztec-labs/foundation/crypto/
 import {sha256ToField} from '@aztec-labs/foundation/crypto/sha256';
 import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
 import {Gas} from '@aztec-labs/stdlib/gas';
+import {computeTransactionFee} from '@aztec-labs/stdlib/fees';
 import {mergeExecutionPayloads,TxStatus,TxExecutionResult} from '@aztec-labs/stdlib/tx';
 import {bridgePrivateFeeCredit} from '../w01-private-funding.mjs';
 import {createPrivateCreditReader,creditInputCapsule,postTipSecret,tipSpendingKey,PAID_LIKE_VALUE} from '../../shared/private-credit.mjs';
@@ -29,7 +31,11 @@ export async function runPrivatePaidLikeNative({node,wallet,owner,author,ownerAc
  const balance=async reader=>(await read(reader)).availableCredit;
  const checkBacking=async()=>assert.equal(await getFeeJuiceBalance(fpc,node),await balance(payerReader)+await balance(authorReader));
  const gasLimits=new Gas(Math.min(20000,info.txsLimits.gas.daGas),Math.min(6000000,info.txsLimits.gas.l2Gas));
- const gasOverrides={gasLimits,teardownGasLimits:new Gas(Math.min(1000,Math.floor(gasLimits.daGas/4)),Math.min(150000,Math.floor(gasLimits.l2Gas/4)))};
+ const refundGas=JSON.parse(await fs.readFile(new URL('../../billboard/private_fee_contract/refund-gas.json',import.meta.url),'utf8'));
+ assert.deepEqual(Object.keys(refundGas).sort(),['daGas','l2Gas']);
+ for(const value of Object.values(refundGas))assert(Number.isSafeInteger(value)&&value>0);
+ assert(gasLimits.daGas>=refundGas.daGas&&gasLimits.l2Gas>=refundGas.l2Gas,'Native network limits must accommodate the declared refund allocation');
+ const gasOverrides={gasLimits,teardownGasLimits:new Gas(refundGas.daGas,refundGas.l2Gas)};
  async function prove(from,paymentFor,interaction=new BatchCall(wallet,[])){
   await wallet.pxe.sync();
   // Reprice at the current native state instead of reserving the bootstrap wallet's 31x ceiling.
@@ -42,12 +48,18 @@ export async function runPrivatePaidLikeNative({node,wallet,owner,author,ownerAc
   const tx=await result.toTx();assert.equal(String(tx.data.feePayer),String(fpc));return {tx,reservation};
  }
  async function include(proven,label,reverted=false){
-  mark(label);const {tx,reservation}=proven;assert.equal((await node.isValidTx(tx)).result,'valid');
+  mark(label);const {tx,reservation}=proven;const privateTailGas=privateTailGasBreakdown(tx);assert.equal((await node.isValidTx(tx)).result,'valid');
+  const gasMeasurement=label.endsWith('-on-post')?await node.simulatePublicCalls(tx,false):null;
   await node.sendTx(tx);const receipt=await waitForTx(node,tx.getTxHash(),{waitForStatus:TxStatus.CHECKPOINTED,timeout:120,dontThrowOnRevert:true});
   assert.equal(receipt.executionResult,reverted?TxExecutionResult.REVERTED:TxExecutionResult.SUCCESS);
   assert(receipt.transactionFee>0n&&receipt.transactionFee<=reservation);
-  assert.equal(String((await node.getBlock(receipt.blockNumber)).hash),String(receipt.blockHash));
-  report.transactions.push({label,txHash:String(tx.getTxHash()),executionResult:receipt.executionResult,transactionFee:String(receipt.transactionFee),maximumFee:String(reservation),blockNumber:receipt.blockNumber});await save();return receipt;
+  const block=await node.getBlock(receipt.blockNumber);assert.equal(String(block.hash),String(receipt.blockHash));
+  if(gasMeasurement){
+   const gas=gasMeasurement.gasUsed;assert.equal(gasMeasurement.revertReason,undefined);
+   assert.equal(computeTransactionFee(block.header.globalVariables.gasFees,tx.data.constants.txContext.gasSettings,gas.billedGas).toBigInt(),receipt.transactionFee);
+   report.postGas??=[];report.postGas.push({label,bytes:29,txHash:String(tx.getTxHash()),privateIncludingTeardown:tx.data.gasUsed,allocatedTeardown:tx.data.constants.txContext.gasSettings.teardownGasLimits,...gas,feePrices:block.header.globalVariables.gasFees,transactionFee:String(receipt.transactionFee)});
+  }
+  report.transactions.push({label,privateTailGas,txHash:String(tx.getTxHash()),executionResult:receipt.executionResult,transactionFee:String(receipt.transactionFee),maximumFee:String(reservation),blockNumber:receipt.blockNumber});await save();return receipt;
  }
  const directory=await fs.mkdtemp('/private/tmp/rolling-paid-like-native-');
  try{
@@ -59,7 +71,8 @@ export async function runPrivatePaidLikeNative({node,wallet,owner,author,ownerAc
   const secret=Fr.random(),amount=100n,content=sha256ToField([words('AZTEC_BB_CLAIM_V1',[1n,chainId,field(portal),field(board.address),version,field(portal),amount])]);
   const leaf=await message(board.address,content,secret);await send(board.methods.claim_deposit(portal,amount,secret,new Fr(leaf)),author,'tip-author-collateral');
   const deposit=await hash([1n,field(board.address),field(author),content.toBigInt(),secret.toBigInt(),leaf],0x42420101);
-  const draft={subboard:Fr.ZERO,parent:Fr.ZERO,root_reference:Fr.ZERO,kind:1,name_id:Fr.ZERO,reference:Fr.ZERO,message:[new Fr(65n<<240n),...Array(31).fill(Fr.ZERO)],length:1,expected_main_policy_version:1,expected_local_policy_version:0};
+  const postBytes=Buffer.from('Paid tips smoke 1793196584165'),packed=Buffer.alloc(992);postBytes.copy(packed);
+  const draft={subboard:Fr.ZERO,parent:Fr.ZERO,root_reference:Fr.ZERO,kind:1,name_id:Fr.ZERO,reference:Fr.ZERO,message:Array.from({length:32},(_,i)=>new Fr(BigInt('0x'+packed.subarray(i*31,(i+1)*31).toString('hex')))),length:postBytes.length,expected_main_policy_version:1,expected_local_policy_version:0};
   const noHints=boardArtifact.functions.find(f=>f.name==='post').parameters.slice(3).map(p=>empty(p.type));
   await node.mineBlock();await wallet.pxe.sync();const nonce=Fr.random();await send(board.methods.post(deposit,nonce,draft,...noHints),author,'tip-recipient-post');
   const post=await hash([1n,board.address.toField(),nonce],0x42420102);
@@ -95,6 +108,11 @@ export async function runPrivatePaidLikeNative({node,wallet,owner,author,ownerAc
   for(const input of mixed)assert(effect.nullifiers.some(n=>String(n)===String(input.nullifier)));
   assert.equal(await balance(authorReader),beforeMixed-mixedReceipt.transactionFee);await checkBacking();
   const wrong=await tipSpendingKey(Fr.random());await payLike('paid-like-public-revert-restores-principal',wrong,true);
+  // Measure an ordinary-credit post as well as the tip-funded post above.
+  const ordinaryInputs=(await read(authorReader)).notes,ordinaryHints=(await board.methods.get_screen_hints(author,deposit).simulate({from:author})).result;
+  const beforeOrdinary=await balance(authorReader);
+  const ordinaryPost=await include(await prove(author,reservation=>new PrivateFeePaymentMethod(fpc,reservation,{owner:author,notes:ordinaryInputs}),board.methods.post(deposit,Fr.random(),draft,...ordinaryHints)),'ordinary-credit-on-post');
+  assert.equal(await balance(authorReader),beforeOrdinary-ordinaryPost.transactionFee);await checkBacking();
   // Two distinct native transactions prove against the same settled inputs.
   // Include the first, then require admission to reject the competing spend.
   const competingNotes=(await read(authorReader)).notes;

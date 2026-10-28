@@ -1,0 +1,25 @@
+{
+  "focusedReaderTests": {
+    "passed": 90
+  },
+  "metadataNoirTests": {
+    "passed": 5
+  },
+  "historyThreadModerationNoirTests": {
+    "passed": 12
+  },
+  "ownerRestorationNoirTests": {
+    "passed": 1
+  },
+  "selectedIntegrationTests": {
+    "total": 841,
+    "passed": 818,
+    "failed": 23,
+    "failureScope": "Unchanged public-projection.test.mjs fixtures omit prior required PostTipKey events; reducer, decoder and test files byte-identical to HEAD. Not a compact ABI dependency."
+  },
+  "fullNativePaymentLifecycle": "passed with proofs disabled,40000/512declared refund allowance",
+  "sdkBuild": "passed",
+  "applicationBuild": "passed",
+  "proverArtifactPins": "passed after removing one unused embedded ToField source from exact Board inventory; all retained source hashes unchanged",
+  "livePublication": false
+}

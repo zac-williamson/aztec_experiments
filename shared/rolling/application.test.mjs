@@ -98,7 +98,7 @@ function fixture(){
       return {maximumFee:state.fee,payload:input.interaction,gasSettings:{ceiling:state.fee}};
     }};
   const deployment={board:{address:hex(1),artifact,instance:{address:hex(1),currentContractClassId:hex(12),originalContractClassId:hex(12)}},network:{chainId:'31337',version:'1',rollup:'0x'+'11'.repeat(20)},
-    portal:'0x'+'22'.repeat(20),privateFee:{address:hex(2),artifact:feeArtifact,gasSettings:{}}};
+    economics:{censorWindow:'20'},portal:'0x'+'22'.repeat(20),privateFee:{address:hex(2),artifact:feeArtifact,gasSettings:{}}};
   const accountSession={owner,wallet,node,journal,walletSecret:hex(8),walletSalt:'0'};
   const options={sdk,deployment,accountSession,privateStore,readPublicLikePage:async({posts})=>({schemaVersion:1,complete:true,scope:{chainId:deployment.network.chainId,rollupVersion:deployment.network.version,rollupAddress:deployment.network.rollup,boardAddress:hex(1)},checkpoint:{number:1,hash:hex(42)},confirmationCheckpoint:{number:1,hash:hex(42)},revision:"1",postIds:posts,items:[],nextCursor:null}),publicReader:new Proxy({},{get(){throw Error('Private access to public reader');}}),contextGuard:async()=>{assert.ok(state.guard);}};
   return {state,values,options,app:createRollingApplication(options),restart:()=>createRollingApplication(options)};
@@ -967,7 +967,7 @@ test('Bok post recovery never replaces unknown, nonfinal or changed funded reque
 function moderatorFixture(){
  const f=fixture(),decode=(name,values)=>decodeFromAbi(getFunctionReturnType([...artifact.functions,...artifact.nonDispatchPublicFunctions].find(fn=>fn.name===name)),values.map(n=>new Fr(n)));
  f.state.moderator=3n;f.state.storageReads=[];f.state.responses={
-  get_post:decode('get_post',[1n,0n,0n,8n,1n,0n,0n,9n,0n,10n,0n]),
+  get_post:decode('get_post',[1n,0n,8n,0n,10n,0n]),
   subboard_state:decode('subboard_state',[1n,8n,1n,0n,0n]),
   profile_state:decode('profile_state',[1n,8n,10n,2n,9n,100n,100n,100n]),
   avatar_moderation:decode('avatar_moderation',[0n,0n,0n,0n])};
@@ -1331,7 +1331,7 @@ test('Bok interrupted reverted release keeps original identity through another c
 });
 
 function bokReplyFixture(){
- const f=bokFixture();f.state.responses={get_post:[true,{subboard:0n,parent:0n,root:11n,kind:1n,name_id:0n,reference:0n,content_digest:0n},0n,100n,0n]};return f;
+ const f=bokFixture();f.state.responses={get_post:decodeFromAbi(getFunctionReturnType([...artifact.functions,...artifact.nonDispatchPublicFunctions].find(fn=>fn.name==='get_post')),[1n,0n,11n,0n,100n,0n].map(n=>new Fr(n)))};return f;
 }
 const bokReply=()=>({...bokAction(),parent:'12',root:'11'});
 test('Bok reply preserves canonical thread across authorization, reopen and exact post ABI',async()=>{
@@ -2186,17 +2186,15 @@ test('automatic withdrawal readiness observes the oldest post deadline at the ex
  const f=fixture();f.state.responses={get_deposit_info:[1n,9n,100n,BigInt('0x'+'33'.repeat(20)),0n,1n,0n,0n,1n,150n,56n]};
  f.state.hints=[{note:{schema_version:1,deposit_chain_id:9n,sequence:1n,post_id:8n,anchor_timestamp:80n,previous_link:3n,is_dummy:false},
   contract_address:new AztecAddress(new Fr(1n)),owner:f.options.accountSession.owner,randomness:20n,storage_slot:21n,metadata:{stage:1,maybe_note_nonce:22n}},null];
- const exists=await deriveStorageSlotInMap(new Fr(BigInt(artifact.storageLayout.post_exists.slot)),new Fr(8n));
- const deadline=await deriveStorageSlotInMap(new Fr(BigInt(artifact.storageLayout.post_flag_deadline.slot)),new Fr(8n));
+ const metadata=await deriveStorageSlotInMap(new Fr(BigInt(artifact.storageLayout.post_metadata.slot)),new Fr(8n));
  const reads=[];f.options.accountSession.node.getPublicStorageAt=async(reference,address,slot)=>{
   reads.push({reference,address:String(address),slot:String(slot)});
   assert.deepEqual(reference,{hash:hex(42)});
-  if(String(slot)===String(exists))return Fr.ONE;
-  assert.equal(String(slot),String(deadline));return new Fr(200n);
+  assert.equal(String(slot),String(metadata));return new Fr((1n<<64n)|180n);
  };
  const result=await f.app.readWithdrawalReadiness('9');
  assert.deepEqual(result,{anchor:{blockNumber:1,blockHash:hex(42),timestamp:'100'},screenedSequence:'0',needsScreening:true,readyAt:'200'});
- assert.equal(reads.length,2);assert.equal(f.state.sends,0);
+ assert.equal(reads.length,1);assert.equal(f.state.sends,0);
 });
 test('automatic withdrawal readiness skips history reads for an already checked deposit',async()=>{
  const f=fixture(),result=await f.app.readWithdrawalReadiness('9');
@@ -2215,7 +2213,7 @@ function automaticWithdrawalFixture(needsScreening=false){
   f.state.responses.get_deposit_info[7]=0n;
   f.state.hints=[{note:{schema_version:1,deposit_chain_id:9n,sequence:1n,post_id:8n,anchor_timestamp:80n,previous_link:3n,is_dummy:false},
    contract_address:new AztecAddress(new Fr(1n)),owner:f.options.accountSession.owner,randomness:20n,storage_slot:21n,metadata:{stage:1,maybe_note_nonce:22n}},null];
-  f.options.accountSession.node.getPublicStorageAt=async()=>Fr.ONE;
+  f.options.accountSession.node.getPublicStorageAt=async()=>new Fr((1n<<64n)|80n);
  }
  const send=f.options.accountSession.wallet.sendTx;
  f.options.accountSession.wallet.sendTx=async(payload,options)=>{
@@ -2249,15 +2247,14 @@ for(const outcome of ['reverted','pending','throw'])test(`automatic withdrawal r
  else{f.state.screenOutcome=outcome;assert.equal((await f.run()).status,outcome==='pending'?'unknown':'reverted');}
  assert.deepEqual(f.state.calls.map(call=>call.name),['screen']);assert.equal(f.state.sends,1);
 });
-test('automatic withdrawal readiness drains a failed public read and held sibling before releasing the application',async()=>{
+test('automatic withdrawal readiness holds the application through its single metadata read, then releases after failure',async()=>{
  const f=automaticWithdrawalFixture(true),held=Promise.withResolvers(),entered=Promise.withResolvers(),failure=Error('Read failed');let calls=0,settled=false;
- f.options.accountSession.node.getPublicStorageAt=async()=>{
-  const order=++calls;if(calls===2)entered.resolve();if(order===1)throw failure;await held.promise;return Fr.ONE;
- };
+ f.options.accountSession.node.getPublicStorageAt=async()=>{calls++;entered.resolve();await held.promise;throw failure;};
  const work=f.app.readWithdrawalReadiness('9');work.then(()=>settled=true,()=>settled=true);
- const rejection=assert.rejects(work,e=>e===failure);await entered.promise;await new Promise(resolve=>setImmediate(resolve));
- assert.equal(settled,false);await assert.rejects(f.app.readBalances(),{code:'ROLLING_BUSY'});
+ const rejection=assert.rejects(work,e=>e===failure);await entered.promise;
+ assert.equal(calls,1);assert.equal(settled,false);await assert.rejects(f.app.readBalances(),{code:'ROLLING_BUSY'});
  held.resolve();await rejection;assert.equal(f.state.sends,0);assert.equal(f.values.size,0);
+ await f.app.readBalances();
 });
 
 test('same-operation canonical policy overlaps predecessor reads exactly once before intent writes',{timeout:3000},async()=>{

@@ -15,16 +15,16 @@ async function fixture({fork=false,failRead=0,stringHash=false}={}) {
   let backingReads=0,reads=0,canonicalReads=0;
   source.stores={blocks:{getBlockData:async query=>{backingReads++;assert.equal(query.hash,requested);return head;}}};
   const hold=new UnseenBlockHoldOff(source,{}, {verbose(){},debug(){},warn(){}});
-  const storageLayout={post_time:{slot:new Fr(1)},post_flag_deadline:{slot:new Fr(2)},post_flagged:{slot:new Fr(3)}};
+  const storageLayout={post_metadata:{slot:new Fr(1)},post_flagged:{slot:new Fr(3)}};
   const slots=await Promise.all(Object.values(storageLayout).map(x=>deriveStorageSlotInMap(x.slot,new Fr(99))));
   const error=Error('synthetic storage unavailable'),address={synthetic:true};
   const node={getBlockData:async ref=>{if(ref==='checkpointed')return stringHash?{...head,blockHash:String(requested)}:head;assert.equal(ref,7);canonicalReads++;return fork?{...head,blockHash:hash(3)}:head;},
-    getPublicStorageAt:async(ref,a,slot)=>{await hold.getBlockData(ref);assert.equal(a,address);assert(slot.equals(slots[reads]));reads++;if(reads===failRead)throw error;return new Fr([110,130,0][reads-1]);}};
-  return {args:{node,address,storageLayout,id:'99'},error,stats:()=>({backingReads,reads,canonicalReads,holds:hold.holds})};
+    getPublicStorageAt:async(ref,a,slot)=>{await hold.getBlockData(ref);assert.equal(a,address);assert(slot.equals(slots[reads]));reads++;if(reads===failRead)throw error;return new Fr([(1n<<64n)|110n,0n][reads-1]);}};
+  return {args:{node,address,storageLayout,id:'99',censorWindow:'20'},error,stats:()=>({backingReads,reads,canonicalReads,holds:hold.holds})};
 }
-test('actual native resolver accepts typed hash for all three mapped reads and canonical recheck',async()=>{
+test('actual native resolver accepts typed hash for both mapped reads and canonical recheck',async()=>{
   const f=await fixture();assert.deepEqual(await readRollingAdmission(f.args),{published:'110',deadline:'130',flag:'0'});
-  assert.deepEqual(f.stats(),{backingReads:3,reads:3,canonicalReads:1,holds:0});
+  assert.deepEqual(f.stats(),{backingReads:2,reads:2,canonicalReads:1,holds:0});
 });
 test('original string hash fails inside installed resolver before any backing read',async()=>{
   const f=await fixture({stringHash:true});await assert.rejects(readRollingAdmission(f.args),e=>e instanceof TypeError&&e.stack.includes('data_source_base.js'));
@@ -32,9 +32,9 @@ test('original string hash fails inside installed resolver before any backing re
 });
 test('canonical replacement after storage reads rejects the result',async()=>{
   const f=await fixture({fork:true});await assert.rejects(readRollingAdmission(f.args),assert.AssertionError);
-  assert.deepEqual(f.stats(),{backingReads:3,reads:3,canonicalReads:1,holds:0});
+  assert.deepEqual(f.stats(),{backingReads:2,reads:2,canonicalReads:1,holds:0});
 });
-for(const failRead of [1,2,3])test('storage failure '+failRead+' propagates without retry or partial result',async()=>{
+for(const failRead of [1,2])test('storage failure '+failRead+' propagates without retry or partial result',async()=>{
   const f=await fixture({failRead});await assert.rejects(readRollingAdmission(f.args),e=>e===f.error);
   assert.deepEqual(f.stats(),{backingReads:failRead,reads:failRead,canonicalReads:0,holds:0});
 });

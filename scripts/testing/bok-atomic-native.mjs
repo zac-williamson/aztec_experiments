@@ -14,8 +14,9 @@ import {Fr} from '@aztec-labs/foundation/curves/bn254';
 import {EthAddress} from '@aztec-labs/foundation/eth-address';
 import {poseidon2HashWithSeparator} from '@aztec-labs/foundation/crypto/poseidon';
 import {sha256ToField} from '@aztec-labs/foundation/crypto/sha256';
-import {computeSecretHash} from '@aztec-labs/stdlib/hash';
-import {loadContractArtifact,FunctionSelector} from '@aztec-labs/stdlib/abi';
+import {computeSecretHash,computeLogTag} from '@aztec-labs/stdlib/hash';
+import {loadContractArtifact,FunctionSelector,EventSelector,decodeFunctionSignature,decodeFromAbi} from '@aztec-labs/stdlib/abi';
+import {DomainSeparator} from '@aztec-labs/constants';
 import {TxStatus,TxExecutionResult} from '@aztec-labs/stdlib/tx';
 import {InboxAbi} from '@aztec-foundation/l1-artifacts/InboxAbi';
 import {createPublicClient,createWalletClient,http,parseEventLogs} from 'viem';
@@ -113,16 +114,27 @@ try{
  const draft={subboard:Fr.ZERO,parent:Fr.ZERO,root_reference:Fr.ZERO,kind:1,name_id:Fr.ZERO,reference:Fr.ZERO,message:preimage.slice(13).map(v=>new Fr(v)),length:Number(preimage[12]),expected_main_policy_version:1,expected_local_policy_version:0};
  const balance=async()=> (await bok.methods.balance_of(owner).simulate({from:owner})).result;
  const state=async()=> (await bok.methods.request(request).simulate({from:operator})).result;
- const count=async()=> (await board.methods.get_post_count().simulate({from:operator})).result;
+ const publishedAbi=boardArtifact.outputs.structs.events.find(item=>item.path==='RollingBoard::PostPublished');assert(publishedAbi);
+ const publishedSelector=await EventSelector.fromSignature(decodeFunctionSignature('PostPublished',publishedAbi.fields));
+ const publishedTag=await computeLogTag(publishedSelector.toField(),DomainSeparator.EVENT_LOG_TAG);
+ const postId=await poseidon2HashWithSeparator([1n,field(board.address),nonce.toBigInt()],0x42420102);
+ const invocation=await poseidon2HashWithSeparator([field(bok.address),request.toBigInt()],0x52434249);
+ const replyId=await poseidon2HashWithSeparator([field(board.address),invocation.toBigInt()],0x52434252);
+ const postState=async id=>(await board.methods.get_post(id).simulate({from:operator})).result;
+ async function publications(receipt){
+  const included=await node.getTxEffect(receipt.txHash);assert(included?.data);
+  return included.data.publicLogs.filter(log=>log.contractAddress.equals(board.address)&&log.fields[0].equals(publishedTag))
+   .map(log=>decodeFromAbi(publishedAbi,log.getEmittedFieldsWithoutTag()));
+ }
  const beforeBalance=await balance();
- await send(new BatchCall(wallet,[bok.methods.authorize_request(request,target,600n),board.methods.post_with_bok(depositId,nonce,draft,...empty,new Fr(1),request)]),owner,'authorize-post',true);
- assert.equal((await state()).state,2n);assert.equal((await state()).reserved,600n);assert.equal((await state()).available,0n);assert.equal(await balance(),beforeBalance-600n);assert.equal(await count(),1n);report.checks.push('authorization, board activation and full budget reservation share the posting transaction');
+ const posted=await send(new BatchCall(wallet,[bok.methods.authorize_request(request,target,600n),board.methods.post_with_bok(depositId,nonce,draft,...empty,new Fr(1),request)]),owner,'authorize-post',true);
+ assert.equal((await state()).state,2n);assert.equal((await state()).reserved,600n);assert.equal((await state()).available,0n);assert.equal(await balance(),beforeBalance-600n);assert.equal((await postState(postId))[0],true);const postEvents=await publications(posted);assert.equal(postEvents.length,1);assert.equal(postEvents[0].id,postId.toBigInt());report.checks.push('authorization, board activation and full budget reservation share the posting transaction');
  const reserved=await state(),receiptHash=Fr.random(),reply=Array(32).fill(Fr.ZERO);reply[0]=new Fr(BigInt('0x'+Buffer.from('Done').toString('hex').padEnd(62,'0')));
  const final=version=>new BatchCall(wallet,[bok.methods.settle(request,0,120n,receiptHash),bok.methods.publish_reply(request,new Fr(1),reply,4,version,0),bok.methods.finish(request)]);
- await send(final(99),operator,'final-revert',true,true);
- assert.deepEqual(await state(),reserved);assert.equal(await count(),1n);report.checks.push('failed reply rolls back settlement and refund');
- await send(final(1),operator,'final-success',true);
- const closed=await state();assert.equal(closed.state,4n);assert.equal(closed.charged,120n);assert.equal(closed.refunded,480n);assert.equal(closed.available,0n);assert.equal(closed.reserved,0n);assert.equal(closed.secondary_done,true);assert.equal(await balance(),beforeBalance-120n);assert.equal(await count(),2n);report.checks.push('single final transaction settles120 publishes reply and refunds480');
+ const rejected=await send(final(99),operator,'final-revert',true,true);
+ assert.deepEqual(await state(),reserved);assert.equal((await postState(replyId))[0],false);assert.deepEqual(await publications(rejected),[]);report.checks.push('failed reply rolls back settlement and refund');
+ const replied=await send(final(1),operator,'final-success',true);
+ const closed=await state();assert.equal(closed.state,4n);assert.equal(closed.charged,120n);assert.equal(closed.refunded,480n);assert.equal(closed.available,0n);assert.equal(closed.reserved,0n);assert.equal(closed.secondary_done,true);assert.equal(await balance(),beforeBalance-120n);assert.equal((await postState(replyId))[0],true);const replyEvents=await publications(replied);assert.equal(replyEvents.length,1);assert.equal(replyEvents[0].id,replyId.toBigInt());assert.equal(replyEvents[0].record.parent,postId.toBigInt());assert.equal(replyEvents[0].record.root,postId.toBigInt());report.checks.push('single final transaction settles120 publishes reply and refunds480');
  const finalRow=report.transactions.find(r=>r.label==='final-success');
  // SDK's callable ABI omits only-self continuations; verify the same explicit
  // continuation signature enforced by the hosted Bok publication policy.
@@ -137,8 +149,8 @@ try{
  await node.mineBlock();await wallet.pxe.sync();
  const badId=Fr.random(),badNonce=Fr.random(),badTarget=await invocationHash({...input,nonce:badNonce.toBigInt()});
  const beforeBadBalance=await balance();
- await send(new BatchCall(wallet,[bok.methods.authorize_request(badId,badTarget,600n),board.methods.post_with_bok(secondDeposit,badNonce,{...draft,expected_main_policy_version:99},...empty,new Fr(1),badId)]),owner,'authorize-post-revert',true,true);
- assert.equal(await balance(),beforeBadBalance);assert.equal((await bok.methods.request(badId).simulate({from:operator})).result.state,0n);assert.equal(await count(),2n);report.checks.push('authorization and post rollback together');
+ const rejectedPost=await send(new BatchCall(wallet,[bok.methods.authorize_request(badId,badTarget,600n),board.methods.post_with_bok(secondDeposit,badNonce,{...draft,expected_main_policy_version:99},...empty,new Fr(1),badId)]),owner,'authorize-post-revert',true,true);
+ assert.equal(await balance(),beforeBadBalance);assert.equal((await bok.methods.request(badId).simulate({from:operator})).result.state,0n);const badPostId=await poseidon2HashWithSeparator([1n,field(board.address),badNonce.toBigInt()],0x42420102);assert.equal((await postState(badPostId))[0],false);assert.deepEqual(await publications(rejectedPost),[]);report.checks.push('authorization and post rollback together');
  assert(!report.transactions.some(row=>row.label==='reserve'));report.checks.push('successful invocation requires exactly posting and final reply transactions');
  }
  report.passed=true;await save();console.log('NATIVE_PASSED',output);

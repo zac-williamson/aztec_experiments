@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October gas work: compiled/native-tested duplicate public validation removal and sparse fresh-record writes: exact29byte post public1241359→482531gas. FPC native30336gas maximum; qualified40000/512allocation passes9valid+5negative cases. All14 Board private circuits/VKs unchanged. Same-price projectedtotal3.507→1.587FEE (54.76%less), NOT newliveacceptance. Integrationbasedd93 preservesops; operationsowns liveacceptance window. Oldlatencycampaign paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 29 October compact gas candidate: root10→2writes and public482531→211720; full29byte ordinary-credit and tip-funded native transactions each1020245billedL2/4064DA, exact inclusion receipt fees verified. Refund40000/512 passes fixed-control-flow audit, adversarial contexts, and actual native payment success/rollback/mixed-spend lifecycle. Regenerated private circuits/VKs+SDK.90 reader checks and818/841 selected checks pass;23 failures isolated to byte-identical baseline projection fixtures missing prior paid-tip events. Fullnative proof flagsfalse; no website deployment. Operations maintenance window remains held; oldlatencygoalpaused.
 
 ## Ready internal work
 

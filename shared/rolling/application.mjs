@@ -1,3 +1,4 @@
+import {postMetadataDeadline} from './post-metadata.mjs';
 import {captureThreadAction,linkThreadDrafts,MAX_THREAD_POSTS} from './thread-action.mjs';
 import {createEncryptedJournalSlot} from '../journal-record.mjs';
 import {l2JournalScopeText} from '../l2-journal.mjs';
@@ -646,7 +647,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
     check(Array.isArray(hints)&&hints.length===2&&!(!hints[0]&&hints[1]),'ROLLING_HISTORY_UNAVAILABLE');
     if(prefetch){
       const owner=getOperationScope();
-      const reading=measure('action.history-witnesses',()=>sdk.prefetchOrdinaryPostWitnesses({wallet:session.wallet,node:session.node,board:deployment.board.instance,artifact:deployment.board.artifact,hints,owner:session.owner,noteHashWitnessHints}));
+      const reading=measure('action.history-witnesses',()=>sdk.prefetchOrdinaryPostWitnesses({wallet:session.wallet,node:session.node,board:deployment.board.instance,artifact:deployment.board.artifact,hints,owner:session.owner,noteHashWitnessHints,censorWindow:deployment.economics?.censorWindow}));
       if(Array.isArray(owner?.preparationReads)){
         // The native cache shares in-flight reads with the actual private
         // execution. Prefetch is only a latency hint: a rejected read is evicted
@@ -1109,15 +1110,11 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
         screening=await screeningArguments(board,id);const [,child]=screening;
         check(child?.note&&BigInt(child.note.sequence)===BigInt(info.screenedSequence)+1n,'ROLLING_HISTORY_UNAVAILABLE');
         if(!child.note.is_dummy){
-          const observations=await Promise.allSettled(['post_exists','post_flag_deadline'].map(async name=>{
-            const base=deployment.board.artifact.storageLayout?.[name]?.slot;check(base!==undefined,'ROLLING_ABI_MISMATCH');
-            const slot=await sdk.deriveStorageSlotInMap(new sdk.Fr(BigInt(base)),new sdk.Fr(BigInt(child.note.post_id)));
-            return chainValue(await session.node.getPublicStorageAt({hash:anchor.blockHash},deployment.board.address,slot));
-          }));
-          const failure=observations.find(value=>value.status==='rejected');if(failure)throw failure.reason;
-          const values=observations.map(value=>value.value);
-          check(values[0]===1n&&values[1]>0n&&values[1]<(1n<<64n),'ROLLING_INVALID_RESPONSE');
-          if(values[1]>readyAt)readyAt=values[1];
+          const base=deployment.board.artifact.storageLayout?.post_metadata?.slot;check(base!==undefined,'ROLLING_ABI_MISMATCH');
+          const slot=await sdk.deriveStorageSlotInMap(new sdk.Fr(BigInt(base)),new sdk.Fr(BigInt(child.note.post_id)));
+          const packed=chainValue(await session.node.getPublicStorageAt({hash:anchor.blockHash},deployment.board.address,slot));
+          const deadline=postMetadataDeadline(packed,deployment.economics?.censorWindow);
+          if(deadline>readyAt)readyAt=deadline;
         }
       }
       await checkBalanceAnchor(anchor);

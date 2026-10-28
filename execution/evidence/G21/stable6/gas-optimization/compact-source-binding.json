@@ -1,0 +1,15 @@
+{
+  "boardArtifactSha256": "9cc151053858d66932e5bb5ac67dbd6e61a9b28f16c06932b12c584062ddae41",
+  "proofsEnabled": false,
+  "sourceHashes": {
+    "billboard/rolling_contract/src/main.nr": "96565d11ec8bc63189051e8c31ee74b678fc7472828cd248e47cdb4edbc2b5f0",
+    "billboard/rolling_contract/src/posting.nr": "cc4bd73a9a8d772dd6f01d5036114f8fac28b17f816d7bcce443351a375e4760",
+    "billboard/private_fee_contract/src/main.nr": "ab80b785a73c2deeb450656fea351424241dc8635066cf6ac7908bb049deda8b",
+    "scripts/testing/private-paid-like-native.mjs": "6a56aa242feae2b22239919b48861fb5c0e433d1abec5b9f842d282609faab89",
+    "scripts/testing/private-tail-gas.mjs": "532d64c774dc94c262251b07949aad7d814941f59b6b4ef92e18f4dd9b187ed2",
+    "shared/rolling/post-metadata.mjs": "8f7080a0ff90e9a7bad20d0096c8574640bacd386c9594beb9be07fd149a0d16",
+    "shared/ordinary-post-witnesses.mjs": "6c3a2aeca7b05cdbdad1c8bb506ddae67652e20948bb6bcb75b7983e039debbc"
+  },
+  "nativeGasObservation": "Both29-byte ordinary-credit and tip-credit posts billed1020245L2/4064DA; exact fee matches native inclusion receipts",
+  "runtimePublished": false
+}

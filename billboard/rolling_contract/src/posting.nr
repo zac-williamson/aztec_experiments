@@ -16,8 +16,8 @@ pub struct PostDraft {
     pub expected_local_policy_version: u32,
 }
 
-/// Content lives in authenticated logs; fixed metadata keeps combined invocation
-/// transactions below the public write limit. No human account is stored here.
+/// Full post presentation is emitted in authenticated logs, never stored in public
+/// state. Neither this event record nor the compact context identifies a human account.
 #[derive(Deserialize, Serialize, Eq, Packable)]
 pub struct PostRecord {
     pub subboard: Field,
@@ -89,10 +89,9 @@ pub fn bot_reply_id(board: AztecAddress, adapter: AztecAddress, request: Field) 
 
 /// Bounded thread shape. A single owned name and board are shared by every row;
 /// the first row may reply/quote/repost, and each later row replies to its predecessor.
-/// Each post writes13 slots: record7, order/exists/time/deadline/policy/key6.
-/// Post count is shared. Bok adds at most19 escrow/invocation slots; with two
-/// protocol fee slots, 4 plain posts use55 and 3 with one invocation use61.
-/// Keep the bounded mix below63 without counting repeated writes to the same slot.
+/// Each post writes at most four slots: metadata, tip key, optional subboard/root.
+/// The existing bounded thread/Bok product limits remain; no storage index or
+/// message digest is duplicated outside the complete PostPublished event.
 pub fn validate_thread(board: AztecAddress, nonces: [Field; 4], drafts: [PostDraft; 4],
     count: u32, plugin_ids: [Field; 4], request_ids: [Field; 4]) -> [Field; 4] {
     assert((count >= 2) & (count <= 4), "Thread must contain 2 to 4 posts");
@@ -123,11 +122,38 @@ pub fn validate_thread(board: AztecAddress, nonces: [Field; 4], drafts: [PostDra
     ids
 }
 
-/// Only for a new post whose caller has asserted !post_exists(id). Neither
-/// publication path overwrites or clears records: skipped fields retain the
-/// native zero default, with the exact same Packable layout and read API.
-pub fn initialize_post_record(context: aztec::context::PublicContext,
-    entry: aztec::state_vars::PublicMutable<PostRecord, aztec::context::PublicContext>, record: PostRecord) {
+/// The only context future authorization needs. A zero stored root denotes this
+/// post itself. Subboard and non-self root are written only when nonzero.
+#[derive(Deserialize, Serialize, Eq, Packable)]
+pub struct PostContext { pub subboard: Field, pub root: Field }
+impl PostContext {
+    pub fn canonical(self, id: Field) -> Self {
+        Self { subboard: self.subboard, root: if self.root == 0 { id } else { self.root } }
+    }
+}
+
+/// Immutable publication timestamp and policy occupy one field. Main policy starts
+/// at one and checked u32 increments never wrap: zero remains absent at timestamp 0.
+pub struct PostMetadata { pub timestamp: u64, pub policy: u64 }
+impl PostMetadata {
+    pub fn encode(timestamp: u64, main: u32, local: u32) -> Field {
+        assert(main != 0, "Invalid publication policy");
+        let policy = (main as u64) | ((local as u64) << 32);
+        (((policy as u128) << 64) | timestamp as u128) as Field
+    }
+    pub fn decode(value: Field) -> Self {
+        let packed = value as u128;
+        assert(packed as Field == value, "Invalid post metadata");
+        let policy = (packed >> 64) as u64;
+        assert(policy as u32 != 0, "Invalid publication policy");
+        Self { timestamp: packed as u64, policy }
+    }
+}
+
+/// Only for fresh zero-metadata post IDs; neither publication path overwrites or
+/// clears contexts. Native zero defaults preserve both omitted optional values.
+pub fn initialize_post_context(context: aztec::context::PublicContext,
+    entry: aztec::state_vars::PublicMutable<PostContext, aztec::context::PublicContext>, record: PostContext) {
     let fields = record.pack();
     let slot = entry.get_storage_slot();
     for i in 0..fields.len() {

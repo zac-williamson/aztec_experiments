@@ -1393,7 +1393,7 @@ export async function runRollingApplicationFixture(ctx,scenario='conversation') 
             isRejectedSubboardError:error=>error?.code==='ROLLING_SUBBOARD_REJECTED',readDeposit,
             action:async(input,label)=>{await action(input,label,actorA);return capture(report.transactions.at(-1).txHash);}},projection,
             rejectSubboard:async({id,reason})=>{await moderate({kind:'subboard',id,reason});return capture(report.subboardModeration.txHash);},waitCanonicalAnchor,
-            readAdmission:id=>readRollingAdmission({node:ctx.node,address:ctx.instance.address,storageLayout:checked.artifact.storageLayout,id}),
+            readAdmission:id=>readRollingAdmission({node:ctx.node,address:ctx.instance.address,storageLayout:checked.artifact.storageLayout,id,censorWindow:String(economics.censorWindow)}),
             scope:escrow.scope,economics:Object.fromEntries(['minDeposit','baseCooldown','censorWindow','maxSaveUp'].map(k=>[k,economics[k]]))});
           // Preserve ordinary canonical reads and fee/journal checks before the
           // real-wall miner stops. The one-use continuation is kept only in RAM.

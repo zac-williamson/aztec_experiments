@@ -6,11 +6,11 @@ class Fr {constructor(n){this.n=BigInt(n);}toBigInt(){return this.n;}toString(){
 const gate=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function fixture(){
- const f={calls:[],hooks:{},values:{1:8n,2:3n,103:1n,104:0n,109:0n}};
+ const f={calls:[],hooks:{},values:{1:8n,2:3n,103:(3n<<64n)|100n,104:0n,109:0n}};
  const checkpoint={number:10,hash:hex(10)},latest={number:11,hash:hex(11)};
  const call=async(key,value)=>{f.calls.push(key);if(f.hooks[key])return f.hooks[key](value);return value;};
  const node={getContract:async()=>call('contract',{currentContractClassId:hex(99)}),getBlock:async n=>call('block:'+n,n==='latest'?latest:n===10?checkpoint:latest)};
- const layout=Object.fromEntries(['moderator','main_version','post_exists','post_flagged','subboards'].map((name,i)=>[name,{slot:new Fr(i+1)}]));
+ const layout=Object.fromEntries(['moderator','main_version','post_metadata','post_flagged','subboards'].map((name,i)=>[name,{slot:new Fr(i+1)}]));
  const options={checkpoint,record:{job:{postId:hex(1)},policy:{context:{mainVersion:'3',subboard:'7'}}},checkNetwork:()=>call('network'),node,
   read:async(slot,at)=>call(`read:${at.number}:${slot.toBigInt()}`,new Fr(f.values[Number(slot.toBigInt())])),address:hex(9),classId:hex(99),operatorAddress:hex(8),layout,deriveStorageSlotInMap:async slot=>new Fr(slot.toBigInt()+100n),Fr};
  f.run=()=>assertRollingModerationAuthority(options);f.options=options;return f;
@@ -74,4 +74,15 @@ for(const failure of ['none','network','contract','both'])test(`moderator networ
  assert.deepEqual(f.calls,['network','contract','read:10:1','block:latest']);
  if(failure==='contract')contract.resolve();else network.resolve();await tick();assert.equal(finished,false);assert(!f.calls.some(x=>x.startsWith('read:11:')));
  network.resolve();contract.resolve();if(failure==='none')await work;else await assert.rejects(work,e=>e===(failure==='contract'?contractFailure:networkFailure));
+});
+
+import {readRollingPostDeadline} from './rolling-adapter.mjs';
+for(const [published,main,local,window] of [[0n,1n,0n,20n],[100n,0xffffffffn,1n,20n],[(1n<<63n)-21n,1n,0n,20n]])test('moderator deadline derives anchored metadata and immutable window '+published,async()=>{
+ const at={number:7,hash:hex(7)},seen=[],packed=((main|(local<<32n))<<64n)|published;
+ const result=await readRollingPostDeadline({id:hex(9),at,layout:{post_metadata:{slot:new Fr(20)},config:{slot:new Fr(3)}},deriveStorageSlotInMap:async()=>new Fr(100),Fr,
+  read:async(slot,ref)=>{assert.equal(ref,at);seen.push(slot.toBigInt());return new Fr(slot.toBigInt()===100n?packed:window);}});
+ assert.equal(result,String(published+window));assert.deepEqual(seen.sort((a,b)=>Number(a-b)),[10n,100n]);
+});
+for(const [metadata,window] of [[0n,20n],[1n,20n],[1n<<128n,20n],[(1n<<64n)|((1n<<63n)-1n),1n],[(1n<<64n),1n<<32n]])test('moderator rejects missing/invalid metadata or overflowing deadline '+metadata+':'+window,async()=>{
+ await assert.rejects(readRollingPostDeadline({id:hex(9),at:{number:7,hash:hex(7)},layout:{post_metadata:{slot:new Fr(20)},config:{slot:new Fr(3)}},deriveStorageSlotInMap:async()=>new Fr(100),Fr,read:async slot=>new Fr(slot.toBigInt()===100n?metadata:window)}),{code:'ROLLING_INVALID_RESPONSE'});
 });

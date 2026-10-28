@@ -1,3 +1,4 @@
+import {decodePostMetadata,postMetadataDeadline} from '../shared/rolling/post-metadata.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import fs from 'node:fs/promises';
@@ -174,7 +175,7 @@ export async function createRollingModerationService({configFile,stateDirectory,
   wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe});
   const account=await wallet.createSchnorrInitializerlessAccount(actor.secret,actor.salt,actor.signingKey,'public Rolling moderator');assert.equal(String(account.address),config.operatorAddress);
   const [raw]=loadRollingArtifacts(),artifact=loadContractArtifact(raw),address=AztecAddress.fromStringUnsafe(config.boardAddress),classId=String((await getContractClassFromArtifact(artifact)).id);
-  for(const name of ['moderator','portal_address','post_flag_deadline','main_version','post_exists','post_flagged','subboards'])assert(artifact.storageLayout[name]?.slot,'Pinned moderation layout missing');
+  for(const name of ['moderator','portal_address','config','main_version','post_metadata','post_flagged','subboards'])assert(artifact.storageLayout[name]?.slot,'Pinned moderation layout missing');
   const read=async(slot,checkpoint)=>node.getPublicStorageAt({number:checkpoint.number,hash:checkpoint.hash},address,slot);
   const assertAuthority=(checkpoint,record)=>assertRollingModerationAuthority({checkpoint,record,checkNetwork,node,read,address,classId,operatorAddress:config.operatorAddress,layout:artifact.storageLayout,deriveStorageSlotInMap,Fr});
   const tip=await node.getBlock('checkpointed'),checkpoint={number:Number(tip.number),hash:String(tip.hash)};await assertAuthority(checkpoint);
@@ -190,7 +191,7 @@ export async function createRollingModerationService({configFile,stateDirectory,
   const state=await fileState(path.join(stateDirectory,'removals.json'));
   const prepare=record=>prepareRollingRemoval({record,contract,wallet,account,config,Fr});
   const signer=rollingModerationAdapter({index,node:normalNode,scope,lease,state,development:config.development,stopping,assertAuthority,prepare,broadcast:record=>node.sendTx(record.tx),
-   deadline:async(id,at)=>(await read(await deriveStorageSlotInMap(artifact.storageLayout.post_flag_deadline.slot,Fr.fromString(id)),at)).toBigInt().toString()});
+   deadline:(id,at)=>readRollingPostDeadline({id,at,read,layout:artifact.storageLayout,deriveStorageSlotInMap,Fr})});
   return {signer,node:normalNode,scope,development:config.development,publicConfig,assertHeld:()=>lease.assertHeld(),close};
  }catch{try{await close();}catch{}throw Error('Rolling moderation startup failed; inspect private operator configuration and retained state');}
 }
@@ -227,7 +228,7 @@ export async function assertRollingModerationAuthority({checkpoint,record,checkN
  const reads=[()=>read(layout.moderator.slot,at)];
  if(record){
   reads.push(()=>read(layout.main_version.slot,at));
-  for(const name of ['post_exists','post_flagged'])reads.push(async()=>read(await deriveStorageSlotInMap(layout[name].slot,Fr.fromString(record.job.postId)),at));
+  for(const name of ['post_metadata','post_flagged'])reads.push(async()=>read(await deriveStorageSlotInMap(layout[name].slot,Fr.fromString(record.job.postId)),at));
   if(record.policy.context.subboard!=='0')reads.push(async()=>{const slot=await deriveStorageSlotInMap(layout.subboards.slot,Fr.fromString(field(record.policy.context.subboard)));return read(new Fr(slot.toBigInt()+4n),at);});
  }
  // The original checkpoint is rechecked after its initial reads, concurrently
@@ -237,9 +238,20 @@ export async function assertRollingModerationAuthority({checkpoint,record,checkN
  assert.equal(String(values[0]),operatorAddress);
  if(record){
   assert.equal(values[1].toBigInt(),BigInt(record.policy.context.mainVersion));
-  assert.equal(values[2].toBigInt(),1n,'Latest moderation target changed');
+  assert(decodePostMetadata(values[2].toBigInt()).exists,'Latest moderation target changed');
   assert.equal(values[3].toBigInt(),0n,'Latest moderation target changed');
   if(record.policy.context.subboard!=='0')assert.equal(values[4].toBigInt(),0n,'Subboard rejected');
  }
  assert.equal(String((await node.getBlock(at.number))?.hash),at.hash);
+}
+
+// Both operands come from the same held native block; config.censor_window is
+// immutable packed field 7. The caller fences the publication before signing.
+export async function readRollingPostDeadline({id,at,read,layout,deriveStorageSlotInMap,Fr}){
+ assert(layout.post_metadata?.slot&&layout.config?.slot,'Pinned moderation layout missing');
+ const [metadata,window]=await drained([
+  async()=>read(await deriveStorageSlotInMap(layout.post_metadata.slot,Fr.fromString(id)),at),
+  ()=>read(new Fr(BigInt(String(layout.config.slot))+7n),at),
+ ]);
+ return String(postMetadataDeadline(metadata.toBigInt(),window.toBigInt()));
 }

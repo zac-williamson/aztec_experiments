@@ -24,7 +24,7 @@ pub contract RollingBoard {
     };
     use owner_delivery::delivery::deliver_note;
     use crate::admission::{Config, SequenceState, compute_cooldown, checked_time_add, deposit_chain_id, deposit_decision_nullifier, post_id, post_link, get_ready_msg_hash, get_deposit_msg_hash, get_withdraw_msg_hash, get_cancel_msg_hash, get_refund_msg_hash};
-    use crate::posting::{PostDraft, PostRecord, PluginRecord, validate_draft, invocation_target, InvocationRecord, invocation_key, bot_reply_id};
+    use crate::posting::{PostDraft, PostRecord, PostContext, PostMetadata, PluginRecord, validate_draft, invocation_target, InvocationRecord, invocation_key, bot_reply_id};
     use crate::profiles::{OwnedNameRecord, ProfileRecord, AvatarModerationRecord, next_version, bio_digest, avatar_digest};
     global SENTINEL: Field = 0;
     use crate::encoding::{name_id, pack_bytes, subboard_id, text_hash, validate_text};
@@ -189,14 +189,10 @@ pub contract RollingBoard {
         config: PublicImmutable<Config, Context>,
         deposits: Owned<PrivateSet<DepositNote, Context>, Context>,
         posts: Owned<PrivateSet<PostNote, Context>, Context>,
-        post_count: PublicMutable<u64, Context>,
-        post_id_by_order: Map<u64, PublicMutable<Field, Context>, Context>,
-        post_exists: Map<Field, PublicMutable<bool, Context>, Context>,
-        post_time: Map<Field, PublicMutable<u64, Context>, Context>,
-        post_flag_deadline: Map<Field, PublicMutable<u64, Context>, Context>,
+        // Zero metadata is absent. Nonzero packs timestamp and immutable publication policy.
+        post_metadata: Map<Field, PublicMutable<Field, Context>, Context>,
+        post_contexts: Map<Field, PublicMutable<PostContext, Context>, Context>,
         post_flagged: Map<Field, PublicMutable<u8, Context>, Context>,
-        post_policy_version: Map<Field, PublicMutable<Field, Context>, Context>,
-        post_records: Map<Field, PublicMutable<PostRecord, Context>, Context>,
         post_reason: Map<Field, PublicMutable<Field, Context>, Context>,
         plugins: Map<Field, PublicMutable<PluginRecord, Context>, Context>,
         moderator: PublicMutable<AztecAddress, Context>,
@@ -207,12 +203,11 @@ pub contract RollingBoard {
         subboards: Map<Field, PublicMutable<SubboardRecord, Context>, Context>,
         like_state: LikeStorageRoot,
         private_fee: PublicImmutable<AztecAddress, Context>,
-        // Only post creation writes this slot, guarded by !post_exists. Full P is in its paired event.
+        // Only post creation writes this slot, guarded by zero post_metadata. Full P is in its paired event.
         tip_key_hashes: Map<Field, PublicMutable<Field, Context>, Context>,
         invocation_state: InvocationStorageRoot,
         profile_state: ProfileStorageRoot,
         avatar_moderation_state: AvatarModerationStorageRoot,
-        // Append only: all existing storage slots retain their positions.
     }
 
     #[event]
@@ -744,17 +739,13 @@ pub contract RollingBoard {
             let child_is_head = cn.sequence == historical_head_sequence;
             assert((child_link == historical_head_link) == child_is_head, "C02 child head");
             let child_mature = if cn.is_dummy { true } else {
-                let exists_slot = storage.post_exists.at(cn.post_id).get_storage_slot();
-                assert(public_storage_historical_read(header, exists_slot, addr) == 1, "Post not publicly included");
-                let time_slot = storage.post_time.at(cn.post_id).get_storage_slot();
-                let deadline_slot = storage.post_flag_deadline.at(cn.post_id).get_storage_slot();
-                let published_field = public_storage_historical_read(header, time_slot, addr);
-                let deadline_field = public_storage_historical_read(header, deadline_slot, addr);
-                let published = published_field as u64;
-                let deadline = deadline_field as u64;
-                assert((published as Field == published_field) & (deadline as Field == deadline_field), "Invalid post deadline");
+                let metadata_slot = storage.post_metadata.at(cn.post_id).get_storage_slot();
+                let value = public_storage_historical_read(header, metadata_slot, addr);
+                assert(value != 0, "Post not publicly included");
+                let metadata = PostMetadata::decode(value);
+                let published = metadata.timestamp;
+                let deadline = checked_time_add(published, censor_window);
                 assert((published >= cn.anchor_timestamp) & (published <= now), "Invalid publication timestamp");
-                assert(deadline == checked_time_add(published, censor_window), "Invalid post deadline");
                 now >= deadline
             };
 
@@ -783,17 +774,13 @@ pub contract RollingBoard {
                 let gc_link = post_link(addr, sender, deposit_chain_id, gn.sequence, gc_inner_hash, link_secret);
                 assert((gc_link == historical_head_link) == (gn.sequence == historical_head_sequence), "C02 grandchild head");
                 let gc_mature = if gn.is_dummy { true } else {
-                    let exists_slot = storage.post_exists.at(gn.post_id).get_storage_slot();
-                    assert(public_storage_historical_read(header, exists_slot, addr) == 1, "Post not publicly included");
-                    let time_slot = storage.post_time.at(gn.post_id).get_storage_slot();
-                    let deadline_slot = storage.post_flag_deadline.at(gn.post_id).get_storage_slot();
-                    let published_field = public_storage_historical_read(header, time_slot, addr);
-                    let deadline_field = public_storage_historical_read(header, deadline_slot, addr);
-                    let published = published_field as u64;
-                    let deadline = deadline_field as u64;
-                    assert((published as Field == published_field) & (deadline as Field == deadline_field), "Invalid post deadline");
+                    let metadata_slot = storage.post_metadata.at(gn.post_id).get_storage_slot();
+                    let value = public_storage_historical_read(header, metadata_slot, addr);
+                    assert(value != 0, "Post not publicly included");
+                    let metadata = PostMetadata::decode(value);
+                    let published = metadata.timestamp;
+                    let deadline = checked_time_add(published, censor_window);
                     assert((published >= gn.anchor_timestamp) & (published <= now), "Invalid publication timestamp");
-                    assert(deadline == checked_time_add(published, censor_window), "Invalid post deadline");
                     now >= deadline
                 };
                 if child_mature & gc_mature {
@@ -942,10 +929,10 @@ pub contract RollingBoard {
             if history[i].is_some() {
                 let note = history[i].unwrap_unchecked().note;
                 if !note.is_dummy {
-                    assert(self.storage.post_exists.at(note.post_id).read(), "Post not publicly included");
-                    let published = self.storage.post_time.at(note.post_id).read();
-                    deadlines[i] = self.storage.post_flag_deadline.at(note.post_id).read();
-                    assert(deadlines[i] == checked_time_add(published, config.censor_window as u64), "Invalid post deadline");
+                    let value = self.storage.post_metadata.at(note.post_id).read();
+                    assert(value != 0, "Post not publicly included");
+                    let published = PostMetadata::decode(value).timestamp;
+                    deadlines[i] = checked_time_add(published, config.censor_window as u64);
                     penalized[i] = self.storage.post_flagged.at(note.post_id).read() == 3;
                 }
                 length += 1;
@@ -1129,7 +1116,7 @@ pub contract RollingBoard {
         assert((plugin_id == 0) == (request_id == 0), "Invalid invocation identity");
         let id = post_id(self.address, nonce);
         assert(id != 0, "Zero post identity");
-        assert(!self.storage.post_exists.at(id).read(), "Post already exists");
+        assert(self.storage.post_metadata.at(id).read() == 0, "Post already exists");
         let local_version: u32 = if draft.subboard == 0 { 0 } else { 1 };
         if draft.subboard != 0 {
             let subboard = self.storage.subboards.at(draft.subboard).read();
@@ -1142,15 +1129,15 @@ pub contract RollingBoard {
         if draft.name_id != 0 { assert(self.storage.registered_names.at(draft.name_id).read(), "Unknown name"); }
         let mut root = id;
         if draft.parent != 0 {
-            assert(self.storage.post_exists.at(draft.parent).read(), "Unknown parent");
+            assert(self.storage.post_metadata.at(draft.parent).read() != 0, "Unknown parent");
             assert(self.storage.post_flagged.at(draft.parent).read() == 0, "Parent removed");
-            let parent = self.storage.post_records.at(draft.parent).read();
+            let parent = self.storage.post_contexts.at(draft.parent).read().canonical(draft.parent);
             assert(parent.subboard == draft.subboard, "Cross-board reply");
             assert(parent.root == draft.root_reference, "Wrong canonical root");
             root = parent.root;
         }
         if draft.reference != 0 {
-            assert(self.storage.post_exists.at(draft.reference).read(), "Unknown referenced post");
+            assert(self.storage.post_metadata.at(draft.reference).read() != 0, "Unknown referenced post");
             assert(self.storage.post_flagged.at(draft.reference).read() == 0, "Referenced post removed");
         }
         let record = PostRecord { subboard: draft.subboard, parent: draft.parent, root,
@@ -1159,17 +1146,14 @@ pub contract RollingBoard {
         let config = self.storage.config.read();
         config.validate(self.context.chain_id(), self.context.version());
         let now = self.context.timestamp();
-        let count = self.storage.post_count.read();
-        self.storage.post_count.write(count + 1);
-        self.storage.post_id_by_order.at(count).write(id);
-        crate::posting::initialize_post_record(self.context, self.storage.post_records.at(id), record);
-        self.storage.post_exists.at(id).write(true);
+        // Check the derived deadline now: later admission/removal cannot overflow.
+        let _ = checked_time_add(now, config.censor_window as u64);
+        self.storage.post_metadata.at(id).write(PostMetadata::encode(now, main_version, local_version));
+        crate::posting::initialize_post_context(self.context, self.storage.post_contexts.at(id),
+            PostContext { subboard: record.subboard, root: if record.root == id { 0 } else { record.root } });
         self.storage.tip_key_hashes.at(id).write(private_credit::tip_key_hash(
             aztec::protocol::point::EmbeddedCurvePoint { x: key.x, y: key.y }));
         self.emit(PostTipKey { schema: 1, post: id, key });
-        self.storage.post_time.at(id).write(now);
-        self.storage.post_flag_deadline.at(id).write(checked_time_add(now, config.censor_window as u64));
-        self.storage.post_policy_version.at(id).write(crate::posting::policy_identity(main_version, local_version));
         self.emit(PostPublished { schema: 1, id, record, timestamp: now,
             main_policy_version: main_version, local_policy_version: local_version,
             length: draft.length, message: draft.message });
@@ -1225,9 +1209,9 @@ pub contract RollingBoard {
         assert(!invocation.replied, "Already replied");
         validate_text(message, length, true);
         let parent_id = invocation.parent;
-        assert(self.storage.post_exists.at(parent_id).read(), "Unknown parent");
+        assert(self.storage.post_metadata.at(parent_id).read() != 0, "Unknown parent");
         assert(self.storage.post_flagged.at(parent_id).read() == 0, "Parent removed");
-        let parent = self.storage.post_records.at(parent_id).read();
+        let parent = self.storage.post_contexts.at(parent_id).read().canonical(parent_id);
         if parent.subboard != 0 {
             let subboard = self.storage.subboards.at(parent.subboard).read();
             assert(subboard.exists & !subboard.rejected, "Subboard rejected");
@@ -1239,22 +1223,19 @@ pub contract RollingBoard {
         config.validate(self.context.chain_id(), self.context.version());
         let id = bot_reply_id(self.address, adapter, request_id);
         assert(id != 0, "Zero post identity");
-        assert(!self.storage.post_exists.at(id).read(), "Post already exists");
+        assert(self.storage.post_metadata.at(id).read() == 0, "Post already exists");
         let record = PostRecord { subboard: parent.subboard, parent: parent_id, root: parent.root,
             kind: 4, name_id: 0, reference: 0, content_digest: text_hash(message, length) };
         let now = self.context.timestamp();
-        let count = self.storage.post_count.read();
         invocation.replied = true; slot.write(invocation);
-        self.storage.post_count.write(count + 1);
-        self.storage.post_id_by_order.at(count).write(id);
-        crate::posting::initialize_post_record(self.context, self.storage.post_records.at(id), record);
-        self.storage.post_exists.at(id).write(true);
+        // Check the derived deadline now: later admission/removal cannot overflow.
+        let _ = checked_time_add(now, config.censor_window as u64);
+        self.storage.post_metadata.at(id).write(PostMetadata::encode(now, main_version, local_version));
+        crate::posting::initialize_post_context(self.context, self.storage.post_contexts.at(id),
+            PostContext { subboard: record.subboard, root: if record.root == id { 0 } else { record.root } });
         self.storage.tip_key_hashes.at(id).write(private_credit::tip_key_hash(
             aztec::protocol::point::EmbeddedCurvePoint { x: key.x, y: key.y }));
         self.emit(PostTipKey { schema: 1, post: id, key });
-        self.storage.post_time.at(id).write(now);
-        self.storage.post_flag_deadline.at(id).write(checked_time_add(now, config.censor_window as u64));
-        self.storage.post_policy_version.at(id).write(crate::posting::policy_identity(main_version, local_version));
         self.emit(PostPublished { schema: 1, id, record, timestamp: now, main_policy_version: main_version,
             local_policy_version: local_version, length, message });
         self.emit(PluginReplyPublished { schema: 1, plugin_id, request_id, post_id: id, parent_id, target: invocation.target });
@@ -1274,16 +1255,18 @@ pub contract RollingBoard {
     fn remove_post(id: Field, expected_main_version: u32, expected_local_version: u32,
         reason: [Field; 7], length: u16) {
         assert(self.msg_sender() == self.storage.moderator.read(), "Only moderator");
-        assert(self.storage.post_exists.at(id).read(), "Unknown post");
+        let value = self.storage.post_metadata.at(id).read();
+        assert(value != 0, "Unknown post");
         assert(self.storage.post_flagged.at(id).read() == 0, "Already removed");
         validate_text(reason, length, true);
-        let post = self.storage.post_records.at(id).read();
+        let post = self.storage.post_contexts.at(id).read();
         let local_version: u32 = if post.subboard == 0 { 0 } else { 1 };
         let main_version = self.storage.main_version.read();
         assert((main_version == expected_main_version) & (local_version == expected_local_version), "Policy changed");
         let version = crate::posting::policy_identity(main_version, local_version);
-        let penalized = (self.context.timestamp() < self.storage.post_flag_deadline.at(id).read())
-            & (version == self.storage.post_policy_version.at(id).read());
+        let metadata = PostMetadata::decode(value);
+        let deadline = checked_time_add(metadata.timestamp, self.storage.config.read().censor_window as u64);
+        let penalized = (self.context.timestamp() < deadline) & (version == metadata.policy as Field);
         self.storage.post_flagged.at(id).write(if penalized { 3 } else { 1 });
         self.storage.post_reason.at(id).write(text_hash(reason, length));
         self.emit(PostRemoved { schema: 1, id, policy_version: version, penalized, reason_length: length, reason });
@@ -1291,16 +1274,14 @@ pub contract RollingBoard {
 
     #[external("public")]
     #[view]
-    fn get_post(id: Field) -> pub (bool, PostRecord, u8, u64, Field) {
-        (self.storage.post_exists.at(id).read(), self.storage.post_records.at(id).read(),
-            self.storage.post_flagged.at(id).read(), self.storage.post_time.at(id).read(), self.storage.post_reason.at(id).read())
+    fn get_post(id: Field) -> pub (bool, PostContext, u8, u64, Field) {
+        let value = self.storage.post_metadata.at(id).read();
+        let exists = value != 0;
+        let context = if exists { self.storage.post_contexts.at(id).read().canonical(id) }
+            else { PostContext { subboard: 0, root: 0 } };
+        let timestamp = if exists { PostMetadata::decode(value).timestamp } else { 0 };
+        (exists, context, self.storage.post_flagged.at(id).read(), timestamp, self.storage.post_reason.at(id).read())
     }
-    #[external("public")]
-    #[view]
-    fn get_post_count() -> pub u64 { self.storage.post_count.read() }
-    #[external("public")]
-    #[view]
-    fn get_post_id(order: u64) -> pub Field { self.storage.post_id_by_order.at(order).read() }
     #[external("public")]
     #[view]
     fn get_plugin(plugin_id: Field) -> pub PluginRecord { self.storage.plugins.at(plugin_id).read() }
@@ -1325,10 +1306,7 @@ pub contract RollingBoard {
             Map::<Field, PublicMutable<u64, aztec::context::PublicContext>, aztec::context::PublicContext>::new(context, slot)
                 .at(crate::posting::like_storage_key(1, post, 0))
         }
-        unconstrained fn active(context: aztec::context::PublicContext, slot: Field, post: Field, tag: Field) -> PublicMutable<bool, aztec::context::PublicContext> {
-            Map::<Field, PublicMutable<bool, aztec::context::PublicContext>, aztec::context::PublicContext>::new(context, slot)
-                .at(crate::posting::like_storage_key(2, post, tag))
-        }
+
     }
 
     #[event]
@@ -1339,7 +1317,7 @@ pub contract RollingBoard {
     #[external("public")]
     fn record_paid_like(post: Field, key: TipKey, tag: Field) {
         assert(self.msg_sender() == self.storage.private_fee.read(), "Only private fee contract");
-        assert(self.storage.post_exists.at(post).read(), "Unknown post");
+        assert(self.storage.post_metadata.at(post).read() != 0, "Unknown post");
         assert(self.storage.post_flagged.at(post).read() == 0, "Post removed");
         assert(self.storage.tip_key_hashes.at(post).read() == private_credit::tip_key_hash(
             aztec::protocol::point::EmbeddedCurvePoint { x: key.x, y: key.y }), "Wrong post tip key");
@@ -1347,7 +1325,6 @@ pub contract RollingBoard {
         let old_count = LikeState::count(self.context, self.storage.like_state.slot, post).read();
         assert(old_count < 0xffffffffffffffff, "Like count overflow");
         let count = old_count + 1;
-        LikeState::active(self.context, self.storage.like_state.slot, post, tag).write(true);
         LikeState::count(self.context, self.storage.like_state.slot, post).write(count);
         self.emit(LikeChanged { schema: 1, post, tag, active: true, count });
     }
