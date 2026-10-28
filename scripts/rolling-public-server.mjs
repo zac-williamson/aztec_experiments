@@ -179,6 +179,9 @@ export async function startRollingPublicServer({index,host='127.0.0.1',port=0,st
   };
   const server=http.createServer((req,res)=>{
     if(closed){res.writeHead(503,headers);res.end('{"schemaVersion":1,"error":"unavailable"}');return;}
+    // Global admission protects the bounded reader while synchronization is
+    // slow. It creates no IP bucket, cookie or persistent visitor identity.
+    if(requests.size>=128){res.writeHead(503,{...headers,'Retry-After':'2'});res.end('{"schemaVersion":1,"error":"capacity"}');return;}
     // Arm ownership before invoking application/static callbacks. Socket close
     // is not handler completion; disconnected requests remain owned until done.
     const operation=Promise.resolve().then(()=>handle(req,res));requests.add(operation);

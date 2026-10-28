@@ -52,7 +52,7 @@ export function openAnalyticsStore({filename=':memory:',campaigns=ANALYTICS_CAMP
   const parse=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d+'T00:00:00Z'))&&dayOf(Date.parse(d+'T00:00:00Z'))===d;
   if(!parse(to))invalid();from??=dayOf(Date.parse(to+'T00:00:00Z')-(days-1)*DAY);
   if(!parse(from)||from>to||(Date.parse(to)-Date.parse(from))/DAY>=retentionDays)invalid();
-  remove.run(dayOf(now()-(retentionDays-1)*DAY));
+  prune();
   const totals=zero(),dailyMap=new Map(),sourceMap=new Map(),campaignMap=new Map(),deviceMap=new Map(),durationMap=new Map();
   for(let t=Date.parse(from);t<=Date.parse(to);t+=DAY)dailyMap.set(dayOf(t),{day:dayOf(t),totals:zero()});
   for(const row of db.prepare('SELECT * FROM analytics_daily WHERE day >= ? AND day <= ? ORDER BY day').all(from,to)){
@@ -69,5 +69,6 @@ export function openAnalyticsStore({filename=':memory:',campaigns=ANALYTICS_CAMP
   }
   return {schemaVersion:1,from,to,timeZone:'UTC',retentionDays,totals,daily:[...dailyMap.values()],sources:[...sourceMap.values()].sort((a,b)=>b.totals.visit-a.totals.visit),campaigns:[...campaignMap.values()].sort((a,b)=>b.totals.visit-a.totals.visit),devices:[...deviceMap.values()],funnel:ANALYTICS_FUNNEL.map(event=>({event,count:totals[event],visitRate:totals.visit?totals[event]/totals.visit:null})),durations:[...durationMap.values()],semantics:{visits:'Page sessions; reload opens a new session. Not unique people.',funnel:'Once-per-page-session milestones. Returning accounts can skip payment. No linkage between sessions.',counts:'Client-reported observations; delivery is best effort. Included posts and visible posts are separate.',retention:'No user retention or persistent profiles are collected.',privacy:'Daily aggregates only. No raw events, page paths, network identifiers, account IDs, content or exact event times.'}};
  }
- return Object.freeze({ingest,summary,close(){if(!closed){closed=true;dedup.clear();db.close();}}});
+ function prune(){if(closed)throw Error('Analytics store closed');const result=remove.run(dayOf(now()-(retentionDays-1)*DAY));return {removedRows:Number(result.changes)};}
+ return Object.freeze({ingest,summary,prune,close(){if(!closed){closed=true;dedup.clear();db.close();}}});
 }

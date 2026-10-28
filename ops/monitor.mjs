@@ -63,9 +63,10 @@ export function buildReliability({hosts={},external,spending,backup,now=Date.now
   result.spending={observedAt:timestamp(spending?.observedAt),limitUsd:limit,forecastUsd:spendFresh?forecast:null,incurredUsd:spendFresh?incurred:null};
   add('spending',!spendFresh||limit===null||forecast===null?'unknown':forecast>=limit?'critical':forecast>=limit*.8?'warning':'healthy',spendFresh?forecast:null,'USD',limit!==null&&timestamp(spending?.observedAt)!==null);
   const restored=timestamp(backup?.lastVerifiedRestoreAt),backed=timestamp(backup?.lastSuccessAt);
-  result.backup={lastSuccessAt:backed,lastVerifiedRestoreAt:restored};
-  add('backup.freshness',!backed?'unknown':!fresh(backed,now,48*3600000)?'critical':'healthy',null,null,Boolean(backed)||backup?.configured===true);
-  add('backup.restore',!restored?'unknown':!fresh(restored,now,7*86400000)?'warning':'healthy',null,null,Boolean(restored)||backup?.configured===true);
+  const backupOutcome=['uploaded','verified','backup-failed','restore-failed','cleanup-failed'].includes(backup?.lastOutcome)?backup.lastOutcome:'unknown';
+  result.backup={lastSuccessAt:backed,lastVerifiedRestoreAt:restored,lastOutcome:backupOutcome};
+  add('backup.freshness',['backup-failed','cleanup-failed'].includes(backupOutcome)?'critical':!backed?'unknown':!fresh(backed,now,48*3600000)?'critical':'healthy',null,null,Boolean(backed)||backup?.configured===true);
+  add('backup.restore',backupOutcome==='restore-failed'?'critical':!restored?'unknown':!fresh(restored,now,7*86400000)?'warning':'healthy',null,null,Boolean(restored)||backup?.configured===true);
   result.status=overall(result.checks);return result;
 }
 

@@ -72,6 +72,7 @@ the client sends no automatic retry. This is analytics, not financial accounting
 - `summary({days:7|30, from?, to?})`: totals, UTC daily totals, independent source,
   campaign and device breakdowns, page-session milestones and duration buckets.
 - `close()`: closes SQLite and clears transient duplicate state.
+- `prune()`: removes expired daily cells without requiring visitor activity.
 
 Persisted rows are only `(day, event, dimension, value, bucket, count)`.
 Source, campaign and device are separate dimensions; they cannot be joined into
@@ -79,8 +80,10 @@ fine-grained visitor cohorts. Source/campaign attribution is limited to
 acquisition milestones and engaged sessions; devices get aggregate traffic and
 error counts. Duration samples are bucketed before sending. No raw event log or
 exact event time exists. Aggregate retention defaults to 90 days; ingestion and
-dashboard reads prune older rows. Keep periodic dashboard/monitor summaries
-running to prune during traffic-free periods.
+dashboard reads prune older rows. The daily core backup job also prunes before
+snapshotting, including when cloud access fails later. A standalone daily timer
+may run `node ops/prune-analytics.mjs /absolute/path/analytics.sqlite` if backups
+are not enabled. Retention does not depend on the website receiving traffic.
 
 The HTTP/proxy owner must require same-origin JSON, bound bodies (8 KiB suffices
 for 32 allowed events), reject unknown keys, and suppress raw request/access logs
