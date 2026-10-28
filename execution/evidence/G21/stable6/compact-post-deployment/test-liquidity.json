@@ -1,0 +1,78 @@
+{
+  "chainId": 11155111,
+  "reason": "Depleted WETH/FEE pool made default signup quote exceed owned test-wallet balance; first attempt sent no payment",
+  "faucet": {
+    "purpose": "free Sepolia fixture tokens for actual posting-credit and Bok flow tests",
+    "chainId": 11155111,
+    "owner": "0x8d83fed116a7542934ca2e968055555317f91ca4",
+    "stage": "complete",
+    "feeToken": "0x762C132040fdA6183066Fa3B14d985ee55aA3C18",
+    "before": "100000000000000434309",
+    "amount": "1000000000000000000000",
+    "nonce": 122,
+    "txHash": "0x26f0ba308709423f57af6489152c65dfe02dcd4c51e4028adab0a7cd567bca6f",
+    "after": "1100000000000000434309",
+    "blockNumber": 12014560,
+    "blockHash": "0x74b4cede8df081f5c52061ca375f0502c2897bb90c7281de0abe2fe46e50a972",
+    "gasWei": "908460"
+  },
+  "rebalance": {
+    "network": 11155111,
+    "amountIn": "100000000000000000000",
+    "transactions": [
+      {
+        "stage": "approve-test-swap",
+        "hash": "0xb62c1ae8a235c62185dbfa32054fe28161a8e4d8cf1e7e14ac46a281ba29fd44",
+        "block": 12014564
+      },
+      {
+        "stage": "rebalance-test-pool",
+        "hash": "0x54b7fcdce687ee4aadc5518b3c3642827d3250ae7da8802791fad749b06f5247",
+        "block": 12014565
+      },
+      {
+        "stage": "unwrap-test-eth",
+        "hash": "0xa500d82bf9a69545c6e68cb1f3604660f68782ab7383bcbe0122bc7a845ddf47",
+        "block": 12014566
+      }
+    ],
+    "quotedOutput": "19372783966660081",
+    "received": "19372783966660081",
+    "complete": true
+  },
+  "refill": {
+    "network": 11155111,
+    "owner": "0x8d83fed116a7542934CA2E968055555317F91CA4",
+    "pool": "0xb5a47234Bdd0ee7078FEBcD2fb21014093183556",
+    "manager": "0x1238536071E1c677A632429e3655c799b22cDA52",
+    "amount0Desired": "800000000000000000000",
+    "tickLower": -88680,
+    "tickUpper": 887220,
+    "transactions": [
+      {
+        "stage": "approve-exact-fee-inventory",
+        "hash": "0x76f564df0e97e7d6942c522fee1718528fc6db6fedaf8d1b5a3a85c9a4f9399f",
+        "block": 12014574
+      },
+      {
+        "stage": "add-fee-liquidity",
+        "hash": "0xd5d0fc50e5ba669e94e73d71959cd31c62a9c855bb5321a03cb40b3d01a62454",
+        "block": 12014575
+      },
+      {
+        "stage": "clear-unused-approval",
+        "hash": "0x69fc366f90dcb0e12042cb980fd99322522be4ff4a808f91a3824ed87934c447",
+        "block": 12014576
+      }
+    ],
+    "expected": {
+      "amount0": "799999999999999999996",
+      "amount1": "0",
+      "liquidity": "9495646333589617622",
+      "tokenId": "233920"
+    },
+    "poolFeeBalance": "1165303391194757186152",
+    "complete": true
+  },
+  "actualBrowserQuote": "0.046050597580844015 ETH"
+}

@@ -1,0 +1,18 @@
+{
+  "core": {
+    "bytesFreed": 676253696,
+    "freeBytes": 5540364288,
+    "configurationAndReceiptsRetained": true
+  },
+  "bok": {
+    "bytesFreed": 676188160,
+    "freeBytes": 108301709312,
+    "configurationAndReceiptsRetained": true
+  },
+  "local": {
+    "temporaryS3ObjectsDeleted": 3,
+    "transferArchiveBytesFreed": 423863372,
+    "ownedBrowserProfilesRemoved": 2,
+    "retainedActiveBuild": true
+  }
+}

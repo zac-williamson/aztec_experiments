@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+  "board": "0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5",
+  "browser": "Isolated headless Chromium, owned EIP1193 test adapter, real remote proofs",
+  "status": "passed",
+  "startedAt": "2026-10-28T20:01:46.121Z",
+  "finishedAt": "2026-10-28T20:05:27.706Z",
+  "stages": [
+    {
+      "stage": "signup-navigation",
+      "at": "2026-10-28T20:01:46.571Z"
+    },
+    {
+      "stage": "signup-open",
+      "at": "2026-10-28T20:01:48.346Z"
+    },
+    {
+      "stage": "signup-wallet-ready",
+      "at": "2026-10-28T20:01:57.698Z"
+    },
+    {
+      "stage": "signup-connect",
+      "at": "2026-10-28T20:01:57.702Z"
+    },
+    {
+      "stage": "signup-price",
+      "at": "2026-10-28T20:01:57.767Z"
+    },
+    {
+      "stage": "signup-payment",
+      "at": "2026-10-28T20:02:15.845Z"
+    },
+    {
+      "stage": "signup-ready",
+      "at": "2026-10-28T20:03:08.122Z"
+    },
+    {
+      "stage": "first-post",
+      "at": "2026-10-28T20:03:08.204Z"
+    },
+    {
+      "stage": "self-tip-1",
+      "at": "2026-10-28T20:04:37.068Z"
+    },
+    {
+      "stage": "self-tip-2",
+      "at": "2026-10-28T20:04:51.570Z"
+    },
+    {
+      "stage": "second-post",
+      "at": "2026-10-28T20:05:04.740Z"
+    },
+    {
+      "stage": "complete",
+      "at": "2026-10-28T20:05:27.705Z"
+    }
+  ],
+  "firstPost": {
+    "postId": "12348848417649416945932027719792651207097416498439131690487451192119301690248",
+    "txHash": "0x1c4e2300fc17927c166420692d649fd74a6c629d6ebbc7e8aeb5da610fd2b5ed",
+    "content": "Compact gas run 1793217788204"
+  },
+  "secondPost": {
+    "txHash": "0x2b5392522efda556bcfe46c23d37ef2798b5188373ef065f3004184a7e375fd5"
+  },
+  "receipts": [
+    {
+      "stage": "signup-payment",
+      "txHash": "0x19b8dc25ee5b6d5bd35bba87105dd2195b6fbd453257fbb3cc93f417c66559d4",
+      "status": "checkpointed",
+      "blockNumber": 9751,
+      "blockHash": "0x1c456fef76c3dd0bc7221e1074e437bbe5aa12ff99c373eab6af61f5053c46e1",
+      "transactionFee": "1754578755720300000",
+      "feeTokens": "1.7545787557203",
+      "feePrices": {
+        "feePerL2Gas": "1980621100000",
+        "feePerDaGas": "0"
+      },
+      "priorityFeePerGas": "0",
+      "billedL2Gas": "885873",
+      "gasMeasurement": "derived exactly from native receipt fee / inclusion-block L2 price; DA price is zero"
+    },
+    {
+      "stage": "first-post",
+      "txHash": "0x1c4e2300fc17927c166420692d649fd74a6c629d6ebbc7e8aeb5da610fd2b5ed",
+      "status": "checkpointed",
+      "blockNumber": 9753,
+      "blockHash": "0x2945dcd6e7a5043a031a0ff5d0ad5a7cf06cf6fbf8bd38d568f7f0e7b2baaf9e",
+      "transactionFee": "2760553580939000000",
+      "feeTokens": "2.760553580939",
+      "feePrices": {
+        "feePerL2Gas": "2764783700000",
+        "feePerDaGas": "0"
+      },
+      "priorityFeePerGas": "0",
+      "billedL2Gas": "998470",
+      "gasMeasurement": "derived exactly from native receipt fee / inclusion-block L2 price; DA price is zero"
+    },
+    {
+      "stage": "self-tip-1",
+      "txHash": "0x12062f26d820ccc0a1fe2ca8c21573d0beb2d1e21afbee7b5e1e9b02f41d185a",
+      "status": "proposed",
+      "blockNumber": 9754,
+      "blockHash": "0x2715ea2e3cf9769752efc0914a61a30930154b9d7a0ec10e4cf7737b59f7731a",
+      "transactionFee": "2466026702945400000",
+      "feeTokens": "2.4660267029454",
+      "feePrices": {
+        "feePerL2Gas": "2764783700000",
+        "feePerDaGas": "0"
+      },
+      "priorityFeePerGas": "0",
+      "billedL2Gas": "891942",
+      "gasMeasurement": "derived exactly from native receipt fee / inclusion-block L2 price; DA price is zero"
+    },
+    {
+      "stage": "self-tip-2",
+      "txHash": "0x2b08907e09bbeba5c2a18230c21673e71c542e71dbf481958ff5930088e58ca8",
+      "status": "proposed",
+      "blockNumber": 9755,
+      "blockHash": "0x2e8778b1fc0d3ccd926b0f7f2d4232b41966ae89663509dcc93a2001358e7fc4",
+      "transactionFee": "2466026702945400000",
+      "feeTokens": "2.4660267029454",
+      "feePrices": {
+        "feePerL2Gas": "2764783700000",
+        "feePerDaGas": "0"
+      },
+      "priorityFeePerGas": "0",
+      "billedL2Gas": "891942",
+      "gasMeasurement": "derived exactly from native receipt fee / inclusion-block L2 price; DA price is zero"
+    },
+    {
+      "stage": "second-post",
+      "txHash": "0x2b5392522efda556bcfe46c23d37ef2798b5188373ef065f3004184a7e375fd5",
+      "status": "proposed",
+      "blockNumber": 9756,
+      "blockHash": "0x0eb6f951fe596b45dd3bf5c2e36bcefc69830a805d4e44a7188e7ca99a021886",
+      "transactionFee": "2905912083966500000",
+      "feeTokens": "2.9059120839665",
+      "feePrices": {
+        "feePerL2Gas": "2764783700000",
+        "feePerDaGas": "0"
+      },
+      "priorityFeePerGas": "0",
+      "billedL2Gas": "1051045",
+      "gasMeasurement": "derived exactly from native receipt fee / inclusion-block L2 price; DA price is zero"
+    }
+  ],
+  "ethereumReceipt": {
+    "hash": "0xecbe2ddd599825fd110d5bb973455869dcbe1057add585f454830a777c7bf428",
+    "blockNumber": 12014581,
+    "gasUsed": "1776909",
+    "gasPrice": "18",
+    "fee": "31984362"
+  },
+  "postTimings": [
+    {
+      "stage": "first-post",
+      "bytes": 29,
+      "txHash": "0x1c4e2300fc17927c166420692d649fd74a6c629d6ebbc7e8aeb5da610fd2b5ed",
+      "clickToIncludedRenderMs": 84667.969666
+    },
+    {
+      "stage": "second-post",
+      "bytes": 44,
+      "txHash": "0x2b5392522efda556bcfe46c23d37ef2798b5188373ef065f3004184a7e375fd5",
+      "clickToIncludedRenderMs": 15231.060625000013
+    }
+  ],
+  "tipBalances": [
+    {
+      "tip": 1,
+      "credit": "241299592064395300000"
+    },
+    {
+      "tip": 2,
+      "credit": "238833565361449900000"
+    }
+  ],
+  "creditBeforeTips": "243765618767340700000",
+  "creditAfterTips": "238833565361449900000",
+  "creditAfterSecondPost": "235927653277483400000",
+  "tipNoteConsumption": "not established by this UI smoke",
+  "likeCount": 2,
+  "tipAmountFEE": "20",
+  "selfTipConservation": "passed: self-tip principal returned; balance decreased by exactly both native receipt fees",
+  "ethereumSends": 1,
+  "signupQuote": {
+    "asset": "ETH",
+    "total": "Total payable \u00b7 maximum\u2248 $108.59 USDUp to 0.0460506 ETHIncludes your deposit, posting credit and payment fees.",
+    "exactMaximum": "0.046050597580844015 ETH",
+    "allocations": [
+      {
+        "label": "Refundable deposit",
+        "amount": "0.001 ETH",
+        "explanation": "Held to discourage spam. Withdraw when your deposit is available."
+      },
+      {
+        "label": "Posting credit",
+        "amount": "0.0450506 ETH",
+        "explanation": "Pays network fees for posts, replies, tips and account updates."
+      },
+      {
+        "label": "Ethereum fee limit",
+        "amount": "0.00000001 ETH",
+        "explanation": "You pay the actual network fee, up to this limit."
+      }
+    ],
+    "details": [
+      "Deposit held: 0.001 ETH.",
+      "Posting credit: 248.280751104 FEE. Setup can use up to 124.140375552 of these credits.",
+      "Exchange price tolerance: 1%. Unused exchange funds are returned to the paying wallet."
+    ]
+  },
+  "boundaries": [
+    "Not MetaMask extension UX",
+    "Not proof that second post consumed tip notes",
+    "Not a distinct recipient discovery check",
+    "Not all application flows or a production security audit",
+    "Latency campaign remains paused; first post includes native posting-readiness wait"
+  ],
+  "memory": {
+    "maxTreeRssBytes": 6442450944,
+    "maxProcessRssBytes": 3221225472,
+    "peakTreeRssBytes": 1402077184,
+    "peakProcessRssBytes": 1071366144
+  }
+}
