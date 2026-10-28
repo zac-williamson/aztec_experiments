@@ -79,5 +79,65 @@
     "recipientBalanceWei": "33971239351380410",
     "fixtureBalanceWei": "12675112184446535"
   },
-  "fixtureReadiness": "Not ready for current expensive Sepolia pool quote; dedicated balance/caps require replenishment before journey. No real-money purchase authorized."
+  "fixtureReadiness": "Current route quote and dedicated balances recorded; automatic release remains disabled until actual journey passes.",
+  "faucet": {
+    "provider": "Google Cloud Web3 Sepolia faucet",
+    "hash": "0x916c6c16f83effc6cec2b811885a9497df2e1ad8418a595c9000c39ad2565e94",
+    "status": "success",
+    "valueWei": "50000000000000000",
+    "block": 12013046,
+    "recipient": "0xB100C6C628b598e5Fe30b047765C2dD16C8554bf"
+  },
+  "latestReadOnlyQuote": {
+    "at": "2026-10-28T15:05:45.288Z",
+    "block": 12013098,
+    "chainId": "11155111",
+    "feeCap": "124140375552000000000",
+    "feeAmount": "248280751104000000000",
+    "collateralWei": "1000000000000000",
+    "ethGasBudgetWei": "160000000",
+    "quotes": {
+      "ethToFee": {
+        "exact": "384369572314072875",
+        "maximumWith1PercentSlippage": "388213268037213604"
+      },
+      "usdcToCollateral": {
+        "exact": "43270726",
+        "maximumWith1PercentSlippage": "43703434"
+      },
+      "usdcToFee": {
+        "exact": "11508957",
+        "maximumWith1PercentSlippage": "11624047"
+      },
+      "ethToOneBokUsdc": {
+        "exact": "23250162920439",
+        "maximumWith1PercentSlippage": "23482664549644"
+      }
+    },
+    "signupEthMinimumWei": "389213268197213604",
+    "signupUsdcMinimumBeforeRelayFeeBaseUnits": "55327481",
+    "balances": {
+      "ciFunder": {
+        "address": "0xB100C6C628b598e5Fe30b047765C2dD16C8554bf",
+        "ethWei": "62675112184446535",
+        "eth": "0.062675112184446535",
+        "usdcBaseUnits": "100000000",
+        "usdc": "100.0"
+      },
+      "stageRelay": {
+        "address": "0xfEf738e7AdC25999E463d4F2Cd750DcF364E43D0",
+        "ethWei": "3000000000000000",
+        "eth": "0.003",
+        "usdcBaseUnits": "0",
+        "usdc": "0.0"
+      },
+      "archivedMacTestFixture": {
+        "address": "0xa9b4129e0692d533EfA8c28aF69c09e07dE02ca9",
+        "ethWei": "0",
+        "eth": "0.0",
+        "usdcBaseUnits": "0",
+        "usdc": "0.0"
+      }
+    }
+  }
 }

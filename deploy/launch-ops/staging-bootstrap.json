@@ -1,0 +1,39 @@
+{
+  "bootstrapExit": 0,
+  "result": {
+    "status": "prepared-not-started",
+    "baseline": "/opt/rolling-releases/021fd7a6b574367be57c7c97b38d76f1d8daa473",
+    "operatorConfig": "/etc/rolling-release/config.json",
+    "stageRelaySignerRequired": "/etc/rolling-stage/relay-signer.json",
+    "ciFunderRequired": "/etc/rolling-release/test-wallet.json",
+    "githubRunnerInstalled": false,
+    "releaseJobStarted": false,
+    "liveUnitChanged": false,
+    "caddyChanged": false
+  },
+  "error": "",
+  "beforePids": {
+    "rolling-application": "604361",
+    "rolling-application-proxy": "427800",
+    "rolling-node": "561751",
+    "rolling-query": "561753",
+    "board-prover": "604038",
+    "board-prover-proxy": "739",
+    "rolling-moderator": "604372"
+  },
+  "afterPids": {
+    "rolling-application": "604361",
+    "rolling-application-proxy": "427800",
+    "rolling-node": "561751",
+    "rolling-query": "561753",
+    "board-prover": "604038",
+    "board-prover-proxy": "739",
+    "rolling-moderator": "604372"
+  },
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T15:29:09.534392+00:00",
+  "commandId": "6fe2b9e8-d9e5-4a08-bc44-d02eb264ab70",
+  "instance": "i-0a9b5b9ba55815cda",
+  "sourceRevision": "021fd7a6b574367be57c7c97b38d76f1d8daa473",
+  "activationEnabled": false
+}
