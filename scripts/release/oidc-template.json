@@ -32,7 +32,7 @@
           "Effect": "Allow", "Principal": {"Federated": {"Ref": "GithubOidc"}}, "Action": "sts:AssumeRoleWithWebIdentity",
           "Condition": {"StringEquals": {
             "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-            "token.actions.githubusercontent.com:sub": "repo:zac-williamson/aztec_experiments:environment:rolling-testnet-release"
+            "token.actions.githubusercontent.com:sub": "repo:zac-williamson@1476668/aztec_experiments@1371600739:environment:rolling-testnet-release"
           }}
         }]},
         "Policies": [{"PolicyName": "StartOnlyInstalledRelease", "PolicyDocument": {"Version": "2012-10-17", "Statement": [

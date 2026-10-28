@@ -36,6 +36,13 @@ test('failed real-testnet journey never switches live or restarts it',async t=>{
 test('mock proof label cannot qualify a release',async t=>{
  const f=await setup(t);f.options.journey=async()=>({...successful,proofs:'disabled'});await assert.rejects(releaseCandidate(f.options),{code:'RELEASE_JOURNEY_FAILED'});assert.equal(await fs.realpath(f.options.liveLink),f.old);
 });
+test('failed journey keeps only bounded known completion names without private diagnostics',async t=>{
+ const f=await setup(t);f.options.journey=async()=>{throw Object.assign(Error('private response'),{code:'RELEASE_INCLUSION',completed:['signup-ETH','private-wallet','post','post'],params:'secret'});};
+ await assert.rejects(releaseCandidate(f.options),{code:'RELEASE_INCLUSION'});
+ const text=await fs.readFile(f.options.stateFile,'utf8'),state=JSON.parse(text);
+ assert.deepEqual(state.journeyCompleted,['signup-ETH','post']);assert.equal(state.status,'blocked');assert(!text.includes('private'));assert(!text.includes('secret'));
+ assert.equal(await fs.realpath(f.options.liveLink),f.old);assert(!f.calls.includes('restart-live'));
+});
 test('successful journey promotes exactly the candidate tested',async t=>{
  const f=await setup(t);const state=await releaseCandidate(f.options);assert.equal(state.status,'live');assert.equal(await fs.realpath(f.options.liveLink),f.candidate);assert.equal(f.calls.indexOf('journey')<f.calls.indexOf('restart-live'),true);
 });
@@ -140,7 +147,7 @@ test('fixed host job rejects non-master or superseded source; git has no credent
 test('release transport has an exact environment trust and parameterless command with no arbitrary execution grant',async()=>{
  const template=JSON.parse(await fs.readFile(new URL('./oidc-template.json',import.meta.url),'utf8'));
  const role=template.Resources.ReleaseRole.Properties,trust=role.AssumeRolePolicyDocument.Statement[0];
- assert.deepEqual(trust.Condition.StringEquals,{'token.actions.githubusercontent.com:aud':'sts.amazonaws.com','token.actions.githubusercontent.com:sub':'repo:zac-williamson/aztec_experiments:environment:rolling-testnet-release'});
+ assert.deepEqual(trust.Condition.StringEquals,{'token.actions.githubusercontent.com:aud':'sts.amazonaws.com','token.actions.githubusercontent.com:sub':'repo:zac-williamson@1476668/aztec_experiments@1371600739:environment:rolling-testnet-release'});
  const statements=role.Policies[0].PolicyDocument.Statement;assert.deepEqual(statements.map(x=>x.Action),['ssm:SendCommand','ssm:GetCommandInvocation']);assert.equal(statements[0].Resource.length,2);assert(!statements[0].Resource.includes('*'));
  const doc=template.Resources.ReleaseCommand.Properties.Content;assert.deepEqual(doc.parameters,{});assert.equal(doc.mainSteps.length,1);assert(doc.mainSteps[0].inputs.runCommand.includes('/usr/bin/systemctl start --wait rolling-release-job.service'));
  const unit=releaseJobUnit({releaseDirectory:'/opt/rolling-releases',stagingLink:'/opt/rolling-stage/current',liveLink:'/opt/rolling-release-live/current',stateFile:'/var/lib/rolling-release-state/state.json',nodeBinary:'/opt/rolling-ops/runtime/node'});

@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "status": "prepared-not-applied",
+  "scope": "Add explicit current core control-file backup inputs only; no host mutation or new backup/restore claimed.",
+  "coverageObservation": {
+    "observedAt": "2026-10-28T18:48:28.951654+00:00",
+    "ssmCommand": "fcdab67e-ac36-4925-9c5b-4cb1b0a8c032",
+    "evidenceSha256": "df30abdff7f174361897ca479fcb5424171fc0a6b42377d780bd85b9e001becb"
+  },
+  "hostRole": "core",
+  "configFile": "/etc/rolling-ops-backup/core.json",
+  "service": "rolling-ops-backup-core.service",
+  "timer": "rolling-ops-backup-core.timer",
+  "stateFile": "/var/lib/rolling-ops-backup-core/status.json",
+  "expectedExistingInputCount": 10,
+  "expectedResultingInputCount": 20,
+  "preserveExistingEntriesAndSettings": true,
+  "fileAdditions": [
+    {
+      "name": "configuration/wallet.json",
+      "path": "/etc/rolling-app/wallet.json",
+      "kind": "file"
+    },
+    {
+      "name": "configuration/application-caddyfile",
+      "path": "/etc/rolling-app/Caddyfile",
+      "kind": "file"
+    },
+    {
+      "name": "configuration/application.service",
+      "path": "/etc/systemd/system/rolling-application.service",
+      "kind": "file"
+    },
+    {
+      "name": "configuration/application-availability.conf",
+      "path": "/etc/systemd/system/rolling-application.service.d/availability.conf",
+      "kind": "file"
+    },
+    {
+      "name": "configuration/application-release.conf",
+      "path": "/etc/systemd/system/rolling-application.service.d/zz-release.conf",
+      "kind": "file"
+    },
+    {
+      "name": "configuration/release.json",
+      "path": "/etc/rolling-release/config.json",
+      "kind": "file"
+    },
+    {
+      "name": "configuration/release-public-verifier.json",
+      "path": "/etc/rolling-release/public-verifier.json",
+      "kind": "file"
+    },
+    {
+      "name": "configuration/release-job.service",
+      "path": "/etc/systemd/system/rolling-release-job.service",
+      "kind": "file"
+    },
+    {
+      "name": "configuration/release-sudoers",
+      "path": "/etc/sudoers.d/rolling-release",
+      "kind": "file"
+    },
+    {
+      "name": "configuration/staging.service",
+      "path": "/etc/systemd/system/rolling-staging.service",
+      "kind": "file"
+    }
+  ],
+  "excluded": [
+    "CI test-wallet keys",
+    "stage relay test key",
+    "old application data, caches and journals",
+    "automatic-release enabled marker"
+  ],
+  "unchanged": [
+    "encryption and restore implementation",
+    "S3 bucket and seven-day retention",
+    "SSM/KMS keys and IAM permissions",
+    "pinned runtime and boto3 dependencies",
+    "Bok backup installation"
+  ],
+  "installationBoundary": "Install a new immutable reviewed backup source, amend only the core backup config/service, and run one actual off-host restore drill. Recheck canonical paths and record current uid/gid/modes at installation; never copy file contents into evidence. No application/prover/proxy changes or signing.",
+  "restoreBoundary": "Existing restore verification restores exact bytes into a fresh private directory; it does not install files into /etc or restore ownership/modes automatically. Reapply reviewed recorded uid/gid/modes when explicitly installing recovered configuration."
+}

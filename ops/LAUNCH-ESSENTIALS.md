@@ -96,11 +96,14 @@ scan secret directories. `BACKUP_NAMES` defines the admitted small inventory:
 
 | Host | Stable inputs to select when used by its current services |
 |---|---|
-| Core | Application, wallet deployment, funding relay, prover, query, moderator, operations and release configs; moderator, query and funding-relayer credentials; analytics SQLite |
+| Core | Application, wallet deployment, funding relay, prover, query, moderator, operations and release configs; application Caddyfile/unit and its availability/release drop-ins; release public verifier, job unit and sudoers; staging unit; moderator, query and funding-relayer credentials; analytics SQLite |
 | Bok | Service config; operator credential; GitHub App private key; model-provider environment file |
 
 Do not include public index databases, archives of posts, proof queues, browser
 accounts, disposable test fixtures, generic logs, or live transaction journals.
+Keep CI test-wallet keys, the stage relay test key and the automatic-release
+`enabled` marker out of the inventory. Recovery never implies permission to
+enable automatic deployment again.
 This job protects stable credentials/configuration and aggregates. It is not a
 snapshot/recovery protocol for in-flight financial operations. Existing onchain
 reconciliation remains necessary before any restored signer is started.
@@ -172,6 +175,41 @@ share the same instance role and therefore have the union of these permissions.
 The $3 reservation covers the first 31 days within the shared launch budget;
 review by 28 November 2026. It is an allocation, not a billing cap. KMS and SSM
 keys must outlive all retained archives if backups are later retired.
+
+## Prepared core coverage update — 29 October 2026
+
+The final read-only coverage review found ten missing inputs: the already
+admitted live wallet/release configs and eight exact live control-file names.
+[`core-backup-update-plan.json`](../deploy/launch-ops/core-backup-update-plan.json)
+records their observed paths and the additive change from ten to twenty inputs.
+This is a prepared update, not evidence that those files have been backed up.
+
+The integrating operator applies it in a coordinated window:
+
+1. Pause only the core backup timer, confirm its job is inactive, and read the
+   current units/config references again. Require all ten paths to be canonical
+   regular files; missing or changed references block the update. Record current
+   ownership/modes without reading file contents into logs.
+2. Install the reviewed backup source into a new immutable
+   `/opt/rolling-ops-backup/releases/FULL_COMMIT` directory and verify its source
+   hashes. Keep the existing pinned Node runtime, cloud adapter dependencies,
+   encryption keys, bucket, IAM policies, retention and Bok installation.
+3. Add only the plan's `fileAdditions` to `/etc/rolling-ops-backup/core.json`,
+   preserving every existing entry and scalar setting. Reject duplicate names
+   or paths; validate the resulting twenty-input configuration with the newly
+   installed `validateBackupJobConfig`. Atomically install the private config
+   with its existing owner/mode. Update only the core backup service's code
+   directory to the new immutable source and reload systemd.
+4. Start `rolling-ops-backup-core.service` once. Require successful encrypted
+   upload, actual download/restore integrity checks and cleanup before recording
+   the fresh projected status and resuming its daily timer. Preserve a failed
+   result honestly; do not change any application, prover or proxy service.
+
+The restore drill recovers exact bytes into a private directory; it does not
+install them or automatically recreate uid/gid/modes. Reapply separately reviewed
+metadata when deliberately restoring selected control files. Source bundles,
+browser files, old application data and deployment activation remain outside
+this backup change. No crypto, archive, cloud-access or restore logic changes.
 
 ## Incremental spending visibility
 
