@@ -10,7 +10,18 @@ export function validateRollingRegistration(value,{config,artifactHashes,proofsE
  check(value.schemaVersion===1&&value.purpose==='testnet-registration');
  check(['11155111','31337'].includes(value.config?.network?.chainId));
  check(typeof value.proofsEnabled==='boolean'&&(value.proofsEnabled||value.config.network.chainId==='31337'));
- if(config!==undefined)check(JSON.stringify(value.config)===JSON.stringify(config));
+ if(config!==undefined){
+  const registered=structuredClone(value.config),runtime=structuredClone(config);
+  // The relay signs Ethereum transactions for this serving environment; it is
+  // not a deployed contract or a member of the aggregate contract scope. Its
+  // terms remain bound to the runtime address by aggregate-wallet. A different
+  // stage signer must not relax any other registration identity check.
+  if(registered.aggregateFunding?.usdcRelayAddress!==undefined||runtime.aggregateFunding?.usdcRelayAddress!==undefined){
+   hex(registered.aggregateFunding?.usdcRelayAddress,20);hex(runtime.aggregateFunding?.usdcRelayAddress,20);
+   registered.aggregateFunding.usdcRelayAddress=runtime.aggregateFunding.usdcRelayAddress;
+  }
+  check(JSON.stringify(registered)===JSON.stringify(runtime));
+ }
  if(proofsEnabled!==undefined)check(value.proofsEnabled===proofsEnabled);
  keys(value.artifactHashes,['board','privateFee']);for(const name of ['board','privateFee']){digest(value.artifactHashes[name]);if(artifactHashes)check(value.artifactHashes[name]===artifactHashes[name]);}
  keys(value.instances,['board','privateFee']);
