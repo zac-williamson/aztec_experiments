@@ -18,9 +18,9 @@ export function checkArtifacts(root = ROOT) {
   const privateFee = JSON.parse(privateFeeBytes);
   const privateFeePrivate = privateFee.functions?.filter(f => (f.custom_attributes || []).includes('abi_private')) ?? [];
   if (privateFee.name !== 'PrivateFPC' || privateFee.transpiled !== true || privateFeePrivate.length !== 4 ||
-      privateFeePrivate.some(f => !f.verification_key) || privateFee.functions.some(f => ((f.custom_attributes || []).includes('abi_public') && !['public_dispatch','_complete_refund'].includes(f.name)) || (f.custom_attributes || []).includes('abi_initializer')) ||
-      privateFee.functions.filter(f => f.name === '_complete_refund' && f.custom_attributes?.includes('abi_public') && f.custom_attributes?.includes('abi_only_self')).length !== 1 ||
-      ['mint', 'pay_fee', 'mint_and_pay_fee', 'recurse_subtract_balance_internal'].some(name => !privateFeePrivate.some(f => f.name === name))) {
+      privateFeePrivate.some(f => !f.verification_key) || privateFee.functions.some(f => ((f.custom_attributes || []).includes('abi_public') && !['public_dispatch','_complete_refund','_record_paid_like'].includes(f.name)) || (f.custom_attributes || []).includes('abi_initializer')) ||
+      ['_complete_refund','_record_paid_like'].some(name => privateFee.functions.filter(f => f.name === name && f.custom_attributes?.includes('abi_public') && f.custom_attributes?.includes('abi_only_self')).length !== 1) ||
+      ['mint', 'pay_fee', 'mint_and_pay_fee', 'pay_like_and_fee'].some(name => !privateFeePrivate.some(f => f.name === name))) {
     throw new Error('Canonical privateFee artifact lacks fixed private routes or verification keys');
   }
   const portal = JSON.parse(read('billboard/portal/out/BillboardPortal.sol/BillboardPortal.json'));

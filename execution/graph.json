@@ -9402,13 +9402,13 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "28 October: integrated20-FEE private paid likes; canonical contract/VK and SDK builds passed,203 client/composer tests,16 policy and91 deployment tests passed, repeated-like browser test passed. Native tips acceptance passed with proofs disabled:20 transfers, author spending tip, mixed inputs, application revert principal refund, double-spend rejection, fresh discovery. Native atomic Bok invocation/rollback passed. Real-proof testnet acceptance next, then publication. MetaMaskhostnameBLOCK confirmed; reportpushed1b6159d1. Liveapp8e68 unchanged; performancepaused.",
+      "checkpoint": "28 October:20-FEE tips contracts deployed and wallet built; service staging caught legacy FPC route admission in check-artifacts before live mutation. Root integrates independently reviewed canonical checker fix, then reseals same compiled artifacts/contracts and publishes. Basic22-byte post measured2.5016104002576FEE actual receipt; no cost UI change. Performance remains paused.",
       "execution_lane": "root integration/deployment; isolated contract and client implementers; independent review",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",
       "verification_method": "Native claim/cancel exclusion, Solidity custody/refund proofs, client and browser checks, coherent artifact verification, independent review, then fresh testnet signup and publication.",
       "priority": 0,
-      "next_action": "Integrate reviewed20-token contract/client/UI/prover changes with current atomic threads and single funding router; focused native acceptance and publish."
+      "next_action": "Finish corrected release staging/publication; real-proof fresh signup, post, repeated20-credit likes and post acceptance."
     }
   ],
   "specification": {

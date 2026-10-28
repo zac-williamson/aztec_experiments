@@ -70,9 +70,9 @@ function fixture(t) {
   json(canonicalPath, artifact);
   json(pluginAdapterPath, {name:'PluginAdapter',transpiled:true,functions:[{name:'claim',custom_attributes:['abi_private'],verification_key:'fixture-vk'}]});
   json(pluginPortalPath, {bytecode:{object:'0x60006000'},deployedBytecode:{object:'0x6000'},metadata:{sources:{'src/PluginPortal.sol':{keccak256:keccak256(Buffer.from(inputs['billboard/portal/src/PluginPortal.sol']))}}}});
-  json(fundingRouterPath, {bytecode:{object:'0x60006000'},deployedBytecode:{object:'0x6000'},metadata:{sources:{'src/RollingFundingRouter.sol':{keccak256:keccak256(Buffer.from(inputs['billboard/portal/src/RollingFundingRouter.sol']))}}}});
+  json(fundingRouterPath, {abi:[{type:'function',name:'buyCredit'},{type:'event',name:'CreditPurchased'}],bytecode:{object:'0x60006000'},deployedBytecode:{object:'0x6000'},metadata:{sources:{'src/RollingFundingRouter.sol':{keccak256:keccak256(Buffer.from(inputs['billboard/portal/src/RollingFundingRouter.sol']))}}}});
   json(privateFeePath, { name: 'PrivateFPC', transpiled: true,
-    functions: [...['mint', 'pay_fee', 'mint_and_pay_fee', 'recurse_subtract_balance_internal'].map(name => ({ name, custom_attributes: ['abi_private'], verification_key: 'fixture-vk' })), {name:'_complete_refund',custom_attributes:['abi_public','abi_only_self']}] });
+    functions: [...['mint', 'pay_fee', 'mint_and_pay_fee', 'pay_like_and_fee'].map(name => ({ name, custom_attributes: ['abi_private'], verification_key: 'fixture-vk' })), ...['_complete_refund','_record_paid_like'].map(name=>({name,custom_attributes:['abi_public','abi_only_self']}))] });
   const bytecode = '0x60006000';
   json(portalPath, {
     bytecode: { object: bytecode },
@@ -220,8 +220,25 @@ test('privateFee key, extra route and stale content fail closed', t => {
   assert.throws(() => checkArtifacts(f.root), /Contract artifact differs from build manifest/);
 });
 
-test('refund completion must remain restricted to the fee contract',t=>{
- const f=fixture(t);f.editJson(privateFeePath,a=>{a.functions.find(fn=>fn.name==='_complete_refund').custom_attributes=['abi_public'];});
+for(const name of ['_complete_refund','_record_paid_like'])for(const mutation of ['unrestricted','missing','duplicate'])test(`${name} must remain one only-self public route: ${mutation}`,t=>{
+ const f=fixture(t);f.editJson(privateFeePath,a=>{
+  const fn=a.functions.find(fn=>fn.name===name);
+  if(mutation==='unrestricted')fn.custom_attributes=['abi_public'];
+  else if(mutation==='missing')a.functions=a.functions.filter(fn=>fn.name!==name);
+  else a.functions.push({...fn});
+ });
+ f.editJson(manifestPath,m=>{m.privateFee=hash(f.read(privateFeePath));});
+ assert.throws(()=>checkArtifacts(f.root),/Canonical privateFee artifact/);
+});
+for(const [label,mutate] of [
+ ['legacy subtraction route',a=>{a.functions.find(fn=>fn.name==='pay_like_and_fee').name='recurse_subtract_balance_internal';}],
+ ['paid-like private VK missing',a=>{delete a.functions.find(fn=>fn.name==='pay_like_and_fee').verification_key;}],
+ ['paid-like made public',a=>{a.functions.find(fn=>fn.name==='pay_like_and_fee').custom_attributes=['abi_public'];}],
+ ['unexpected public route',a=>{a.functions.push({name:'foreign',custom_attributes:['abi_public','abi_only_self']});}],
+ ['initializer',a=>{a.functions.push({name:'init',custom_attributes:['abi_initializer']});}],
+])test(`privateFee rejects ${label} even with matching manifest`,t=>{
+ const f=fixture(t);f.editJson(privateFeePath,mutate);
+ f.editJson(manifestPath,m=>{m.privateFee=hash(f.read(privateFeePath));});
  assert.throws(()=>checkArtifacts(f.root),/Canonical privateFee artifact/);
 });
 

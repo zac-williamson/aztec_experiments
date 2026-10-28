@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: integrated20-FEE private paid likes; canonical contract/VK and SDK builds passed,203 client/composer tests,16 policy and91 deployment tests passed, repeated-like browser test passed. Native tips acceptance passed with proofs disabled:20 transfers, author spending tip, mixed inputs, application revert principal refund, double-spend rejection, fresh discovery. Native atomic Bok invocation/rollback passed. Real-proof testnet acceptance next, then publication. MetaMaskhostnameBLOCK confirmed; reportpushed1b6159d1. Liveapp8e68 unchanged; performancepaused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October:20-FEE tips contracts deployed and wallet built; service staging caught legacy FPC route admission in check-artifacts before live mutation. Root integrates independently reviewed canonical checker fix, then reseals same compiled artifacts/contracts and publishes. Basic22-byte post measured2.5016104002576FEE actual receipt; no cost UI change. Performance remains paused.
 
 ## Ready internal work
 
