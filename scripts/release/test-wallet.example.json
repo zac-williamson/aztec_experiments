@@ -1,0 +1,10 @@
+{
+  "stagingOrigin": "https://d1jab0kmgvw5tv.cloudfront.net",
+  "liveOrigin": "https://d30njln0kead8n.cloudfront.net",
+  "ethereumRpc": "https://ethereum-sepolia-rpc.publicnode.com/",
+  "testFunderKey": null,
+  "ethPerAccountWei": "400000000000000000",
+  "usdcPerAccount": "100000000",
+  "timeoutMs": 540000,
+  "testOnly": true
+}

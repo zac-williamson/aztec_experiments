@@ -127,15 +127,29 @@ Create `/etc/rolling-release/config.json`, mode `0600`, owned by the release use
 }
 ```
 
-Create private `test-wallet.json` with exactly these fields: `stagingOrigin`,
+Start from `test-wallet.example.json`, refresh its allocation against the current
+quote, and supply only the dedicated test key locally. Create private
+`test-wallet.json` with exactly these fields: `stagingOrigin`,
 `liveOrigin` (same as above), `ethereumRpc` (Sepolia), `testFunderKey` (a dedicated
-test-only key), `ethPerAccountWei` (decimal string, at most `10000000000000000`),
+test-only key), `ethPerAccountWei` (decimal string, at most `500000000000000000`),
 `usdcPerAccount` (decimal string, at most `100000000` test-USDC base units),
 `timeoutMs` (`540000` maximum), and `testOnly: true`. Owner `rolling-release`,
 mode `0600`. Keep it out of GitHub, artifacts and logs. Fund it with free Sepolia
 ETH and the deployed router's test USDC. Each run creates two disposable accounts;
 it never imports a user's account and rejects any chain other than Sepolia.
 Disposable balances are not recovered or retained as fixtures.
+The ETH allowance applies only to the fresh ETH-payment wallet; the USDC wallet
+still receives zero ETH. Up to0.5 free Sepolia ETH is allocated to the ETH-payment wallet per run,
+with100 test
+USDC for the separate gasless signup. This is a ceiling, not a target: set the
+actual allocation from a fresh route quote plus the remaining journey cost.
+The28 October quote required about0.389214 ETH for signup because of the current
+Sepolia fee-token pool, so the previous0.01 ceiling could not exercise this path.
+Dedicated funder transaction gas and the relay gas budget are additional.
+The chain11155111 restriction, contract target allowlist, cumulative signing cap,
+zero-ETH gasless check and relay's separate gas budget remain enforced. No
+mainnet funds or paid token acquisition are introduced by this fixture policy.
+
 
 Install the reviewed operator code and fixed wrappers once, as root:
 

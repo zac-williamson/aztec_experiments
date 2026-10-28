@@ -91,7 +91,8 @@ test('contract, dependency and prover changes require a different deployment pat
 });
 test('test fixture cannot use same origin, mainnet-like arbitrary cap or public file fields',()=>{
  const cfg={stagingOrigin:'https://stage.example',liveOrigin:'https://live.example',ethereumRpc:'https://rpc.example',testFunderKey:'0x'+'1'.repeat(64),ethPerAccountWei:'1000000000000000',usdcPerAccount:'2000000',timeoutMs:540000,testOnly:true};assert.equal(validateJourneyConfig(cfg),cfg);
- for(const patch of [{stagingOrigin:cfg.liveOrigin},{testOnly:false},{ethPerAccountWei:'1000000000000000000'},{walletAddress:'identity'}])assert.throws(()=>validateJourneyConfig({...cfg,...patch}));
+ assert.equal(validateJourneyConfig({...cfg,ethPerAccountWei:'500000000000000000',usdcPerAccount:'100000000'}).ethPerAccountWei,'500000000000000000');
+ for(const patch of [{stagingOrigin:cfg.liveOrigin},{testOnly:false},{ethPerAccountWei:'500000000000000001'},{ethPerAccountWei:'0'},{usdcPerAccount:'100000001'},{walletAddress:'identity'}])assert.throws(()=>validateJourneyConfig({...cfg,...patch}));
 });
 test('test wallet signs only Sepolia fixture targets and rejects unbounded transfers',async()=>{
  const wallet={address:'0x'+'1'.repeat(40),signTypedData:async()=> 'signed',sendTransaction:async()=>({hash:'sent'})};const target='0x'+'2'.repeat(40);const bridge=await createTestWalletBridge({wallet,provider:{send:async()=>null},allowedTargets:new Set([target]),capWei:100n,getBytes:x=>x});
