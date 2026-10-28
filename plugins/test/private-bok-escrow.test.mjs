@@ -1,5 +1,9 @@
 // Labelled unit fakes only: no network, wallet signatures, token funding or real proofs.
-import test from 'node:test';
+import test, {after} from 'node:test';
+import {BarretenbergSync} from '@aztec-foundation/bb.js';
+import {Fr} from '@aztec-labs/foundation/curves/bn254';
+import {Grumpkin} from '@aztec-labs/foundation/crypto/grumpkin';
+import {FunctionSelector} from '@aztec-labs/stdlib/abi';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {Gas,GasFees,GasSettings} from '@aztec-labs/stdlib/gas';
@@ -10,6 +14,10 @@ class Field {
  constructor(v){this.v=BigInt(v);} toBigInt(){return this.v;} toString(){return H(this.v);} toField(){return this;}
  static fromString(v){return new Field(v);} static fromStringUnsafe(v){return new Field(v);}
 }
+const replySelector=await FunctionSelector.fromSignature('_publish_reply(Field,Field,[Field;32],u16,u32,u32,Field,Field)');
+const tipPoint=[Grumpkin.generator.x,Grumpkin.generator.y].map(value=>new Field(value.toBigInt()));
+Field.MODULUS=Fr.MODULUS;
+after(async()=>{await BarretenbergSync.destroySingleton();});
 const names=['state','invocation_hash','sequence','deadline','budget','available','reserved','charged','refunded','primary_refund','secondary_refund','primary_done','secondary_done','receipt'];
 async function fixture(overrides={}){
  let syncs=0,syncFailed=false,validations=0,feeQuotes=0,balanceReads=0,feeBalance=10000000000n;
@@ -26,11 +34,11 @@ async function fixture(overrides={}){
  const artifact={name:'PrivateBok',storageLayout:Object.fromEntries(['operator','board','l1_chain','version','requests'].map((n,i)=>[n,{slot:new Field(i+1)}])),functions:[],nonDispatchPublicFunctions:[{name:'request',returnType:{kind:'struct',fields:names.map(name=>({name,type:({state:8,sequence:32,deadline:64,budget:128,available:128,reserved:128,charged:128,refunded:128})[name]?{kind:'integer',sign:'unsigned',width:({state:8,sequence:32,deadline:64,budget:128,available:128,reserved:128,charged:128,refunded:128})[name]}:{kind:name.endsWith('_done')?'boolean':'field'}}))}}]};
  let lastCall,payloadCalls;
  const methods=new Proxy({}, {get:(_,name)=>(...args)=>({request:async()=>{
-  lastCall={name,to:new Field(address),selector:new Field(9),type:'public',isStatic:false,args:args.flat().map(x=>new Field(x instanceof Field?x.toBigInt():x))};
+  lastCall={name,to:new Field(address),selector:new Field(9),type:name==='publish_reply'?'private':'public',isStatic:false,args:args.flat().map(x=>new Field(x instanceof Field?x.toBigInt():x))};
   return {calls:[lastCall]};
  }})});
  class BatchCall {constructor(_wallet,interactions){this.interactions=interactions;}async request(){return {calls:(await Promise.all(this.interactions.map(i=>i.request()))).flatMap(p=>p.calls)};}}
- const sdk={getFeeJuiceBalance:async(owner,client)=>{balanceReads++;assert.equal(String(owner),operator);assert.equal(client,node);return feeBalance;},BatchCall,waitForTx:async()=>receipt,Fr:Field,AztecAddress:Field,TxHash:Field,Contract:{at:async()=>({methods})},getContractClassFromArtifact:async()=>({id:new Field(classId)}),deriveStorageSlotInMap:async()=>new Field(100),getFunctionReturnType:fn=>fn.returnType,isTrustedProver:p=>p?.trusted===true};
+ const sdk={FunctionSelector,getFeeJuiceBalance:async(owner,client)=>{balanceReads++;assert.equal(String(owner),operator);assert.equal(client,node);return feeBalance;},BatchCall,waitForTx:async()=>receipt,Fr:Field,AztecAddress:Field,TxHash:Field,Contract:{at:async()=>({methods})},getContractClassFromArtifact:async()=>({id:new Field(classId)}),deriveStorageSlotInMap:async()=>new Field(100),getFunctionReturnType:fn=>fn.returnType,isTrustedProver:p=>p?.trusted===true};
  const node={getNodeInfo:async()=>({l1ChainId:chainId,realProofs:nodeProofs,rollupVersion:1,l1ContractAddresses:{rollupAddress:rollup}}),
   getBlock:async tag=>typeof tag==='number'&&blockMismatch?{...block,hash:new Field(99)}:block,
   getContract:async()=>({currentContractClassId:new Field(actualClass)}),
@@ -38,7 +46,7 @@ async function fixture(overrides={}){
   sendTx:async()=>{assert(Object.values(saved.privateBokEscrow.operations).flatMap(r=>[r,...(r.replacement?[r.replacement]:[])]).some(r=>r.txHash===txHash&&r.phase==='submission-unknown'),'exact durable hash before send');sends++;if(sendLost)throw Error('Secret raw transport error');},
   getTxReceipt:async()=>receipt,getTxEffect:async()=>effect};
  const tx={data:{feePayer:new Field(operator),constants:{txContext:{get chainId(){return new Field(chainId);},version:new Field(1)}}},getTxHash:()=>new Field(txHash),toBuffer:()=>Buffer.from('unit fake transaction'),
-  getPublicCallRequestsWithCalldata:()=>(payloadCalls??[lastCall]).map(c=>({request:{contractAddress:new Field(wrongCall?99:address),msgSender:new Field(operator)},functionSelector:c.selector,args:c.args}))};
+  getPublicCallRequestsWithCalldata:()=>(payloadCalls??[lastCall]).map(c=>({request:{contractAddress:new Field(wrongCall?99:address),msgSender:new Field(c.name==='publish_reply'?address:operator)},functionSelector:c.name==='publish_reply'?replySelector:c.selector,args:c.name==='publish_reply'?[...c.args,...tipPoint]:c.args}))};
  tx.data.getNonRevertiblePublicCallRequests=()=>[];tx.data.getRevertiblePublicCallRequests=()=>payloadCalls??[lastCall];tx.data.getTeardownPublicCallRequest=()=>undefined;
  const maxTxGasLimits=new Gas(10000,1000000);
  const wallet={registerContract:async()=>{},completeFeeOptions:async options=>{feeQuotes++;assert.equal(options.forEstimation,undefined);return {gasSettings:GasSettings.fallback({gasLimits:maxTxGasLimits,maxFeesPerGas:new GasFees(2n,3n)})};},createTxExecutionRequestFromPayloadAndFee:async(p,from,fee)=>{payloadCalls=p.calls;return {payload:p,salt:'same nonce',authWitnesses:['same authorization'],txContext:{chainId:new Field(chainId),version:new Field(1),gasSettings:fee.gasSettings}};},scopesFrom:()=>[],senderForTagsFrom:()=>new Field(operator),
@@ -427,9 +435,26 @@ test('unit fake: distinct latest block and reorg during final guard remain autho
 test('unit fake: atomic final reply proves and submits one exact ordered three-call transaction',async()=>{
  const f=await fixture(),fields=Array(32).fill(H(0)),args=[f.id,0,120n,H(88),H(89),fields,1,0,0],op=f.op('finalize_reply',args);
  const result=await f.port.finalize_reply(...args,op);assert.equal(result.status,'succeeded');assert.deepEqual(f.counts(),{proofs:1,sends:1});
- const requests=f.tx.getPublicCallRequestsWithCalldata();assert.deepEqual(requests.map(c=>c.args.length),[4,37,1]);
+ const requests=f.tx.getPublicCallRequestsWithCalldata();assert.deepEqual(requests.map(c=>c.args.length),[4,39,1]);
  assert.equal(f.journal().operations[op.operationId].method,'finalize_reply');
  await (await f.create()).finalize_reply(...args,op);assert.deepEqual(f.counts(),{proofs:1,sends:1});
+});
+test('private reply continuation rejects changed sender, selector, arguments and invalid tip points before broadcast',async()=>{
+ for(const change of [
+  call=>{call.request.msgSender=new Field(53);},
+  call=>{call.functionSelector=new Field(9);},
+  call=>{call.args[0]=new Field(99);},
+  call=>{call.args.pop();},
+  call=>{call.args.splice(-2,2,new Field(0),new Field(0));},
+  call=>{call.args.splice(-2,2,new Field(1),new Field(1));},
+  call=>{call.args[call.args.length-2]=new Field(Fr.MODULUS);},
+ ]){
+  const f=await fixture(),original=f.tx.getPublicCallRequestsWithCalldata;
+  f.tx.getPublicCallRequestsWithCalldata=()=>{const calls=original();change(calls[1]);return calls;};
+  const args=[f.id,0,120n,H(88),H(89),Array(32).fill(H(0)),1,0,0];
+  await assert.rejects(f.port.finalize_reply(...args,f.op('finalize_reply',args)),/unresolved/);
+  assert.deepEqual(f.counts(),{proofs:1,sends:0});
+ }
 });
 test('unit fake: atomic final reply rejects non-revertible calls before broadcast',async()=>{
  const f=await fixture();f.tx.data.getNonRevertiblePublicCallRequests=()=>[{}];
@@ -493,7 +518,7 @@ test('explicit final reply replacement binds all nine original arguments and nev
  assert.equal((await f.port.replaceDroppedOperation(f.authority)).status,'succeeded');
  const record=f.journal().operations[f.operation.operationId];assert.equal(record.replacement.method,'finalize_reply');
  assert.deepEqual(record.replacement.args,original.args);assert.equal(record.argsDigest,original.argsDigest);assert.equal(record.txHash,original.txHash);
- assert.deepEqual(f.tx.getPublicCallRequestsWithCalldata().map(call=>call.args.length),[4,37,1]);
+ assert.deepEqual(f.tx.getPublicCallRequestsWithCalldata().map(call=>call.args.length),[4,39,1]);
  assert.deepEqual(f.feeCounts(),{validations:1,feeQuotes:1,balanceReads:1});assert.deepEqual(f.counts(),{proofs:1,sends:1});
  assert.equal((await (await f.create()).replaceDroppedOperation(f.authority)).status,'succeeded');assert.deepEqual(f.counts(),{proofs:1,sends:1});
  f.setOriginal('checkpointed');assert.equal((await f.port.inspectOperation(f.operation.operationId)).txHash,f.originalHash);
