@@ -21,6 +21,7 @@ def project(value, now=None):
   if type(item.get('ok')) is not bool:continue
   out['external'][key]={'ok':item['ok']}
   if external.numeric(item.get('latencyMs'),60000):out['external'][key]['latencyMs']=item['latencyMs']
+ out['backup']=external.aggregate_backups(out['hosts'],now)
  return out
 
 def add_local_projections(value, directory):
@@ -41,11 +42,6 @@ def add_local_projections(value, directory):
   candidate=source.get(key)
   if type(candidate) in (int,float) and 0<=candidate<1e12:spending[key]=candidate
  if spending:value['spending']=spending
- source=read('backup-status.json');backup={}
- if source.get('configured') is True:backup['configured']=True
- for key in ('lastSuccessAt','lastVerifiedRestoreAt'):
-  if timestamp(source.get(key)):backup[key]=timestamp(source[key])
- if backup:value['backup']=backup
  return value
 
 def main():

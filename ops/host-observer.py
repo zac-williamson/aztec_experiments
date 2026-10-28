@@ -70,9 +70,31 @@ def moderator_health():
   except (ValueError,TypeError,KeyError):continue
  return {'status':'unknown'}
 
+def project_backup_status(value, configured=False):
+ result={'configured':configured or isinstance(value,dict),'lastOutcome':'unknown','lastSuccessAt':None,'lastVerifiedRestoreAt':None}
+ if not isinstance(value,dict):return result
+ result['lastOutcome']=value.get('lastOutcome') if value.get('lastOutcome') in ('uploaded','verified','backup-failed','restore-failed','cleanup-failed') else 'unknown'
+ for key in ('lastSuccessAt','lastVerifiedRestoreAt'):
+  try:
+   timestamp=datetime.datetime.fromisoformat(value[key].replace('Z','+00:00'))
+   if timestamp.tzinfo:result[key]=timestamp.astimezone(datetime.timezone.utc).isoformat()
+  except (KeyError,AttributeError,TypeError,ValueError):pass
+ return result
+
+def backup_status(role):
+ # Missing configured status must be visible, including a timer that never ran.
+ configured=False
+ try:configured=subprocess.check_output(['systemctl','show','rolling-ops-backup-'+role+'.service','--property=LoadState','--value'],text=True,timeout=2,stderr=subprocess.DEVNULL).strip()=='loaded'
+ except (OSError,subprocess.SubprocessError):pass
+ try:
+  source=pathlib.Path('/var/lib/rolling-ops-backup-'+role+'/status.json')
+  if source.is_symlink() or not source.is_file() or source.stat().st_size>4096:return project_backup_status(None,configured)
+  return project_backup_status(json.loads(source.read_text()),True)
+ except (OSError,ValueError,TypeError):return project_backup_status(None,configured)
+
 def observe(role, config, state_path=None):
  now=datetime.datetime.now(datetime.timezone.utc).isoformat()
- out={'schemaVersion':1,'role':role,'observedAt':now,'metrics':{},'services':{},'health':{}}
+ out={'schemaVersion':1,'role':role,'observedAt':now,'metrics':{},'services':{},'health':{},'backup':backup_status(role)}
  for name in SERVICES[role]:
   try:
    data=subprocess.check_output(['systemctl','show',name+'.service','--property=ActiveState,SubState,NRestarts'],text=True,timeout=2,stderr=subprocess.DEVNULL)

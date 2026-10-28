@@ -74,13 +74,48 @@ class SnapshotPullTests(unittest.TestCase):
   result=pull.project(value);self.assertNotIn('PRIVATE_SENTINEL',json.dumps(result));self.assertEqual(result['external']['observedAt'],at)
   value['observedAt']=(datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(seconds=181)).isoformat()
   with self.assertRaises(ValueError):pull.project(value)
- def test_local_budget_and_backup_are_preserved_without_arbitrary_fields(self):
+ def test_local_budget_survives_without_overriding_host_backup_projection(self):
   import tempfile
   pull=module('pull_snapshot_local','pull-snapshot.py');at=datetime.datetime.now(datetime.timezone.utc).isoformat()
   with tempfile.TemporaryDirectory() as directory:
    root=pathlib.Path(directory);(root/'spending.json').write_text(json.dumps({'observedAt':at,'limitUsd':50,'forecastUsd':10,'identity':'PRIVATE_SENTINEL'}));(root/'backup-status.json').write_text(json.dumps({'configured':True,'lastSuccessAt':at,'filename':'PRIVATE_SENTINEL'}))
-   result=pull.add_local_projections({'hosts':{}},root);self.assertEqual(result['spending']['forecastUsd'],10);self.assertTrue(result['backup']['configured']);self.assertNotIn('PRIVATE_SENTINEL',json.dumps(result))
+   result=pull.add_local_projections({'hosts':{},'backup':{'configured':True,'lastOutcome':'restore-failed'}},root);self.assertEqual(result['spending']['forecastUsd'],10);self.assertEqual(result['backup']['lastOutcome'],'restore-failed');self.assertNotIn('PRIVATE_SENTINEL',json.dumps(result))
+class BackupObservationTests(unittest.TestCase):
+ def setUp(self):
+  self.now=datetime.datetime.now(datetime.timezone.utc);self.at=self.now.isoformat()
+ def backup(self,**extra):return {'configured':True,'lastOutcome':'verified','lastSuccessAt':self.at,'lastVerifiedRestoreAt':self.at,**extra}
+ def hosts(self):
+  return {role:{'schemaVersion':1,'role':role,'observedAt':self.at,'services':{name:{'active':True,'running':True} for name in external.SERVICES[role]},'backup':self.backup()} for role in ('core','bok')}
+ def test_host_projection_drops_every_nonstatus_field(self):
+  source=self.backup(secret='PRIVATE_SENTINEL',archive='/private/path',lastAttemptAt=self.at)
+  projected=host.project_backup_status(source);self.assertEqual(set(projected),{'configured','lastOutcome','lastSuccessAt','lastVerifiedRestoreAt'});self.assertNotIn('PRIVATE_SENTINEL',json.dumps(projected))
+  cleaned=external.sanitize_host({**self.hosts()['core'],'backup':source},'core',self.now)
+  self.assertEqual(cleaned['backup'],projected);self.assertNotIn('/private/path',json.dumps(cleaned))
+ def test_absent_status_is_unknown_only_after_backup_unit_installed(self):
+  with patch.object(host.subprocess,'check_output',return_value='loaded\n'),patch.object(host.pathlib.Path,'is_file',return_value=False):
+   value=host.backup_status('core');self.assertTrue(value['configured']);self.assertFalse(external.backup_ready(value,self.now))
+  with patch.object(host.subprocess,'check_output',return_value='not-found\n'),patch.object(host.pathlib.Path,'is_file',return_value=False):
+   value=host.backup_status('core');self.assertFalse(value['configured']);self.assertTrue(external.backup_ready(value,self.now))
+ def test_failed_stale_or_unknown_configured_backups_are_not_ready(self):
+  self.assertTrue(external.backup_ready(self.backup(),self.now));self.assertTrue(external.backup_ready({'configured':False},self.now))
+  for outcome in ('backup-failed','restore-failed','cleanup-failed','unknown'):
+   self.assertFalse(external.backup_ready(self.backup(lastOutcome=outcome),self.now))
+  for field,seconds in [('lastSuccessAt',48*3600+1),('lastVerifiedRestoreAt',7*86400+1)]:
+   self.assertFalse(external.backup_ready(self.backup(**{field:(self.now-datetime.timedelta(seconds=seconds)).isoformat()}),self.now))
+  self.assertFalse(external.backup_ready(self.backup(lastSuccessAt=(self.now+datetime.timedelta(seconds=31)).isoformat()),self.now))
+  hosts=self.hosts();hosts['bok']['backup']['lastOutcome']='restore-failed';self.assertFalse(external.host_ready(hosts['bok'],'bok',self.now))
+ def test_two_host_aggregate_uses_oldest_dates_and_worst_outcome(self):
+  hosts=self.hosts();old=(self.now-datetime.timedelta(days=1)).isoformat();hosts['bok']['backup']['lastSuccessAt']=old
+  self.assertEqual(external.aggregate_backups(hosts,self.now)['lastSuccessAt'],old)
+  hosts['bok']['backup']['lastOutcome']='restore-failed';self.assertEqual(external.aggregate_backups(hosts,self.now)['lastOutcome'],'restore-failed')
+  hosts['core']['backup']['lastOutcome']='cleanup-failed';self.assertEqual(external.aggregate_backups(hosts,self.now)['lastOutcome'],'cleanup-failed')
+ def test_missing_host_unknown_or_future_backup_cannot_aggregate_green(self):
+  hosts=self.hosts();hosts.pop('bok');result=external.aggregate_backups(hosts,self.now);self.assertEqual(result['lastOutcome'],'unknown');self.assertIsNone(result['lastSuccessAt'])
+  hosts=self.hosts();hosts['bok']['backup']['lastOutcome']='unknown';self.assertIsNone(external.aggregate_backups(hosts,self.now)['lastVerifiedRestoreAt'])
+  hosts=self.hosts();hosts['bok']['backup']['lastSuccessAt']=(self.now+datetime.timedelta(seconds=31)).isoformat();self.assertIsNone(external.aggregate_backups(hosts,self.now)['lastSuccessAt'])
+  self.assertEqual(external.aggregate_backups({'core':{'backup':{'configured':False}},'bok':{'backup':{'configured':False}}},self.now),{'configured':False})
+ def test_pull_preserves_bok_restore_failure_even_when_top_level_claims_success(self):
+  pull=module('pull_snapshot_backup','pull-snapshot.py');hosts=self.hosts();hosts['bok']['backup']['lastOutcome']='restore-failed'
+  value={'schemaVersion':1,'observedAt':self.at,'hosts':hosts,'backup':self.backup(),'external':{'schemaVersion':1,'observedAt':self.at,'website':{'ok':True},'prover':{'ok':True},'feed':{'ok':True}}}
+  self.assertEqual(pull.project(value,self.now)['backup']['lastOutcome'],'restore-failed')
 if __name__=='__main__':unittest.main()
-
-
-

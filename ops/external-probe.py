@@ -9,6 +9,45 @@ COUNT_KEYS=('active','queued','retainedJobs','completed','failed','oldestJobAgeS
 def numeric(value,maximum=1e15):
  return type(value) in (int,float) and math.isfinite(value) and 0<=value<=maximum
 
+def timestamp(value):
+ try:
+  parsed=datetime.datetime.fromisoformat(value.replace('Z','+00:00'))
+  return parsed.astimezone(datetime.timezone.utc) if parsed.tzinfo else None
+ except (AttributeError,TypeError,ValueError):return None
+
+def sanitize_backup(value):
+ if not isinstance(value,dict) or value.get('configured') is not True:return {'configured':False}
+ result={'configured':True,'lastOutcome':value.get('lastOutcome') if value.get('lastOutcome') in ('uploaded','verified','backup-failed','restore-failed','cleanup-failed') else 'unknown'}
+ for key in ('lastSuccessAt','lastVerifiedRestoreAt'):
+  at=timestamp(value.get(key));result[key]=at.isoformat() if at else None
+ return result
+
+def backup_ready(backup,now=None):
+ if backup.get('configured') is not True:return True
+ if backup.get('lastOutcome') not in ('uploaded','verified'):return False
+ now=now or datetime.datetime.now(datetime.timezone.utc)
+ for key,maximum in [('lastSuccessAt',48*3600),('lastVerifiedRestoreAt',7*86400)]:
+  at=timestamp(backup.get(key))
+  if at is None or not -30<=(now-at).total_seconds()<=maximum:return False
+ return True
+
+def aggregate_backups(hosts,now=None):
+ now=now or datetime.datetime.now(datetime.timezone.utc)
+ backups=[sanitize_backup(hosts.get(role,{}).get('backup')) for role in ('core','bok')]
+ configured=[value for value in backups if value.get('configured') is True]
+ if not configured:return {'configured':False}
+ # A missing host cannot contribute a current positive backup observation.
+ missing_host=any(role not in hosts for role in ('core','bok'))
+ outcomes={value['lastOutcome'] for value in configured}
+ outcome=next((name for name in ('cleanup-failed','backup-failed','restore-failed') if name in outcomes),None)
+ if outcome is None:outcome='unknown' if missing_host or 'unknown' in outcomes else 'uploaded' if 'uploaded' in outcomes else 'verified'
+ result={'configured':True,'lastOutcome':outcome}
+ for key in ('lastSuccessAt','lastVerifiedRestoreAt'):
+  dates=[timestamp(value.get(key)) for value in configured]
+  dates=[at if at and (at-now).total_seconds()<=30 else None for at in dates]
+  result[key]=min(dates).isoformat() if not missing_host and outcome!='unknown' and all(dates) else None
+ return result
+
 def sanitize_host(value,role,now=None):
  """Second closed projection before persistence. No SSM stderr or raw text."""
  if not isinstance(value,dict) or value.get('schemaVersion')!=1 or value.get('role')!=role:return None
@@ -18,7 +57,7 @@ def sanitize_host(value,role,now=None):
   age=((now or datetime.datetime.now(datetime.timezone.utc))-observed).total_seconds()
   if age < -30 or age > 180:return None
  except (ValueError,KeyError,TypeError,AttributeError):return None
- result={'schemaVersion':1,'role':role,'observedAt':observed.astimezone(datetime.timezone.utc).isoformat(),'services':{},'metrics':{},'health':{}}
+ result={'schemaVersion':1,'role':role,'observedAt':observed.astimezone(datetime.timezone.utc).isoformat(),'services':{},'metrics':{},'health':{},'backup':sanitize_backup(value.get('backup'))}
  services=value.get('services') if isinstance(value.get('services'),dict) else {}
  for name in SERVICES[role]:
   service=services.get(name)
@@ -60,8 +99,9 @@ def collect_hosts(ssm,document,instances):
    if value is not None:result[role]=value
  return result
 
-def host_ready(host,role):
+def host_ready(host,role,now=None):
  if not host:return False
+ if not backup_ready(host.get('backup',{}),now):return False
  for name in SERVICES[role]:
   if host.get('services',{}).get(name,{}).get('active') is not True or host.get('services',{}).get(name,{}).get('running') is not True:return False
  for health in host.get('health',{}).values():
@@ -112,7 +152,7 @@ def handler(event, context):
  with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
   host_future=pool.submit(collect_hosts,boto3.client('ssm',config=client_config),os.environ['DOCUMENT'],instances)
   result=observe(os.environ['ORIGIN']);hosts=host_future.result()
- snapshot={'schemaVersion':1,'observedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'hosts':hosts,'external':result}
+ snapshot={'schemaVersion':1,'observedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'hosts':hosts,'external':result,'backup':aggregate_backups(hosts)}
  boto3.client('s3',config=client_config).put_object(Bucket=os.environ['BUCKET'],Key='snapshots/latest.json',Body=json.dumps(snapshot,separators=(',',':'),allow_nan=False).encode(),ContentType='application/json',CacheControl='no-store',ServerSideEncryption='AES256')
  metrics=[{'MetricName':name,'Value':1 if result[kind]['ok'] else 0,'Unit':'Count'} for name,kind in [('ExternalWebsiteHealthy','website'),('ExternalProverHealthy','prover'),('ExternalFeedHealthy','feed')]]
  metrics.extend([{'MetricName':'CoreHostReady' if role=='core' else 'BokHostReady','Value':1 if host_ready(hosts.get(role),role) else 0,'Unit':'Count'} for role in ('core','bok')])

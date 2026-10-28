@@ -85,10 +85,18 @@ The `SnapshotReadPolicy` stack output grants only GetObject on the exact aggrega
 key. Root applies that small policy to the existing host role; the monitoring
 stack never changes the host role. A root timer imports and re-projects the file
 every30seconds, atomically retaining observation timestamps. Failed pulls leave
-the prior timestamp intact so the dashboard becomes stale. Local projections in
-`/var/lib/rolling-ops/spending.json` and `backup-status.json` are independently read
-and merged using closed fields; external pulls cannot erase them. The dashboard
-process has no access to EC2 instance metadata.
+the prior timestamp intact so the dashboard becomes stale. The local spending projection in
+`/var/lib/rolling-ops/spending.json` is independently read using closed fields.
+Each host reads its own `/var/lib/rolling-ops-backup-{core,bok}/status.json`; only
+configured/outcome/success/verified-restore timestamps leave the host. A loaded
+backup service with no usable status is configured but unknown. Missing optional
+backup units do not alert. The external collector and snapshot pull re-project
+these fields, aggregate the oldest success/restore times and worst outcome across
+configured hosts, and preserve immediate backup/restore/cleanup failures. A missing
+host cannot produce an aggregate positive backup observation. Configured backups
+older than48hours, verified restores older than7days, unknown status and explicit
+failures make the corresponding host alarm unhealthy. The dashboard process has
+no access to EC2 instance metadata.
 
 Reserve USD10 for31days within the shared USD50 incremental budget. At the maximum
 75second runtime on every invocation:22,320 calls ×75s ×0.125GiB ×USD0.0000166667
