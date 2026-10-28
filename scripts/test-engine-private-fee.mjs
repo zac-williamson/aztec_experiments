@@ -871,12 +871,13 @@ test('atomic proving failure callback runs before transaction conversion, journa
  assert.deepEqual(calls,['private-validation','unsigned-failure']);
 });
 
-for(const ordinary of [true,false])test('only exact ordinary payload forwards known call pre-sync to native proof: '+ordinary,async()=>{
- const c=context(),stop=Error('inspection complete'),calls=ordinary?[{name:'pay_fee'},{name:'post'}]:[{name:'pay_fee'},{name:'post_with_bok'}];
- class BaseWallet{constructor(pxe){this.pxe=pxe;}async completeFeeOptions(options){return {gasSettings:options.gasSettings};}async createTxExecutionRequestFromPayloadAndFee(payload){assert.equal(payload.calls,calls);return {};}scopesFrom(){return [owner];}senderForTagsFrom(){return owner;}}
- const pxe={async proveTxWithPublicValidation(_request,opts){assert.equal(opts.preSyncCalls,ordinary?calls:undefined);throw stop;}};
+for(const application of ['post','post_with_bok'])test('generic validated proof preserves fee capsules without class-qualified pre-sync: '+application,async()=>{
+ const c=context(),stop=Error('inspection complete'),calls=[{name:'pay_fee'},{name:application}],capsules=[{contractAddress:new Fr(17),storageSlot:new Fr(18),data:[new Fr(19)]}];
+ const payload={calls,capsules};
+ class BaseWallet{constructor(pxe){this.pxe=pxe;}async completeFeeOptions(options){return {gasSettings:options.gasSettings};}async createTxExecutionRequestFromPayloadAndFee(value){assert.equal(value,payload);assert.equal(value.capsules,capsules);return {capsules:value.capsules};}scopesFrom(){return [owner];}senderForTagsFrom(){return owner;}}
+ const pxe={async proveTxWithPublicValidation(request,opts){assert.equal(request.capsules,capsules);assert.equal(opts.preSyncCalls,undefined);throw stop;}};
  const wallet=c.BillboardPrivateFeeRouting.createAztecWallet({BaseWallet,GasSettings},pxe,{}, {},()=>{},Fr.ONE);
- await assert.rejects(wallet.sendTx({calls}, {from:owner,fee:{gasSettings:gas()},atomicSimulation:true}),error=>error===stop);
+ await assert.rejects(wallet.sendTx(payload, {from:owner,fee:{gasSettings:gas()},atomicSimulation:true}),error=>error===stop);
 });
 
 for(const tier of ['proposed','checkpointed'])test('actual wallet delegates '+tier+' completion to exact encrypted journal native waiter',async()=>{

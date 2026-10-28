@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: tips release 86be is deployed. Signup witness class fix 83f3 passed 34 focused checks. Static publication stopped before activation because the publisher selected an inherited stale wallet config; it now binds running and configured wallet paths separately, with 38 focused checks and independent review. Restage and actual signup/post/repeated paid-like acceptance remain pending. Basic 22-byte post on prior 8e68 cost 2.5016104002576 FEE. Performance remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: fresh signup passed on live83f3 with one Ethereum payment and native claim block9448. First post stopped unsigned before proving. Source tracing found engine name-only [pay_fee,post] heuristic entering old class-qualified native sync; removed, two focused request/capsule tests passed and independently reviewed. Separate saved-review error BB_POST_FEE_PROFILE_MISMATCH captured and fixed with actual-artifact witness binding;22 checks passed. SDK/wallet rebuilt; combined static publication and paid-like acceptance next. Performance paused.
 
 ## Ready internal work
 

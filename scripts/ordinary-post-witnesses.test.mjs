@@ -8,17 +8,18 @@ import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
 import {computePublicDataTreeLeafSlot,deriveStorageSlotInMap} from '@aztec-labs/stdlib/hash';
 import {BarretenbergSync} from '@aztec-foundation/bb.js';
 import {withCache} from '../node_modules/@aztec-labs/pxe/dest/node/caching_aztec_node.js';
-import {ORDINARY_POST_GAS_PROFILE} from '../shared/ordinary-post-fees.mjs';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
+import {getContractClassFromArtifact} from '@aztec-labs/stdlib/contract';
 after(()=>BarretenbergSync.destroySingleton());
 const source=fs.readFileSync(new URL('../shared/ordinary-post-witnesses.mjs',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace('export async function','async function');
-async function fixture({mature=true}={}){
- const board={address:AztecAddress.fromFieldUnsafe(new Fr(2)),currentContractClassId:Fr.fromString(ORDINARY_POST_GAS_PROFILE.boardClassId)};
- const artifact={storageLayout:{config:{slot:20},deposits:{slot:31},...Object.fromEntries(['post_exists','post_time','post_flag_deadline','post_flagged'].map((name,i)=>[name,{slot:i+1}]))}};
+async function fixture({mature=true,actualArtifact}={}){
+ const board={address:AztecAddress.fromFieldUnsafe(new Fr(2)),currentContractClassId:actualArtifact?(await getContractClassFromArtifact(actualArtifact)).id:new Fr(42)};
+ const artifact=actualArtifact??{name:'RollingBoard',storageLayout:{config:{slot:20},deposits:{slot:31},...Object.fromEntries(['post_exists','post_time','post_flag_deadline','post_flagged'].map((name,i)=>[name,{slot:i+1}]))}};
  const calls=[],pending=[],noteCalls=[],notePending=[];let rejectFirst=false,hold=false,holdNotes=false,anchor={number:1,hash:BlockHash.fromString('0x'+'1'.padStart(64,'0'))};
  const deadline=await computePublicDataTreeLeafSlot(board.address,await deriveStorageSlotInMap(new Fr(3),new Fr(9)));
  const node={getNoteHashMembershipWitness:async(at,hash)=>{noteCalls.push({at,hash});if(holdNotes)await new Promise(resolve=>notePending.push(resolve));return {index:1n,siblingPath:[]};},getPublicDataWitness:async(at,leaf)=>{calls.push({at,leaf});if(rejectFirst&&calls.length===1)throw Error("witness unavailable");if(hold)await new Promise(resolve=>pending.push(resolve));return {leafPreimage:{leaf:{slot:leaf,value:leaf.equals(deadline)?new Fr(mature?50:150):Fr.ONE}}};}};
  const pxe={node:withCache(node),getSyncedBlockHeader:async()=>({globalVariables:{timestamp:100n},toBlockParameter:async()=>anchor})},wallet={pxe};
- const context=vm.createContext({Fr,computePublicDataTreeLeafSlot,deriveStorageSlotInMap,ORDINARY_POST_GAS_PROFILE,isPrivatePXEForNode:(value,route)=>value===pxe&&route===node});vm.runInContext(source,context);
+ const context=vm.createContext({Fr,computePublicDataTreeLeafSlot,deriveStorageSlotInMap,getContractClassFromArtifact:actualArtifact?getContractClassFromArtifact:async()=>({id:new Fr(42)}),isPrivatePXEForNode:(value,route)=>value===pxe&&route===node});vm.runInContext(source,context);
  const args={wallet,node,board,artifact,hints:[{note:{post_id:'9',is_dummy:false}},null]};
  return {run:()=>context.prefetchOrdinaryPostWitnesses(args),args,calls,pending,noteCalls,notePending,holdNotes:()=>{holdNotes=true;},hold:()=>{hold=true;},rejectFirst:()=>{rejectFirst=true;},advance:()=>{anchor={number:2,hash:BlockHash.fromString('0x'+'2'.padStart(64,'0'))};}};
 }
@@ -53,6 +54,7 @@ test('changing the node while the anchor is pending starts no foreign reads',asy
  const header=f.args.wallet.pxe.getSyncedBlockHeader;
  f.args.wallet.pxe.getSyncedBlockHeader=()=>new Promise(resolve=>{release=async()=>resolve(await header());});
  const work=f.run();const rejection=assert.rejects(work,{code:'ROLLING_CONTEXT_CHANGED'});
+ for(let i=0;i<20&&!release;i++)await new Promise(resolve=>setImmediate(resolve));
  f.args.wallet.pxe.node={getPublicDataWitness:()=>{throw Error('foreign read');}};
  await release();await rejection;assert.equal(f.calls.length,0);
 });
@@ -106,4 +108,20 @@ test('public failure drains held note prefetch before releasing the operation',a
  const work=f.run().finally(()=>settled=true),rejected=assert.rejects(work,/witness unavailable/);
  for(let i=0;i<50&&f.notePending.length<1;i++)await new Promise(resolve=>setImmediate(resolve));
  assert.equal(f.notePending.length,1);assert.equal(settled,false);f.notePending[0]();await rejected;assert.equal(settled,true);
+});
+
+
+test('current compiled Board artifact prefetches without an old gas-profile class pin',async()=>{
+ const artifact=loadContractArtifact(JSON.parse(fs.readFileSync(process.env.ROLLING_TEST_ARTIFACT??new URL('../billboard/target/rolling_contract-RollingBoard.json',import.meta.url),'utf8')));
+ const f=await fixture({actualArtifact:artifact});f.args.hints=[null,null];await f.run();
+ assert.equal(f.calls.length,1);
+ const expected=await computePublicDataTreeLeafSlot(f.args.board.address,new Fr(BigInt(artifact.storageLayout.config.slot)+10n));
+ assert(f.calls[0].leaf.equals(expected));
+});
+for(const mismatch of ['class','artifact-name','address'])test('rejects mismatched ordinary witness context before RPC: '+mismatch,async()=>{
+ const f=await fixture();
+ if(mismatch==='class')f.args.board.currentContractClassId=new Fr(43);
+ if(mismatch==='artifact-name')f.args.artifact.name='OtherBoard';
+ if(mismatch==='address')delete f.args.board.address;
+ await assert.rejects(f.run());assert.equal(f.calls.length,0);
 });

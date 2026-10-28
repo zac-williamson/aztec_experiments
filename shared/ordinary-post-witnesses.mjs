@@ -1,7 +1,7 @@
 import {Fr} from '@aztec-labs/foundation/curves/bn254';
 import {computePublicDataTreeLeafSlot,deriveStorageSlotInMap} from '@aztec-labs/stdlib/hash';
 import {isPrivatePXEForNode} from './private-pxe.mjs';
-import {ORDINARY_POST_GAS_PROFILE} from './ordinary-post-fees.mjs';
+import {getContractClassFromArtifact} from '@aztec-labs/stdlib/contract';
 
 // The private circuit authenticates immutable configuration and screened history.
 // Fetch their independent public witnesses together, through the
@@ -9,10 +9,16 @@ import {ORDINARY_POST_GAS_PROFILE} from './ordinary-post-fees.mjs';
 // No witness or state is reused across anchors and no private execution is run.
 export async function prefetchOrdinaryPostWitnesses({wallet,node,board,artifact,hints,owner,noteHashWitnessHints}) {
   const pxe=wallet?.pxe;
-  if(!isPrivatePXEForNode(pxe,node)||board?.currentContractClassId?.toString()!==ORDINARY_POST_GAS_PROFILE.boardClassId||!Array.isArray(hints)||hints.length!==2)
+  if(!isPrivatePXEForNode(pxe,node)||!board?.address||!board?.currentContractClassId||artifact?.name!=='RollingBoard'||!Array.isArray(hints)||hints.length!==2)
     throw Object.assign(Error('Invalid ordinary post witness context'),{code:'BB_POST_FEE_PROFILE_MISMATCH'});
   const cachedNode=pxe.node;
   const guard=()=>{if(wallet.pxe!==pxe||pxe.node!==cachedNode||!isPrivatePXEForNode(pxe,node))throw Object.assign(Error('Ordinary post witness context changed'),{code:'ROLLING_CONTEXT_CHANGED'});};
+  // Witness preparation is independent of optional class-qualified gas profiles.
+  // Bind this deployment to its actual artifact; native execution remains the
+  // authority for the registered class and witnesses at the held anchor.
+  if(!board.currentContractClassId.equals((await getContractClassFromArtifact(artifact)).id))
+    throw Object.assign(Error('Invalid ordinary post artifact'),{code:'ROLLING_ABI_MISMATCH'});
+  guard();
   const posts=hints.map((hint,index)=>hint&&!hint.note.is_dummy?{post:new Fr(BigInt(hint.note.post_id)),index}:null).filter(Boolean);
   const header=await pxe.getSyncedBlockHeader(),anchor=await header.toBlockParameter();
   guard();
