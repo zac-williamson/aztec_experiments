@@ -55,9 +55,9 @@ test('schema2 separates the72MiB derived asset from bounded network assets', () 
   assert.equal(manifest.files.length, 3);
   assert.ok(manifest.files.every(file => file.bytes <= 64 * 1024 * 1024));
   assert.equal(manifest.derivedG1.bytes, 72 * 1024 * 1024);
-  assert.equal(manifest.aztecVersion, '6.0.0-rc.3');
-  assert.equal(manifest.provenance.version, '6.0.0-rc.6');
-  assert.equal(manifest.derivedG1.derivation.packageVersion, '6.0.0-rc.6');
+  assert.equal(manifest.aztecVersion, '6.0.0');
+  assert.equal(manifest.provenance.version, '6.0.0');
+  assert.equal(manifest.derivedG1.derivation.packageVersion, '6.0.0');
 });
 for (const [label, mutate] of [
   ['old partial Grumpkin chunk', m => { Object.assign(m.files[2], {numPoints:65537,bytes:4194368}); m.files[2].range.end=4194367; }],
@@ -79,10 +79,10 @@ for (const [label, mutate] of [
   ['wrong points', m => { m.derivedG1.numPoints--; }],
   ['unreviewed method', m => { m.derivedG1.derivation.method = 'other'; }],
   ['package mismatch', m => { m.derivedG1.derivation.packageVersion = '5.0.0'; }],
-  ['SDK version used as foundation version', m => { m.derivedG1.derivation.packageVersion = m.aztecVersion; }],
+  ['old foundation derivation version', m => { m.derivedG1.derivation.packageVersion = '6.0.0-rc.6'; }],
   ['old SDK', m => { m.aztecVersion = '6.0.0-rc.1'; }],
   ['wrong downloader package', m => { m.provenance.package = '@aztec-labs/pxe'; }],
-  ['wrong downloader version', m => { m.provenance.version = m.aztecVersion; }],
+  ['old downloader version', m => { m.provenance.version = '6.0.0-rc.6'; }],
   ['wrong downloader source', m => { m.provenance.source = 'other.js'; }],
   ['wrong downloader hash', m => { m.provenance.sourceSha256 = '0'.repeat(64); }],
   ['input checksum mismatch', m => { m.derivedG1.derivation.inputSha256 = '0'.repeat(64); }],
@@ -98,9 +98,9 @@ for (const [label, mutate] of [
   });
 }
 
-test('declared rc6 derivation WASM and downloader match installed package bytes without running WASM', async () => {
+test('declared stable6 derivation WASM and downloader match installed package bytes without running WASM', async () => {
   const installed = JSON.parse(await fs.readFile(new URL('../node_modules/@aztec-foundation/bb.js/package.json', import.meta.url)));
-  assert.equal(installed.version, '6.0.0-rc.6');
+  assert.equal(installed.version, '6.0.0');
   const wasm = await fs.readFile(new URL('../' + manifest.derivedG1.derivation.wasmSource, import.meta.url));
   verifyDerivationWasm(manifest, wasm);
   const downloader = await fs.readFile(new URL('../' + manifest.provenance.source, import.meta.url));

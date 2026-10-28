@@ -7,20 +7,20 @@ import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {ROOT,pins,bbBinary} from './toolchain.mjs';
 
-// Package inventory is not runtime qualification. The exact rc6 registry archive
-// was checked against the committed npm SHA512 before these four member hashes
-// were recorded; see G13/native-prover-platform-check/official-package-inventory.
+// Package inventory is not runtime qualification. The stable 6.0.0 registry
+// archive was checked against the committed npm SHA512 before recording these
+// four member hashes; execution remains restricted to the qualified host pins.
 const inventory={
- 'linux-x64':{directory:'amd64-linux',sha256:'fa4b12adaefd5684b53b802346b9fe839ab3d6a4a829a5ea4efd6bd200e0829f'},
- 'linux-arm64':{directory:'arm64-linux',sha256:'83645bab6e43d3ea6ec65634d31d11490b1150190d6696206f2a7b8e1e0d79e0'},
- 'darwin-x64':{directory:'amd64-macos',sha256:'170d938cdd0d480d99bf51f3ef044c85ab8cc9b8dea897119d2c8521167366b5'},
- 'darwin-arm64':{directory:'arm64-macos',sha256:'8acdba0ecf928087e60bdca0206a508f109e7b62ca621b08fa62263509090217'},
+ 'linux-x64':{directory:'amd64-linux',sha256:'5bbb64800d431c6760a70d8723be4eaf37ed10e8fbfe2842bb85b8436180c130'},
+ 'linux-arm64':{directory:'arm64-linux',sha256:'d43cdeac2e1506ee751e4428ebec224884108957dfaedcf69170671548b35b97'},
+ 'darwin-x64':{directory:'amd64-macos',sha256:'0b1929c13a46c87fd2ee026af6a665d9edee0e4a8957e5455666a876b4735a4c'},
+ 'darwin-arm64':{directory:'arm64-macos',sha256:'f3af6634d08980744f6c9d18010f65b4fd2bbcf23f99e62fd81078ca9b35aa7e'},
 };
 test('every bundled native prover matches its integrity-locked package checksum',()=>{
  const lock=JSON.parse(fs.readFileSync(path.join(ROOT,'package-lock.json'),'utf8')).packages['node_modules/@aztec-foundation/bb.js'];
- assert.equal(lock.version,'6.0.0-rc.6');
- assert.equal(lock.resolved,'https://registry.npmjs.org/@aztec-foundation/bb.js/-/bb.js-6.0.0-rc.6.tgz');
- assert.equal(lock.integrity,'sha512-xDMJKYUKpYxHAtrC48m+wQKN3bWM7muX6et/OZUbQC5AzoezT5ePeTnYKYeOYQQvLgdNHv/nYJVLRvG/Bn63yg==');
+ assert.equal(lock.version,'6.0.0');
+ assert.equal(lock.resolved,'https://registry.npmjs.org/@aztec-foundation/bb.js/-/bb.js-6.0.0.tgz');
+ assert.equal(lock.integrity,'sha512-w+rlVHbSbb1neDeJGMDSbNZCxuD6TeSrN/1lbnVgqhKcVfqdDXdTt2b6RUToCsk7Q2Dmx4oqU5tfBcFY//LQtg==');
  const installed=path.join(ROOT,'node_modules/@aztec-foundation/bb.js');
  assert.equal(JSON.parse(fs.readFileSync(path.join(installed,'package.json'),'utf8')).version,lock.version);
  assert.equal(pins.nativeProverPackage,lock.version);
@@ -30,7 +30,7 @@ test('every bundled native prover matches its integrity-locked package checksum'
   const bytes=fs.readFileSync(path.join(installed,'build',directory,'bb'));
   assert.equal(createHash('sha256').update(bytes).digest('hex'),sha256,platform);
  }
- // b3f5f6b qualified Darwin arm64; ae1a220 added the measured Linux x64 pin.
+ // The stable 6.0.0 runtime qualifies Darwin arm64 and Linux x64 only.
  // Bundled Intel macOS and Linux ARM64 binaries remain unqualified to execute.
  assert.deepEqual(Object.keys(pins.nativeProver).sort(),['darwin-arm64','linux-x64']);
  for(const [platform,pin] of Object.entries(pins.nativeProver)){
