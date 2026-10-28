@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "kind": "manual-incremental-planning-forecast",
+  "record": {
+    "observedAt": "2026-10-28T12:32:29Z",
+    "limitUsd": 50,
+    "forecastUsd": 25,
+    "incurredUsd": null
+  },
+  "expiresAt": "2026-10-30T12:32:29Z",
+  "forecastWindowDays": 31,
+  "reviewBy": "2026-11-28",
+  "sourceLedger": "execution/infrastructure-ledger.json#launch_operations_20261028",
+  "forecastComponentsUsd": {
+    "existingHostSidecars": 0,
+    "CognitoSmallOperatorPool": 1,
+    "externalMonitorLambdaScheduleLogs": 4,
+    "alarmsAndMetrics": 5,
+    "S3EncryptedBackups": 3,
+    "stagingTestTraffic": 8,
+    "contingency": 4
+  },
+  "unallocatedBufferUsd": 25,
+  "actualBilledSpendUsd": null,
+  "publication": {
+    "instanceId": "i-0a9b5b9ba55815cda",
+    "file": "/var/lib/rolling-ops/spending.json",
+    "owner": "root:rolling-ops",
+    "mode": "0640",
+    "automaticRefresh": false,
+    "ssmCommandId": "59b619df-ff2d-4c8e-80e6-9a9cd7f1eb8f",
+    "status": "published-and-readback-verified",
+    "projectionVerified": {
+      "currentForecastUsd": 25,
+      "incurredUsd": null,
+      "after49HoursForecastUsd": null,
+      "after49HoursStatus": "unknown"
+    },
+    "collectorReadback": {
+      "ssmCommandId": "ccd86e7f-d815-4841-a5e4-8256697301bc",
+      "path": "/var/lib/rolling-ops/reliability-inputs.json",
+      "forecastUsd": 25,
+      "incurredUsd": null,
+      "observedAtPreserved": true
+    }
+  },
+  "budgetEvaluation": {
+    "checkedAt": "2026-10-28T12:32:29Z",
+    "existingBudgets": [
+      {
+        "name": "My Monthly Cost Budget",
+        "limitUsd": 20,
+        "scope": "Account-wide excluding credit and refund records"
+      },
+      {
+        "name": "Rolling Chat ongoing hosting",
+        "limitUsd": 1500,
+        "scope": "All services except Amazon Lightsail"
+      }
+    ],
+    "activeCostAllocationTagCount": 0,
+    "decision": "Do not add or modify an AWS Budget: neither existing scope isolates the new launch resources, and cost allocation tags are inactive. A shared-service filter would mix existing hosting charges with this incremental allowance.",
+    "awsChanges": false,
+    "sources": [
+      "https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-create-filters.html",
+      "https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/activating-tags.html"
+    ]
+  },
+  "guardrails": [
+    "No new EC2 servers; reuse existing hosts",
+    "One monitoring Lambda, 128 MiB, 75-second timeout, concurrency one, no retries; one invocation every two minutes",
+    "Monitor schedule ends 2026-11-28T11:12:00Z; reconcile before extending",
+    "Daily backups contain only explicit bounded inputs; seven-day private unversioned object lifecycle",
+    "Existing proof queue, relay gas budget, and Bok request/provider limits remain in place",
+    "Review optional new work against the single shared USD50 allowance; reconcile manual forecast at least every 48 hours and before extending paid resources",
+    "Review all dedicated resources after 31 days; charges for KMS/alarms/storage can continue until resources are retired"
+  ]
+}

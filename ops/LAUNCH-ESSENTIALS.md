@@ -172,3 +172,37 @@ share the same instance role and therefore have the union of these permissions.
 The $3 reservation covers the first 31 days within the shared launch budget;
 review by 28 November 2026. It is an allocation, not a billing cap. KMS and SSM
 keys must outlive all retained archives if backups are later retired.
+
+## Incremental spending visibility
+
+The operator dashboard's **Recorded estimate** is a manually reviewed planning
+forecast for the initial 31 days, currently **$25 against the $50 incremental
+allowance**. Existing application hosting has a separate $1,500/month allowance.
+Actual billed launch charges are unknown; they are never represented as zero.
+The reservation breakdown remains in the single infrastructure ledger. See
+[`spending-estimate.json`](../deploy/launch-ops/spending-estimate.json) for the
+review timestamp, components, publication evidence and exact expiry.
+
+The core input is `/var/lib/rolling-ops/spending.json`, owned by
+`root:rolling-ops` with mode 0640. Its only fields are `observedAt`, `limitUsd`,
+`forecastUsd` and `incurredUsd` (null when unknown). The snapshot collector carries
+this timestamp unchanged. After 48 hours the forecast becomes unknown. No timer
+refreshes the planning estimate. An operator must reconcile the resource ledger
+and pending charges before atomically replacing the file with a genuinely fresh
+review; merely updating its timestamp would hide stale information.
+
+The live account has a $20 account-wide budget and the existing $1,500 hosting
+budget. Neither identifies the new launch resources, and no cost allocation tags
+are active. Service-only filters would also include existing hosting resources.
+No budget or billing settings were changed. [AWS Budget tag filters require
+active allocation tags](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-create-filters.html);
+[activation can take time](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/activating-tags.html).
+
+The practical guard is the small fixed resource set and service limits: existing
+hosts, one monitoring worker with bounded memory/runtime/concurrency and no
+retries, a two-minute schedule ending 28 November, explicit small daily backups
+with seven-day retention, and existing proof/relay/provider spending limits.
+The $25 forecast leaves a $25 unallocated buffer. This is not an automatic AWS
+billing cap. Review before additional paid work, refresh the manual forecast
+within 48 hours, and reconcile or retire dedicated resources at the 31-day review.
+Alarm, KMS and storage charges can continue after a schedule stops.
