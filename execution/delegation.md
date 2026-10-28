@@ -406,3 +406,22 @@ Gas candidate reviewed and integrated: Board native public gas61.1% lower for ex
 29 October deeper gas audit: thread_application owns isolated compact Board metadata/context source and native fixture proposals; posting_credit_ui owns isolated active client/index/moderator reader proposals; thread_composer_review independently audits universal refund gas and transaction-wide output capacity. Root integrates, reviews, builds and publishes only after operations releases its live window. Full message text remains event-only.
 
 29 October completion: compact Board/client/native fixture patches independently reviewed. Extra pre-forget name authentication removed after review; repost/thread event assertions restored. Root verified115Board+73helper embedded sources, regeneratedSDK, passed fullnative FPC lifecycle at40000/512 and captured two exact complete posting-gas totals. Structuralrefund bound and fee-price/capacity/revert contexts approved.90readerchecks and818selectedchecks pass;23untouched baseline projection fixtures lack priorpaid-tip pairing and are recorded separately. No live changes; opswindowheld. Agents stopped their testprocesses.
+
+# Launch operations continuation —28 October2026
+
+- Root owns source integration and all live deployment/credential operations.
+- ci_release observes required d93 master build and diagnoses reproduced CI failures in its isolated checkout; no pushes or live changes.
+- monitoring reproduced systemd address-rule ordering, independently approved exact baseline-adoption retry; no application restart performed by agent.
+- analytics independently reviewed the two-leg operator rollback plan; actual exercise remains after fullCI, genuine journey and promotion.
+- The onboarding chat is now analyzing gas improvements from d93; it has agreed to hold live/config/shared-signer changes during this maintenance window.
+
+
+28 October19:06UTC release acceptance: CI owner repairs reproduced compressed native transaction observer; analytics implements exact ten-input core backup coverage (eight allowlist names); monitoring independently reviews both. Root alone updates installed operator/config, verifies historical inclusion read-only, integrates OIDC source binding, and owns funded acceptance. No application runtime or contract change is inferred from gate failure.
+
+### Operations continuation — 28 October20:00UTC
+
+Root holds application mutations/signing while the coordinated newBoard owner completes acceptance. CI owner prepares exactB48 baseline inventory in an isolated copy; monitoring reviews inventory-reuse/template guards. Analytics prepares held sameclass C89→B48→C rollback and confirms current backup coverage. No worker runs a host mutation or payment.
+
+### Operations continuation — 28 October20:56UTC
+
+Root owns live mutations/signing and final integration. CI owner repaired and locally reproduced the actual account-modal journey failure; monitoring independently approved source and exact two-file operator packet. Analytics records fresh20-input core and4-input Bok backup/restore acceptance. Both timers active; acceptedB48 stays live until candidateD passes exact full build and seven-step real testnet gate. No agent performs a host mutation or payment.
