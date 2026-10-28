@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October:20-FEE tips contracts deployed and wallet built; service staging caught legacy FPC route admission in check-artifacts before live mutation. Root integrates independently reviewed canonical checker fix, then reseals same compiled artifacts/contracts and publishes. Basic22-byte post measured2.5016104002576FEE actual receipt; no cost UI change. Performance remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October:tips86be published/servicesready; actualsignup found staleold-gas-profileclass in Boardclaim prefetch. Fixed authenticatedartifact/currentclass binding with layout/nativeanchorchecks retained;34focused nativeprefetch tests passed; SDK/wallet/apps rebuilt, contractsunchanged. StaticSDKpublication then realUI signup/post/repeatedpaidlikes pending.17trackedgeneratedconsumers synchronized to normalbuild (5deployedcontractoutputs,12legacyapps/dist outputs). Basic22-byte postactual2.5016104002576FEE; performancepaused.
 
 ## Ready internal work
 

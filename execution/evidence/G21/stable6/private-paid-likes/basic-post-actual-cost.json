@@ -1,0 +1,30 @@
+{
+  "startedAt": "2026-10-28T11:28:25.537Z",
+  "sourceCommit": "8e68ac4ae34fb214f9816cec0ffc75a4a3e60727",
+  "content": "Basic post cost check.",
+  "contentBytes": 22,
+  "mode": "one-ordinary-post",
+  "proofsEnabled": true,
+  "board": "0x0a7f5a7759e057b620ddaa331f38db3e9a80ac2e57620f38504ded2ba0e8e351",
+  "boardClass": "0x03c9bf685f78a9b8731b010884f7728f552cd3c59fe169c2e3e7ee302cc17088",
+  "status": "confirmed",
+  "activity": {
+    "authWitnesses": 2,
+    "walletSubmissions": 1,
+    "proofJobs": 1,
+    "transportSends": 1
+  },
+  "maximumFee": "124140375552000000000",
+  "includedAt": "2026-10-28T11:31:24.000Z",
+  "postId": "20858000164519928893945389943707525040272047276642622386486121480587528088744",
+  "receipt": {
+    "txHash": "0x207d88f9e28443d436d7e9428b4d2c28898d947d119cc3ad9204780970f9447a",
+    "status": "checkpointed",
+    "executionResult": "success",
+    "blockNumber": 9312,
+    "blockHash": "0x2ac945d39eccd86f3df381aa5338f2d21791dc9fbbc637a62de7a1fbcd77fa14",
+    "transactionFee": "2501610400257600000",
+    "feeFEE": "2.5016104002576"
+  },
+  "finishedAt": "2026-10-28T11:31:28.168Z"
+}

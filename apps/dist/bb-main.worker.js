@@ -691,7 +691,62 @@ var BarretenbergWasmMain = class _BarretenbergWasmMain extends BarretenbergWasmB
 };
 
 // node_modules/@aztec-foundation/bb.js/dest/browser/barretenberg_wasm/barretenberg_wasm_main/factory/browser/main.worker.js
-expose(new BarretenbergWasmMain());
+expose((function installWorkerTimings(wasm) {
+  const nativeCbind = wasm.cbindCall, nativeCall = wasm.call;
+  let window2 = null, current = null, sequence = 0;
+  const now = () => {
+    try {
+      return performance.now();
+    } catch {
+      return NaN;
+    }
+  };
+  wasm.rollingOpenTiming = () => {
+    if (window2) return 0;
+    let origin;
+    try {
+      origin = performance.timeOrigin;
+    } catch {
+    }
+    sequence = sequence === Number.MAX_SAFE_INTEGER ? 1 : sequence + 1;
+    window2 = { token: sequence, origin, calls: 0, start: NaN, end: NaN, wasmCalls: 0, wasmStart: NaN, wasmEnd: NaN };
+    return sequence;
+  };
+  wasm.rollingCloseTiming = (token) => {
+    if (!window2 || token !== window2.token) return null;
+    const saved = window2;
+    window2 = null;
+    const { origin, calls, start, end, wasmCalls, wasmStart, wasmEnd } = saved;
+    if (![origin, calls, start, end, wasmCalls, wasmStart, wasmEnd].every(Number.isFinite)) return null;
+    return { origin, calls, start, end, wasmCalls, wasmStart, wasmEnd };
+  };
+  wasm.cbindCall = function(...args) {
+    if (!window2 || args[0] !== "bbapi") return Reflect.apply(nativeCbind, this, args);
+    const saved = window2;
+    saved.calls = Math.min(2, saved.calls + 1);
+    const prior = current;
+    current = saved;
+    saved.start = now();
+    try {
+      return Reflect.apply(nativeCbind, this, args);
+    } finally {
+      saved.end = now();
+      current = prior;
+    }
+  };
+  wasm.call = function(...args) {
+    if (!current || args[0] !== "bbapi") return Reflect.apply(nativeCall, this, args);
+    const saved = current;
+    saved.wasmCalls = Math.min(2, saved.wasmCalls + 1);
+    saved.wasmStart = now();
+    try {
+      return Reflect.apply(nativeCall, this, args);
+    } finally {
+      saved.wasmEnd = now();
+    }
+  };
+  return wasm;
+})(new BarretenbergWasmMain()));
 postMessage(Ready);
 /*! Bundled license information:
 

@@ -9402,13 +9402,13 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "28 October:20-FEE tips contracts deployed and wallet built; service staging caught legacy FPC route admission in check-artifacts before live mutation. Root integrates independently reviewed canonical checker fix, then reseals same compiled artifacts/contracts and publishes. Basic22-byte post measured2.5016104002576FEE actual receipt; no cost UI change. Performance remains paused.",
+      "checkpoint": "28 October:tips86be published/servicesready; actualsignup found staleold-gas-profileclass in Boardclaim prefetch. Fixed authenticatedartifact/currentclass binding with layout/nativeanchorchecks retained;34focused nativeprefetch tests passed; SDK/wallet/apps rebuilt, contractsunchanged. StaticSDKpublication then realUI signup/post/repeatedpaidlikes pending.17trackedgeneratedconsumers synchronized to normalbuild (5deployedcontractoutputs,12legacyapps/dist outputs). Basic22-byte postactual2.5016104002576FEE; performancepaused.",
       "execution_lane": "root integration/deployment; isolated contract and client implementers; independent review",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",
       "verification_method": "Native claim/cancel exclusion, Solidity custody/refund proofs, client and browser checks, coherent artifact verification, independent review, then fresh testnet signup and publication.",
       "priority": 0,
-      "next_action": "Finish corrected release staging/publication; real-proof fresh signup, post, repeated20-credit likes and post acceptance."
+      "next_action": "Publish corrected staticSDK/wallet; verify usablefreshsignup, realpost, two20-credit likes, postagain. Coordinate source-sync commit with opsCI; no contractredeploy."
     }
   ],
   "specification": {

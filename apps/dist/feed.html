@@ -344,8 +344,8 @@
 <script>
 (function(root){
   'use strict';
-  const ABI=['function MIN_DEPOSIT() view returns (uint256)','function MAX_DEPOSIT() view returns (uint256)','function L2_CONTRACT() view returns (bytes32)','function ROLLUP() view returns (address)','function INBOX() view returns (address)','function OUTBOX() view returns (address)','function VERSION() view returns (uint256)','function L1_CHAIN_ID() view returns (uint256)','function CONFIG_HASH() view returns (bytes32)'];
-  const names=['MIN_DEPOSIT','MAX_DEPOSIT','L2_CONTRACT','ROLLUP','INBOX','OUTBOX','VERSION','L1_CHAIN_ID','CONFIG_HASH'];
+  const ABI=['function MIN_DEPOSIT() view returns (uint256)','function MAX_DEPOSIT() view returns (uint256)','function L2_CONTRACT() view returns (bytes32)','function ROLLUP() view returns (address)','function INBOX() view returns (address)','function OUTBOX() view returns (address)','function VERSION() view returns (uint256)','function L1_CHAIN_ID() view returns (uint256)','function CONFIG_HASH() view returns (bytes32)','function DEPLOYMENT_OPERATOR() view returns (address)'];
+  const names=['MIN_DEPOSIT','MAX_DEPOSIT','L2_CONTRACT','ROLLUP','INBOX','OUTBOX','VERSION','L1_CHAIN_ID','CONFIG_HASH','DEPLOYMENT_OPERATOR'];
   function failure(){return Object.assign(new Error('The configured portal, network or private fee contract could not be verified. Check the public board configuration before making a payment.'),{code:'BB_CONNECTION_VERIFICATION_FAILED'});}
   async function verify({sdk,ethers,config,privateFeeArtifact,verifyFee=true}={}){
     let provider;
@@ -371,6 +371,7 @@
          !same(contracts.rollupAddress,selected.network.rollupAddress)||!same(immutable.L2_CONTRACT,selected.board.contractAddress)||
          !same(immutable.ROLLUP,selected.network.rollupAddress)||!same(immutable.VERSION,selected.network.rollupVersion)||!same(immutable.L1_CHAIN_ID,selected.network.chainId)||
          !same(immutable.INBOX,contracts.inboxAddress.toString())||!same(immutable.OUTBOX,contracts.outboxAddress.toString()))throw Error();
+      if(BigInt(immutable.DEPLOYMENT_OPERATOR)<=0n||BigInt(immutable.DEPLOYMENT_OPERATOR)>=(1n<<160n))throw Error();
       if(sdk.verifyPortalRuntime(code,sdk.portalRuntimeMetadata,immutable)!==true)throw Error();
       return Object.freeze({verified:true,privateFeeVerified:verifyFee,portalRuntimeVerified:true,scope:'Bundled portal runtime and configured public identities matched RPC responses; this is not independent cryptographic network verification.'});
     }catch{throw failure();}
