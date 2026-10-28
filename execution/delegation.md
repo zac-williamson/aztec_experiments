@@ -445,3 +445,21 @@ operator rollback. This scope remains the four launch operations deliverables;
 broader R04 is not marked complete. Monitoring subsequently verified at block
 12015308 that the shared USDC/FEE pool no longer covers one signup; root must
 resolve and recheck that test liquidity before the next complete journey.
+
+
+### Operations continuation — 28 October 23:22 UTC
+
+Root owns all live mutations and signing; master is frozen for acceptance.
+Candidate F `6233997b` passed full CI `40780669986`. Release `40784910691` attempt2
+passed ETH signup and posting, then blocked at reply submission before promotion.
+B48 remains live, F is staged, and root disabled automatic release under SSM
+`a3687004-cdcc-4adf-a798-ca98e5fd53ad`. CI and application owners investigate the
+actual failing boundary. CI owner subsequently reproduced a matching actual-panel
+readiness race: a rapid Reply click during post-completion busy work reopens the
+old Post form without reply defaults. Remote F inner DOM was not retained. The
+harness repair waits existing readiness only; the independently confirmed
+application fast-click UX defect remains unchanged.
+Analytics prepares factual records in its isolated checkout, uncommitted. Paired
+liquidity, the exact0.4075SepETH faucet and C89-only cleanup are completed
+supporting work. No complete journey, promotion, normal prune or rollback is
+claimed. Existing F helpers stay held and need rebinding if source changes.

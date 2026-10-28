@@ -60,5 +60,265 @@
   },
   "signingPerformedBy": "root",
   "fixedUsdBudgetImpact": "Free Sepolia tokens only; no real ETH or additional infrastructure",
-  "scope": "Fixture repair only; not release journey or deployment acceptance. Quote observed at completion, not reserved for future runs."
+  "scope": "Fixture repair only; not release journey or deployment acceptance. Quote observed at completion, not reserved for future runs.",
+  "subsequentPairedPoolRepair": {
+    "recordedAt": "2026-10-28T23:14:28.711165+00:00",
+    "status": "complete",
+    "chainId": "11155111",
+    "account": "0xb100c6c628b598e5fe30b047765c2dd16c8554bf",
+    "sourceSha256": "47755be090f377694c9cbcba0510323af2bac683fd0432f5a8305544db6dbc90",
+    "savedResultSha256": "7c849665c408f70f4ad1fe3be5bd2c3078b66a4fee2dcedf262925a590c2e641",
+    "transactions": [
+      {
+        "kind": "mint-0",
+        "hash": "0x9b6a82efe8cc1a3cc4efccb651af197283b419b7e073f82ead27a195d3a22eaa",
+        "nonce": 16,
+        "receipt": {
+          "status": 1,
+          "block": 12015439,
+          "blockHash": "0xf24249071d9135729e3c44aeb7126ae2dd93fbeb0529c9a71fc0840f72891aa6",
+          "gasUsed": "50458",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "mint-1",
+        "hash": "0x31b5b28fff65fa3d6f254d89b0599cfb101f2cb97d2e1daaa82a4c4cc5936bcd",
+        "nonce": 17,
+        "receipt": {
+          "status": 1,
+          "block": 12015441,
+          "blockHash": "0x1c91cee55e8eabd01705e27d0a9c561f45ed73022465199fe53979d0b61bf8fc",
+          "gasUsed": "50458",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "mint-2",
+        "hash": "0x93e28727ba2747098ccd8c962ce7d1c33ced65eba796fe801e490e7dd48cdc54",
+        "nonce": 18,
+        "receipt": {
+          "status": 1,
+          "block": 12015443,
+          "blockHash": "0x7f318a565f75b171a0e156953861e3527a43b90fd98dff9df559a0e4d0b1c3c4",
+          "gasUsed": "50458",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "mint-3",
+        "hash": "0xe54ed05f671ae9d71542c5d93781eaf846697ec671c9d38b2db66146b26c7d28",
+        "nonce": 19,
+        "receipt": {
+          "status": 1,
+          "block": 12015445,
+          "blockHash": "0xd72f427c35442642842f82714287cc66a56fbbcc8a5755865cfe8e5be37fc474",
+          "gasUsed": "50458",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "mint-4",
+        "hash": "0x8bdc9aaed19999d37f239fcfe72808b4f0914f790e5724c9b9a2977f919467f5",
+        "nonce": 20,
+        "receipt": {
+          "status": 1,
+          "block": 12015447,
+          "blockHash": "0xd7dfcddd0575911848bc08c079ed230221a1d1bc02d626832b3052475b3cae1a",
+          "gasUsed": "50458",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "mint-5",
+        "hash": "0x1f269ee056bc421a10500123bbe57411e4c34a553961006c6b6aa8a8243c6615",
+        "nonce": 21,
+        "receipt": {
+          "status": 1,
+          "block": 12015451,
+          "blockHash": "0x14dfbcd1df611b3b068444820ce04cebebb30385de590c99e1fe0d345c7b5438",
+          "gasUsed": "50458",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "mint-6",
+        "hash": "0x7c867459315d0dc19d1dcd4e0c58f2bb62c82a2223f33d6053e7ee44b7c1a208",
+        "nonce": 22,
+        "receipt": {
+          "status": 1,
+          "block": 12015453,
+          "blockHash": "0xb7c881c2f818636ee86bb76ffdf6df108f1d0e4e16deb52763cfeb20d8d4f55f",
+          "gasUsed": "50458",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "mint-7",
+        "hash": "0xe1873ca2725e0a3c1b8f6ac094ed6a1eafa27c4869c0e37bee802afd68c77fb5",
+        "nonce": 23,
+        "receipt": {
+          "status": 1,
+          "block": 12015455,
+          "blockHash": "0x586e8a2d9030e5267d436eab121ce9316f1efc8ea66b70ba898d7c0308f5293e",
+          "gasUsed": "50458",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "approve-fee-manager",
+        "hash": "0x38e2897e1f5f2c1929ab359672b68e7a5312ee9fccd7ae1fb1dcfae42ab81b59",
+        "nonce": 24,
+        "receipt": {
+          "status": 1,
+          "block": 12015460,
+          "blockHash": "0xc0c5fb2e123f8d45a4bf482d0284d57e3d74955ea8aabf95b4fb341a108f288c",
+          "gasUsed": "128321",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "weth-lp",
+        "hash": "0x64e1bbce60acca6fdbb5e0bc331e06379ec6195c06283f4ab4bff0f6044aa6ac",
+        "nonce": 25,
+        "receipt": {
+          "status": 1,
+          "block": 12015463,
+          "blockHash": "0x56afa1d7f0862d5bf3e761b97e58873934df0be2f5f9ca67246ddba3afdc7365",
+          "gasUsed": "1495119",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "rebalance",
+        "hash": "0xbdafaf12cbd0b7374b59dfe0d1cc6e21b169cca3f709003b45bdbf463115131f",
+        "nonce": 26,
+        "receipt": {
+          "status": 1,
+          "block": 12015472,
+          "blockHash": "0x9409b47ed86f9e2fc01efdc83eb4378a9fd84626f47339d7bd96170d7bedfc3e",
+          "gasUsed": "851072",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "approve-usdc-manager",
+        "hash": "0x89bc7560cbfedbb0200259f7daacebfb292eeac7ab878e285f9f32be0c1fa059",
+        "nonce": 27,
+        "receipt": {
+          "status": 1,
+          "block": 12015478,
+          "blockHash": "0x9651c289f45a168031167f6faaa4716ecb098706534a31aad06842b5cbff4492",
+          "gasUsed": "137757",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "usdc-lp",
+        "hash": "0x52dd461fc71a6b69aea0346e3520d3da067981fb5b5229318c2a5bc0e020b028",
+        "nonce": 28,
+        "receipt": {
+          "status": 1,
+          "block": 12015481,
+          "blockHash": "0x05307ef316319d69271038ceab8c9a7a9d169b2ef949a15165e85386e750da7b",
+          "gasUsed": "1501732",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "approve-usdc-router",
+        "hash": "0xb5b0f714d453bd2c4529cdf79f577de27dbeb04b4bdb40a24c93cdcb468140ac",
+        "nonce": 29,
+        "receipt": {
+          "status": 1,
+          "block": 12015486,
+          "blockHash": "0x24758fea337b2340bbb4d351b263c0c68c3d0b623d4cbed9a26d2c9507fc0e46",
+          "gasUsed": "137757",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "align",
+        "hash": "0xf592fe316a97510b797f3d6419a57d8a8aa4c16bfc3569ed29fbe1ef1c306709",
+        "nonce": 30,
+        "receipt": {
+          "status": 1,
+          "block": 12015489,
+          "blockHash": "0x518d2f470810d1b7cc89056b576f3c5b2dd7224e89ead17c3173b6d81d48adb4",
+          "gasUsed": "400043",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "unwrap",
+        "hash": "0xf0dea681da4f2f18551826a58d595611af40fb284d6aa6ae0f635ef1e0cacf88",
+        "nonce": 31,
+        "receipt": {
+          "status": 1,
+          "block": 12015492,
+          "blockHash": "0x9b234d94f56687eddcbadcabcc4e86905842bd142808e9a5df27a84e12240606",
+          "gasUsed": "30964",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "clear-fee-manager",
+        "hash": "0xb7967e2087f3af5e110c74d4e56f483db3b226f5aeac7ff20085a96b168d90c1",
+        "nonce": 32,
+        "receipt": {
+          "status": 1,
+          "block": 12015522,
+          "blockHash": "0xcca785b6d3a2a5f8341cf2df70e70964fc99303fef8ba6cb917f1745801eda49",
+          "gasUsed": "24254",
+          "gasPrice": "17"
+        }
+      },
+      {
+        "kind": "clear-usdc-manager",
+        "hash": "0x837f372a4566462abdb6f0ab69360d7e49b0ac8fefd3151e29402fa74bba684f",
+        "nonce": 33,
+        "receipt": {
+          "status": 1,
+          "block": 12015525,
+          "blockHash": "0x26e15d8c11f58d84573a812ade4ef9fd4e777613cb5889e5cc697fd92bf1dcf2",
+          "gasUsed": "31841",
+          "gasPrice": "17"
+        }
+      }
+    ],
+    "positions": {
+      "weth": {
+        "tokenId": "233922",
+        "liquidity": "1352899144678469225"
+      },
+      "usdc": {
+        "tokenId": "233923",
+        "liquidity": "91711455576791"
+      }
+    },
+    "gasPaidWei": "87422908",
+    "limits": {
+      "gas": "307840000",
+      "value": "2000000000000000"
+    },
+    "allowancesCleared": true,
+    "nativeOrderedSimulation": {
+      "block": 12015527,
+      "blockHash": "0xc934611011d932842176ed84f3c495f8a270d54aa81ca65c6d0a843846cfa132",
+      "nativeStatefulSimulation": true,
+      "chainTransactionsSent": 0,
+      "ethMaximum": "1048455220575871",
+      "usdcMaximum": "46586586",
+      "quotes": {
+        "eth-fee": "23873168407993",
+        "bok-usdc": "24102297508710",
+        "adverse-cross-pool": "21981280531673",
+        "usdc-fee": "1414204",
+        "usdc-collateral": "41740830"
+      }
+    },
+    "completionNote": "A finalization read returned UNKNOWN_ERROR without recording a new intent. One bounded continuation reconciled existing hashes and passed. The original RPC body was not retained and the cause remains unproven.",
+    "fixedUsdBudgetImpact": "Free Sepolia tokens only; no real ETH or additional infrastructure.",
+    "scope": "The earlier single-pool refill and quote remain historical above. This paired-pool preparation completed with 18 confirmed transactions and a native stateful ordered simulation; the simulation sent zero chain transactions. Its observed maxima are not reserved for future runs. This is not genuine release journey, promotion, prune or rollback acceptance."
+  }
 }

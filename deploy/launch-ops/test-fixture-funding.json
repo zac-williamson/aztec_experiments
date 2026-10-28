@@ -191,7 +191,7 @@
     "temporaryReadGrantRemoved": true,
     "updatedSsm": "bf64ed0d-adc9-432a-bdbd-3bd03173f10d"
   },
-  "recordUpdatedAt": "2026-10-28T21:39:53.571365+00:00",
+  "recordUpdatedAt": "2026-10-28T23:16:55.506640+00:00",
   "additionalFreeFaucet": {
     "provider": "Sepolia PoW faucet",
     "url": "https://sepolia-faucet.pk910.de",
@@ -202,5 +202,30 @@
     "recipient": "0xB100C6C628b598e5Fe30b047765C2dD16C8554bf",
     "browserAccess": "Native Chrome used successfully; no private key disclosed"
   },
-  "currentUsdcFeeLiquidity": "test-fixture-liquidity.json"
+  "currentUsdcFeeLiquidity": "test-fixture-liquidity.json",
+  "subsequentFreeFaucets": [
+    {
+      "recordedAt": "2026-10-28T22:46:19.706Z",
+      "chainId": "11155111",
+      "recipient": "0xB100C6C628b598e5Fe30b047765C2dD16C8554bf",
+      "amountWei": "407500000000000000",
+      "amountEth": "0.4075",
+      "displayedAmountRounded": "0.408",
+      "hash": "0xd4ef30ca27fe395dc0904179bf4cb665f5301d1697e1dcf6d095578759cb48aa",
+      "block": 12015390,
+      "blockHash": "0xd519398f3afdd0b0f992d7e0b55a3a86e2889e9dcd5a2ca4b6bfc2364be4058d",
+      "status": "confirmed",
+      "balanceAtReceiptWei": "540545071075781407",
+      "source": "Free PoW faucet through Chrome",
+      "miningStopped": true,
+      "tabClosed": true,
+      "realEthPurchased": false
+    }
+  ],
+  "latestLiquidityPreparation": {
+    "record": "test-fixture-liquidity.json",
+    "section": "subsequentPairedPoolRepair",
+    "recordedAt": "2026-10-28T23:14:28.711165+00:00",
+    "scope": "Confirmed fixture preparation and observed native simulation only; not a successful release journey or promotion."
+  }
 }

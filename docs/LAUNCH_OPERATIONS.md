@@ -17,20 +17,22 @@ and recovery delivery without causing an application outage or restart. See
 Fresh encrypted off-host backup and actual restore passed on both hosts on
 28 October: **twenty core inputs and four Bok inputs**. Both daily timers are
 active. See [`backup-verification.json`](../deploy/launch-ops/backup-verification.json)
-for the observed results. Candidate `aad8c265`
-[passed its full build](https://github.com/zac-williamson/aztec_experiments/actions/runs/40775154163)
-on 28 October. Its real staged release then passed ETH signup, posting, reply,
-like and reload, but stopped at Bok credit before USDC signup or promotion.
-Baseline `48c2750f` remains live, and automatic release was disabled after the
-failed attempt.
+for the observed results. Candidate `6233997b`
+[passed its full build](https://github.com/zac-williamson/aztec_experiments/actions/runs/40780669986)
+on 28 October. Its real staged release passed ETH signup and posting, then
+blocked at reply submission before promotion. Baseline `48c2750f` remains live,
+and automatic release was disabled after the failed attempt. A local actual-panel
+reproduction found that clicking Reply while post-completion work is still busy
+can reopen the old Post form. The harness repair waits for existing readiness;
+it does not fix that separate application fast-click issue. The remote inner
+DOM was not retained, so this is a matching reproduction rather than a direct
+trace of the failed run. Earlier attempts remain in the release record.
 
-A local reproduction with the actual account panel confirmed a missing funding
-wallet reconnection in the journey harness after reload. The next repaired
-candidate still needs its own exact full build and complete genuine journey.
-Promotion, normal release pruning and the two-leg operator rollback exercise
-remain **pending final receipts**. The five completed steps do not establish
-full release acceptance. A subsequent read-only check also found insufficient
-USDC/FEE test liquidity; it needs repair and a fresh quote before another journey.
+The paired test-liquidity preparation completed, including eighteen confirmed
+transactions and a native ordered simulation. That supporting work does not
+establish a successful real journey. The complete journey, promotion, normal
+release pruning and two-leg operator rollback remain **pending final receipts**.
+Any repaired candidate needs its own exact full build before acceptance.
 See [`release-acceptance.json`](../deploy/launch-ops/release-acceptance.json) and
 [backup acceptance and procedure](../ops/LAUNCH-ESSENTIALS.md).
 

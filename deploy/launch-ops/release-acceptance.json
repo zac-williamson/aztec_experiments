@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "baseline-adopted-awaiting-funding-wallet-journey-repair-and-genuine-acceptance",
+  "status": "baseline-adopted-awaiting-journey-readiness-repair-and-genuine-acceptance",
   "recordedAt": "2026-10-28T19:32:58.820904+00:00",
   "sourceRevision": "e1bd8abe0d24b4b18a3c7c105695835b3ed9b8a3",
   "fullBuild": {
@@ -69,14 +69,13 @@
     "newBaselineFullBuildRun": 40753383089
   },
   "remaining": [
-    "independently reviewed funding-wallet connection journey repair and exact repaired-candidate full build",
-    "restore sufficient test USDC/FEE liquidity and recheck the current native quote before the complete journey",
-    "complete real staged ETH/USDC signup, posting, reply, like, reload and Bok journey",
+    "independently review the harness wait for existing panel readiness; retain the separate application fast-click issue without claiming it fixed",
+    "require the exact next candidate full build if source changes, then the complete genuine seven-step staged journey",
     "automatic promotion with live byte verification",
     "normal obsolete-release pruning and enablement of the existing hourly prune timer",
     "same-class operator rollback and return"
   ],
-  "updatedAt": "2026-10-28T22:27:47.113257+00:00",
+  "updatedAt": "2026-10-28T23:24:24.970045+00:00",
   "acceptedBaseline": {
     "revision": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
     "fullBuildRun": 40753383089,
@@ -110,7 +109,30 @@
     "coreAndBokBackupRestore": "deploy/launch-ops/backup-verification.json",
     "stalePublicCandidateCleanupSsm": "a5f46e7d-0ffc-4dc8-89ff-3689b6f86e4c",
     "cleanupApplicationServicesUnchanged": true,
-    "usdcFeeLiquidity": "deploy/launch-ops/test-fixture-liquidity.json"
+    "usdcFeeLiquidity": "deploy/launch-ops/test-fixture-liquidity.json",
+    "pairedPoolRepair": {
+      "record": "deploy/launch-ops/test-fixture-liquidity.json",
+      "section": "subsequentPairedPoolRepair",
+      "scope": "Completed supporting fixture preparation; native ordered simulation is not a real release journey."
+    },
+    "obsoleteCandidateCleanup": {
+      "ssm": "cac326d7-cd98-412a-9546-6f0312024aae",
+      "revision": "89dbc88cfdc3b3901f7a9c9b91e44e4299959b89",
+      "recordedAt": "2026-10-28T22:39:02.507819+00:00",
+      "manifestSha256": "8aca4ca1ea78773ad63667e210eaebdfb5687a776627aced169ba56c388596f3",
+      "availableBefore": 3911684096,
+      "availableAfter": 4691599360,
+      "servicesUnchanged": true,
+      "currentStateUnchanged": true,
+      "dependencyUnchanged": true,
+      "preservedReleases": [
+        "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+        "aad8c265c52dca660994ea4722cb64da72d7fccd",
+        "021fd7a6b574367be57c7c97b38d76f1d8daa473",
+        "aae73b012bec660f2ce4c05c2529479208a82b0c"
+      ],
+      "scope": "C89-only unused candidate removal before F; not the pending post-promotion normal prune or timer enablement."
+    }
   },
   "subsequentFullBuild": {
     "revision": "d1b58a3ddd15cb40e20d9b5cbcf16530dd716f4c",
@@ -128,63 +150,111 @@
     "releaseAttempted": false
   },
   "latestCandidateAttempt": {
-    "revision": "aad8c265c52dca660994ea4722cb64da72d7fccd",
-    "fullBuildRun": 40775154163,
+    "revision": "6233997b1a9b607737a838baacbe16354df3e2ca",
+    "fullBuildRun": 40780669986,
     "fullBuildConclusion": "success",
-    "fullBuildCompletedAt": "2026-10-28T22:10:37Z",
-    "releaseRun": 40777920503,
+    "fullBuildCompletedAt": "2026-10-28T23:06:02Z",
+    "releaseRun": 40784910691,
     "attempt": 2,
     "activation": {
-      "ssm": "2b026c6d-315b-4e36-81e3-1196c2a59968",
-      "recordedAt": "2026-10-28T22:16:50.029587+00:00",
+      "ssm": "802678c9-88b3-4d51-a8e5-0d4d46f5e362",
+      "recordedAt": "2026-10-28T23:14:32.327076+00:00",
       "automaticReleaseEnabled": true,
       "serviceStartedByThisCommand": false
     },
     "outcome": "blocked-before-promotion",
-    "startedAt": "2026-10-28T22:17:47.285Z",
-    "blockedAt": "2026-10-28T22:23:35.741Z",
+    "startedAt": "2026-10-28T23:15:10.918Z",
+    "blockedAt": "2026-10-28T23:18:32.716Z",
     "completed": [
       "signup-ETH",
-      "post",
-      "reply",
-      "like",
-      "reload"
+      "post"
     ],
     "error": "RELEASE_JOURNEY_FAILED",
-    "failedStep": "bok-credit",
+    "failedStep": "reply-submit",
     "usdcSignupAttempted": false,
     "liveRevisionUnchanged": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
-    "stageRevision": "aad8c265c52dca660994ea4722cb64da72d7fccd",
+    "stageRevision": "6233997b1a9b607737a838baacbe16354df3e2ca",
     "observation": {
-      "ssm": "d55622a9-079c-4a87-9b22-e4db25b3ecf1",
-      "recordedAt": "2026-10-28T22:24:11.922410+00:00",
+      "ssm": "6f1b15a8-b2f9-42ec-9890-be05c9b3a7da",
+      "recordedAt": "2026-10-28T23:20:11.524096+00:00",
       "releaseJobPid": 0,
       "releaseLockPresent": false
     },
     "hold": {
-      "ssm": "43028701-83d8-4594-9445-c52a5d004706",
-      "recordedAt": "2026-10-28T22:25:16.716932+00:00",
+      "ssm": "a3687004-cdcc-4adf-a798-ca98e5fd53ad",
+      "recordedAt": "2026-10-28T23:22:34.132385+00:00",
       "automaticReleaseEnabled": false,
       "liveUnchanged": true
     },
     "diagnosis": {
       "status": "local-actual-panel-reproduction-confirmed",
-      "finding": "After reload, the remembered Aztec account is restored but the Ethereum funding wallet is disconnected. The top-up panel displays Connect CI test wallet before the Amount input. The old Bok-credit harness waits for Amount without reconnecting the funding wallet.",
-      "scope": "The local actual-panel reproduction confirms the harness mismatch and fits the observed bok-credit failure. The remote trace does not retain the exact inner action; no direct remote selector trace is claimed.",
-      "owner": "ci_release",
-      "repairStatus": "in-progress-test-harness-only"
+      "finding": "After native-style post inclusion closes the dialog, its local work can remain aria-busy=true. A rapid Reply click reopens the old Post form without applying reply defaults; Message fill can succeed later while the expected Reply button is absent.",
+      "scope": "This matching failure mechanism was reproduced locally using the actual panel. The remote F inner DOM was not retained, so this is not a captured remote selector trace.",
+      "repairStatus": "harness-only wait for existing aria-busy=false before subsequent actions under review",
+      "applicationFastClickBehavior": "unchanged; the separate application UX defect is not fixed by the harness wait"
     },
-    "acceptance": "Five real journey steps passed. The required complete journey, promotion, pruning and operator rollback remain unaccepted; the next repaired candidate needs its own exact full CI and genuine acceptance.",
-    "subsequentLiquidityCheck": {
-      "observedAt": "2026-10-28T22:28:06.350Z",
-      "chainId": "11155111",
-      "block": 12015308,
-      "readOnly": true,
-      "transactionsSent": 0,
-      "usdcFeePoolFeeBalanceBaseUnits": "1154525683081622586",
-      "oneSignupFeeRequiredBaseUnits": "248280751104000000000",
-      "oneSignupQuoteSucceeded": false,
-      "scope": "The earlier fixture refill completed successfully, but a later public swap changed the shared pool. Current USDC signup liquidity must be restored and quoted again before a new complete journey; USDC signup was not attempted in E."
+    "acceptance": "ETH signup and posting passed. Reply completion, the remaining journey steps, promotion, normal pruning and operator rollback remain unaccepted. Held candidate-specific helpers must be rebound and reviewed if source changes."
+  },
+  "priorCandidateAttempts": [
+    {
+      "revision": "aad8c265c52dca660994ea4722cb64da72d7fccd",
+      "fullBuildRun": 40775154163,
+      "fullBuildConclusion": "success",
+      "fullBuildCompletedAt": "2026-10-28T22:10:37Z",
+      "releaseRun": 40777920503,
+      "attempt": 2,
+      "activation": {
+        "ssm": "2b026c6d-315b-4e36-81e3-1196c2a59968",
+        "recordedAt": "2026-10-28T22:16:50.029587+00:00",
+        "automaticReleaseEnabled": true,
+        "serviceStartedByThisCommand": false
+      },
+      "outcome": "blocked-before-promotion",
+      "startedAt": "2026-10-28T22:17:47.285Z",
+      "blockedAt": "2026-10-28T22:23:35.741Z",
+      "completed": [
+        "signup-ETH",
+        "post",
+        "reply",
+        "like",
+        "reload"
+      ],
+      "error": "RELEASE_JOURNEY_FAILED",
+      "failedStep": "bok-credit",
+      "usdcSignupAttempted": false,
+      "liveRevisionUnchanged": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+      "stageRevision": "aad8c265c52dca660994ea4722cb64da72d7fccd",
+      "observation": {
+        "ssm": "d55622a9-079c-4a87-9b22-e4db25b3ecf1",
+        "recordedAt": "2026-10-28T22:24:11.922410+00:00",
+        "releaseJobPid": 0,
+        "releaseLockPresent": false
+      },
+      "hold": {
+        "ssm": "43028701-83d8-4594-9445-c52a5d004706",
+        "recordedAt": "2026-10-28T22:25:16.716932+00:00",
+        "automaticReleaseEnabled": false,
+        "liveUnchanged": true
+      },
+      "diagnosis": {
+        "status": "local-actual-panel-reproduction-confirmed",
+        "finding": "After reload, the remembered Aztec account is restored but the Ethereum funding wallet is disconnected. The top-up panel displays Connect CI test wallet before the Amount input. The old Bok-credit harness waits for Amount without reconnecting the funding wallet.",
+        "scope": "The local actual-panel reproduction confirms the harness mismatch and fits the observed bok-credit failure. The remote trace does not retain the exact inner action; no direct remote selector trace is claimed.",
+        "owner": "ci_release",
+        "repairStatus": "in-progress-test-harness-only"
+      },
+      "acceptance": "Five real journey steps passed. The required complete journey, promotion, pruning and operator rollback remain unaccepted; the next repaired candidate needs its own exact full CI and genuine acceptance.",
+      "subsequentLiquidityCheck": {
+        "observedAt": "2026-10-28T22:28:06.350Z",
+        "chainId": "11155111",
+        "block": 12015308,
+        "readOnly": true,
+        "transactionsSent": 0,
+        "usdcFeePoolFeeBalanceBaseUnits": "1154525683081622586",
+        "oneSignupFeeRequiredBaseUnits": "248280751104000000000",
+        "oneSignupQuoteSucceeded": false,
+        "scope": "The earlier fixture refill completed successfully, but a later public swap changed the shared pool. Current USDC signup liquidity must be restored and quoted again before a new complete journey; USDC signup was not attempted in E."
+      }
     }
-  }
+  ]
 }
