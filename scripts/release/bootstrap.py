@@ -136,7 +136,7 @@ def prepare(folder,m,p):
  directory(OPERATOR.parent);directory(OPERATOR);unpack(folder,'operator',OPERATOR);link(OPERATOR/'node_modules',dependencies)
  public.update({'port':8091,'cacheDirectory':'/var/lib/rolling-stage/index','artifactPath':str(STAGE/'current/billboard/target/rolling_contract-RollingBoard.json'),'bokArtifactPath':str(STAGE/'current/experiments/private-bok/target/private_bok-PrivateBok.json')})
  wallet['trustedQuery']['url']=p['stageOrigin']+'/prover/v1/node';wallet['remoteProver']['url']=p['stageOrigin']+'/prover';wallet['config']['aggregateFunding']['usdcRelayAddress']=address
- relay['signerFile']='/run/credentials/rolling-staging.service/relay-signer';relay['stateDirectory']='/var/lib/rolling-stage/relay';relay['policy']['relayer']=address
+ relay['signerFile']='/run/rolling-staging/relay-signer.json';relay['stateDirectory']='/var/lib/rolling-stage/relay';relay['policy']['relayer']=address
  relay['policy']['totalGasBudgetWei']=str(min(int(relay['policy']['totalGasBudgetWei']),10**16));require(int(relay['policy']['maxGasWei'])<=int(relay['policy']['totalGasBudgetWei']),'Stage relay budget needs explicit review')
  json_file(STAGE_CONFIG/'public.json',public,mode=0o640,gid=stage.pw_gid);json_file(STAGE_CONFIG/'wallet.json',wallet,mode=0o640,gid=stage.pw_gid);json_file(STAGE_CONFIG/'relay.json',relay,mode=0o640,gid=stage.pw_gid)
  # The release job sees only the non-secret verifier projection, not service configs.

@@ -94,6 +94,12 @@ host, node and prover to stay within the launch budget.
       WorkingDirectory=/opt/rolling-stage/current
       ExecStart=/opt/rolling-ops/runtime/node apps/rolling/start.mjs /etc/rolling-stage/public.json /etc/rolling-stage/wallet.json /etc/rolling-stage/relay.json
 
+  Use `deploy/launch-ops/rolling-staging.service` as the bootstrap support unit.
+  It copies the systemd credential into its private runtime directory with mode
+  `0600` before starting. The relay config uses
+  `/run/rolling-staging/relay-signer.json`; systemd's own credential mount may be
+  `0440`, which the relay correctly rejects. The persistent source remains root-only.
+
   The live unit is exactly `rolling-application.service`, uses
   `/opt/rolling-release-live/current`, and the existing live config files. Give
   `rolling-release` passwordless sudo for only these two exact commands:

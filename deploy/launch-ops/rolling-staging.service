@@ -1,0 +1,38 @@
+[Unit]
+Description=Rolling isolated staging application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rolling-staging
+Group=rolling-staging
+WorkingDirectory=/opt/rolling-stage/current
+LoadCredential=relay-signer:/etc/rolling-stage/relay-signer.json
+# systemd credentials can be0440. Keep the relay's private-file requirement.
+ExecStartPre=/usr/bin/install -m0600 /run/credentials/rolling-staging.service/relay-signer /run/rolling-staging/relay-signer.json
+ExecStart=/opt/rolling-ops/runtime/node apps/rolling/start.mjs /etc/rolling-stage/public.json /etc/rolling-stage/wallet.json /etc/rolling-stage/relay.json
+StateDirectory=rolling-stage
+StateDirectoryMode=0700
+RuntimeDirectory=rolling-staging
+RuntimeDirectoryMode=0700
+UMask=0077
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=60
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/var/lib/rolling-stage /run/rolling-staging
+InaccessiblePaths=-/etc/rolling-app -/etc/rolling-ops -/etc/rolling-release -/etc/board-prover -/etc/rolling-query -/var/lib/cloud -/var/lib/private
+IPAddressDeny=169.254.169.254/32
+IPAddressDeny=fd00:ec2::254/128
+Environment=AWS_EC2_METADATA_DISABLED=true AWS_SHARED_CREDENTIALS_FILE=/dev/null AWS_CONFIG_FILE=/dev/null
+
+[Install]
+WantedBy=multi-user.target
