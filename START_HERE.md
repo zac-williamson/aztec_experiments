@@ -8,7 +8,7 @@ Current handover: 28 October 2026. The owner's current request takes precedence 
 
 The private paid-like contracts and application release `86be52150de16ad6fe628000404e44e3592705bb` are deployed. Each Like transfers 20 FEE to the author, plus actual network fees; repeated paid likes are supported. Atomic threads, name and avatar updates, Home ranking and the consolidated funding router remain integrated. **Real-proof acceptance of this fresh deployment is pending.** Native development checks passed, but they do not establish live acceptance. See [private paid likes](docs/PRIVATE_PAID_LIKES.md).
 
-An uninterrupted fresh signup paid ETH successfully, then failed before proof submission with `ROLLING_ABI_MISMATCH`. Board claim preparation still required the old ordinary-post gas-profile class. Commit `83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06` instead verifies the deployed Board against its authenticated artifact, preserving layout and anchor checks. Its static wallet publication is in progress at this handoff; acceptance must be recorded after the actual flow completes. This fix changes no contracts.
+An uninterrupted fresh signup paid ETH successfully, then failed before proof submission with `ROLLING_ABI_MISMATCH`. Board claim preparation still required the old ordinary-post gas-profile class. Commit `83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06` instead verifies the deployed Board against its authenticated artifact, preserving layout and anchor checks. Its static wallet publication completed without restarting the application, prover or proxy. Acceptance must be recorded after the actual flow completes. This fix changes no contracts.
 
 Portal activation **does not require an epoch proof**. The explicit immutable testnet deployment operator activates after checking the canonical checkpoint binding. Actual activation was observed16seconds after that checkpoint on27October. User withdrawals/refunds retain their ordinary protocol proofs.
 
@@ -54,7 +54,8 @@ Network: Aztec stable6.0.0, rollup `0x1f435a7f2da358caf887a470faeee7d5d5f4efba`,
 
 | Component | Installed source or publication status |
 | --- | --- |
-| Browser UI | `/opt/rolling-ui/releases/86be52150de16ad6fe628000404e44e3592705bb`; static signup fix `83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06` publishing |
+| Browser UI | `/opt/rolling-ui/releases/83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06` |
+| Configured next application source | `/opt/rolling-app/releases/ui-83f3cb7c5469` |
 | Application and moderator | `/opt/rolling-app/releases/86be52150de16ad6fe628000404e44e3592705bb` |
 | Prover | `/opt/board-prover/releases/fresh-board-86be52150de16ad6fe628000404e44e3592705bb` |
 | Bok | `/opt/rolling-bok/releases/86be52150de16ad6fe628000404e44e3592705bb` |

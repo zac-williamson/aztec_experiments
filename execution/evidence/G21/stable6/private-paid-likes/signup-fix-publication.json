@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T14:10:03.378314+00:00",
+  "operation": "static signup-claim SDK fix publication",
+  "runtimeCommit": "83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06",
+  "publisherCommit": "afd5f0c1a427bab0692a763cdf5c0af4b522af67",
+  "baselineCommit": "86be52150de16ad6fe628000404e44e3592705bb",
+  "publication": {
+    "status": "Success",
+    "activated": true,
+    "appRestarted": false,
+    "proxyRestarted": false,
+    "payloadCleaned": true,
+    "sdkRetentionCleaned": true,
+    "activationCommandId": "1a753833-8e7c-4f77-ac60-f990286db0ae",
+    "verificationCommandId": "0f8d5a20-cd16-4741-bec7-8aefcf72e24d",
+    "verificationStatus": "Success",
+    "runtimeSha256": "949ac2762b6e8bc8b0ad67a6321ba274e1f6c8464896a4a02bbea8ce7f5e8218",
+    "publisherSha256": "1a148674db679470a96bf9ffcb9e0fed4c78b1bf101bc83b4a31c56317526a43",
+    "runningSource": "/opt/rolling-app/releases/86be52150de16ad6fe628000404e44e3592705bb",
+    "nextSource": "/opt/rolling-app/releases/ui-83f3cb7c5469",
+    "ui": "/opt/rolling-ui/releases/83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06",
+    "previousUi": "/opt/rolling-ui/releases/86be52150de16ad6fe628000404e44e3592705bb",
+    "protectedPids": {
+      "board-prover-proxy.service": 739,
+      "board-prover.service": 604038,
+      "rolling-application-proxy.service": 427800,
+      "rolling-application.service": 604361,
+      "rolling-moderator.service": 604372,
+      "rolling-node.service": 561751,
+      "rolling-query.service": 561753
+    },
+    "caddySha256": "e3650dac882a5dd4e1a0faaba7ab6e7f95ef48d8e04fa34de77a67230bdcd83c",
+    "notifySha256": "aa8f21c2b5ff13c58983a4b1cbf6482cfb303db74566198102f8b051d46a53ae"
+  },
+  "packet": {
+    "archive": "/private/tmp/ui-83f3cb7c5469.tgz",
+    "sha256": "f5feffdcfdf774373fc60fc87f780fc9de50759628e32a4bfa5eb65707ff6d77",
+    "bytes": 30067796,
+    "fileCount": 5,
+    "files": [
+      ".build/rolling-wallet/manifest.json",
+      ".build/sdk/aztec_browser.js",
+      ".build/sdk/aztec_bundle.js",
+      ".build/sdk/sdk-manifest.json",
+      "shared/board-claim-witnesses.mjs"
+    ],
+    "inspectionSha256": "e889085358fb70769ed2172bc675c3e6f2d473ba0b2ebf001886ca859bb0eba8"
+  },
+  "repair": {
+    "reason": "Inherited source-local wallet override referred to previous Board; active service and current registration used /etc/rolling-app/wallet.json. Publisher now binds running and configured wallet paths separately.",
+    "runningWalletFile": "/etc/rolling-app/wallet.json",
+    "configuredWalletFile": "/etc/rolling-app/wallet.json",
+    "walletFileSha256": "dea3c6968ffbc1c5d65407dc3807877185f3f5c61391054ef4feb9c87ebad0be",
+    "script": "/private/tmp/signup-claim-publish/repair-and-restage.sh",
+    "scriptSha256": "2722cf47948ab51fb7372257bcc3f61da947afb1323e19d83bc34cea9fd9a46f",
+    "focusedTestsPassed": 38
+  },
+  "scope": {
+    "contractsChanged": false,
+    "runtimeConfigurationChanged": false,
+    "deploymentRegistrationChanged": false,
+    "nativeDependenciesChanged": false,
+    "browserAcceptance": "Not asserted by this publication record; owner attempt5 is independent."
+  },
+  "readOnlyVerificationCommands": [
+    [
+      "python3",
+      "/private/tmp/owner-ssm.py",
+      "get",
+      "core",
+      "1a753833-8e7c-4f77-ac60-f990286db0ae"
+    ],
+    [
+      "python3",
+      "/private/tmp/owner-ssm.py",
+      "get",
+      "core",
+      "0f8d5a20-cd16-4741-bec7-8aefcf72e24d"
+    ]
+  ]
+}

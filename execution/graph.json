@@ -9402,13 +9402,13 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "28 October: tips release 86be is deployed. Signup witness class fix 83f3 passed 34 focused checks. Static publication stopped before activation because the publisher selected an inherited stale wallet config; it now binds running and configured wallet paths separately, with 38 focused checks and independent review. Restage and actual signup/post/repeated paid-like acceptance remain pending. Basic 22-byte post on prior 8e68 cost 2.5016104002576 FEE. Performance remains paused.",
+      "checkpoint": "28 October: tips86be and static signup fix83f3 are live; publisher afd5 binds actual running/configured wallet files and all service PIDs stayed unchanged. Fresh signup passed: one Ethereum payment and native Aztec claim block9448, usable246.2015345213254FEE. First post failed before signing/prover submission; current unsigned intent is being diagnosed. Standalone ordinary-post witness old-class pin fixed with22 focused checks and independent review, but optional prefetch errors are swallowed so actual failure cause remains unconfirmed. Performance paused.",
       "execution_lane": "root integration/deployment; isolated contract and client implementers; independent review",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",
       "verification_method": "Native claim/cancel exclusion, Solidity custody/refund proofs, client and browser checks, coherent artifact verification, independent review, then fresh testnet signup and publication.",
       "priority": 0,
-      "next_action": "Publish corrected static SDK/wallet using the actual current configuration; verify fresh signup, a real post, two 20-credit likes and another post. Coordinate source synchronization with ops CI. No contract redeployment."
+      "next_action": "Diagnose and fix the real unsigned first-post error using the funded fixture, then verify two20-credit likes and another post. Publish reviewed SDK corrections as one batch. Ops handles generated-file CI drift separately."
     }
   ],
   "specification": {

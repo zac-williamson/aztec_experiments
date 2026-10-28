@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: tips release 86be is deployed. Signup witness class fix 83f3 passed 34 focused checks. Static publication stopped before activation because the publisher selected an inherited stale wallet config; it now binds running and configured wallet paths separately, with 38 focused checks and independent review. Restage and actual signup/post/repeated paid-like acceptance remain pending. Basic 22-byte post on prior 8e68 cost 2.5016104002576 FEE. Performance remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: tips86be and static signup fix83f3 are live; publisher afd5 binds actual running/configured wallet files and all service PIDs stayed unchanged. Fresh signup passed: one Ethereum payment and native Aztec claim block9448, usable246.2015345213254FEE. First post failed before signing/prover submission; current unsigned intent is being diagnosed. Standalone ordinary-post witness old-class pin fixed with22 focused checks and independent review, but optional prefetch errors are swallowed so actual failure cause remains unconfirmed. Performance paused.
 
 ## Ready internal work
 
