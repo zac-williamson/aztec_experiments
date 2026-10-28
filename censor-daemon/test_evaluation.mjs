@@ -20,8 +20,8 @@ test('latency uses nearest-rank percentiles and includes errors',()=>{const c=co
 test('capacity is unresolved without measured flag evidence, even with supplied number',()=>{const c=corpus(),r=buildEvaluationReport(c,results(c),{flagSubmissionP95Ms:100,evidenceKind:'actual-isolated-model'});assert.equal(r.endToEndCapacity,null);assert.equal(r.pass,false);});
 test('analytical capacity rejects unstable arrival rate and preserves window margin',()=>{const c=corpus(),rr=results(c),e={sha256:hex(1)};let r=buildEvaluationReport(c,rr,{flagSubmissionP95Ms:59000,flagSubmissionEvidence:e});assert.equal(r.endToEndCapacity.pass,false);c.policies[0].censorWindowSeconds=10;r=buildEvaluationReport(c,results(c),{flagSubmissionP95Ms:1,flagSubmissionEvidence:e});assert.equal(r.endToEndCapacity.pass,false);assert(r.limitations[0].includes('not an elapsed'));});
 test('duplicate/mismatched results and unknown policies are rejected',()=>{const c=corpus(),rr=results(c);assert.throws(()=>buildEvaluationReport(c,[rr[0],rr[0]]));rr[0].inputDigest=hex(1);assert.throws(()=>buildEvaluationReport(c,rr));c.cases[0].policyId='unknown';assert.throws(()=>validateCorpus(c));});
-function setup(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bb-eval-')),c=corpus();c.cases=c.cases.slice(0,3);const corpusPath=path.join(dir,'corpus.json'),outputPath=path.join(dir,'out.json');fs.writeFileSync(corpusPath,JSON.stringify(c));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));const configurationBytes=Buffer.from('{"test":true}'),promptBytes=Buffer.from('fixture');const modelIdentity=identifyModel({imageDigest:hex(1),weightsDigest:hex(2),configurationBytes,promptBytes});const f={dir,c,corpusPath,outputPath,calls:0,stops:0};f.runtime={port:5090,configurationBytes,promptBytes,modelIdentity,stop:async()=>{f.stops++;}};f.deps={startRuntime:async()=>f.runtime,evaluate:async(text,policy,port,options)=>{f.calls++;assert(options.timeoutMs<=120000);return {isViolation:false};}};f.run=options=>evaluateModel({corpusPath,outputPath,runtimeOptions:{},maxCases:1,...options},f.deps);return f;}
-test('atomic resume continues remaining cases, retains identities and stops owned runtime',async t=>{const f=setup(t);let state=await f.run();assert.equal(state.results.length,1);assert.equal(state.report.complete,false);assert.equal(state.binding.evidenceKind,'fixture');state=await f.run({maxCases:10});assert.equal(state.results.length,3);assert.equal(f.calls,3);assert.equal(f.stops,2);assert.equal(state.sessions.length,2);assert.equal(state.report.pass,false);assert.equal(state.report.runState,'stopped-cleanly');assert(!fs.existsSync(f.outputPath+'.lock'));});
+function setup(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'bb-eval-')),c=corpus();c.cases=c.cases.slice(0,3);const corpusPath=path.join(dir,'corpus.json'),outputPath=path.join(dir,'out.json');fs.writeFileSync(corpusPath,JSON.stringify(c));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));const configurationBytes=Buffer.from('{"test":true}'),promptBytes=Buffer.from('fixture');const modelIdentity=identifyModel({imageDigest:hex(1),weightsDigest:hex(2),configurationBytes,promptBytes});const f={dir,c,corpusPath,outputPath,calls:0,stops:0};f.runtime={port:5090,configurationBytes,promptBytes,modelIdentity,stop:async()=>{f.stops++;}};f.deps={startRuntime:async()=>f.runtime,evaluate:async(text,policy,port,options)=>{f.calls++;assert(options.signal instanceof AbortSignal);assert.equal(options.signal.aborted,false);assert.deepEqual(Object.keys(options),['signal']);return {isViolation:false};}};f.run=options=>evaluateModel({corpusPath,outputPath,runtimeOptions:{},maxCases:1,...options},f.deps);return f;}
+test('atomic resume continues remaining cases, retains identities and stops owned runtime',async t=>{const f=setup(t);let state=await f.run();assert.equal(state.results.length,1);assert.equal(state.report.complete,false);assert.equal(state.report.errors.total,0);assert.equal(state.binding.evidenceKind,'fixture');state=await f.run({maxCases:10});assert.equal(state.results.length,3);assert.equal(state.report.errors.total,0);assert.equal(f.calls,3);assert.equal(f.stops,2);assert.equal(state.sessions.length,2);assert.equal(state.report.pass,false);assert.equal(state.report.runState,'stopped-cleanly');assert(!fs.existsSync(f.outputPath+'.lock'));});
 test('corpus/model binding mismatch cannot alter saved results',async t=>{const f=setup(t);await f.run();const before=fs.readFileSync(f.outputPath);f.c.cases[0].text='Changed';fs.writeFileSync(f.corpusPath,JSON.stringify(f.c));await assert.rejects(f.run(),/exact corpus/);assert(fs.readFileSync(f.outputPath).equals(before));assert.equal(f.stops,2);assert.equal(f.calls,1);});
 test('failed inference is durable and not retried to cherry-pick results',async t=>{const f=setup(t);f.deps.evaluate=async()=>{f.calls++;throw Object.assign(Error('sensitive raw output'),{code:'MODEL_TIMEOUT'});};let state=await f.run();assert.equal(state.results[0].errorCode,'MODEL_TIMEOUT');state=await f.run({maxCases:10});assert.equal(f.calls,3);assert.equal(state.results.length,3);assert.equal(state.report.errors.total,3);assert(!fs.readFileSync(f.outputPath,'utf8').includes('sensitive'));});
 test('existing lock prevents concurrent runtime creation',async t=>{const f=setup(t);fs.writeFileSync(f.outputPath+'.lock','owned');await assert.rejects(f.run(),/EEXIST/);assert.equal(f.stops,0);assert.equal(f.calls,0);});
@@ -72,44 +72,51 @@ test('runner durably records expected boundary rejection without counting model 
 });
 
 
-test('remaining batch budget defers the next case without shortening its model timeout',async t=>{
- const f=setup(t);let now=0;const time=t.mock.method(performance,'now',()=>now),timeouts=[];
- f.deps.evaluate=async(text,policy,port,options)=>{f.calls++;timeouts.push(options.timeoutMs);now=475000;return {isViolation:false};};
+test('positive batch time admits work on the shared signal and exhausted time defers the next case',async t=>{
+ const f=setup(t);let now=0,startSignal;const time=t.mock.method(performance,'now',()=>now),signals=[];
+ f.deps.startRuntime=async({signal})=>{startSignal=signal;return f.runtime;};
+ f.deps.evaluate=async(text,policy,port,options)=>{f.calls++;assert.deepEqual(Object.keys(options),['signal']);signals.push(options.signal);now=f.calls===1?475000:480000;return {isViolation:false};};
  const state=await f.run({maxCases:3});
- assert.equal(f.calls,1,'Five seconds left must not admit another model request');
- assert.deepEqual(timeouts,[120000]);assert.equal(state.results.length,1);
+ assert.equal(f.calls,2,'Five seconds admits the second request; zero remaining time must defer the third');
+ assert(startSignal instanceof AbortSignal);assert.deepEqual(signals,[startSignal,startSignal]);assert.equal(state.results.length,2);
  assert.equal(state.report.errors.total,0);assert.equal(state.report.complete,false);
  assert.equal(f.stops,1);assert(!fs.existsSync(f.outputPath+'.lock'));
- assert.deepEqual(state.sessions[0].deferredCase,{caseId:'case1',reason:'insufficient-request-budget',remainingMs:5000,requiredMs:120000});
- const original=JSON.stringify(state.results[0]);now=0;const resumed=await f.run({maxCases:1});
- assert.equal(f.calls,2);assert.equal(resumed.results[1].caseId,'case1');assert.equal(JSON.stringify(resumed.results[0]),original);
+ assert.deepEqual(state.sessions[0].deferredCase,{caseId:'case2',reason:'insufficient-request-budget',remainingMs:0,requiredMs:1});
+ const original=JSON.stringify(state.results);now=0;const resumed=await f.run({maxCases:1});
+ assert.equal(f.calls,3);assert.equal(resumed.results[2].caseId,'case2');assert.equal(JSON.stringify(resumed.results.slice(0,2)),original);assert.equal(resumed.report.errors.total,0);
  assert.equal(resumed.sessions[1].deferredCase,null);assert.equal(f.stops,2);
  time.mock.restore();
 });
 
 
-test('runtime startup time cannot consume part of an admitted model deadline',async t=>{
+test('runtime startup exhausting the shared work budget prevents any model request',async t=>{
  const f=setup(t);let now=0;t.mock.method(performance,'now',()=>now);
- f.deps.startRuntime=async()=>{now=360001;return f.runtime;};
+ f.deps.startRuntime=async()=>{now=480000;return f.runtime;};
  const state=await f.run({maxCases:3});assert.equal(f.calls,0);assert.equal(f.stops,1);
  assert.equal(state.results.length,0);assert.equal(state.report.errors.total,0);assert.equal(state.report.complete,false);
- assert.deepEqual(state.sessions[0].deferredCase,{caseId:'case0',reason:'insufficient-request-budget',remainingMs:119999,requiredMs:120000});
+ assert.deepEqual(state.sessions[0].deferredCase,{caseId:'case0',reason:'insufficient-request-budget',remainingMs:0,requiredMs:1});
  assert.equal(state.report.runState,'stopped-cleanly');assert.equal(state.report.pass,false);
 });
-test('an admitted request retains the full timeout and its real error through resume',async t=>{
+test('an admitted request retains its actual model error through resume without a per-call deadline',async t=>{
  const f=setup(t);let now=0;t.mock.method(performance,'now',()=>now);
  f.deps.startRuntime=async()=>{now+=360000;return f.runtime;};
- f.deps.evaluate=async(text,policy,port,options)=>{assert.equal(options.timeoutMs,120000);f.calls++;now+=120000;throw Object.assign(Error('not retained'),{code:'MODEL_TIMEOUT'});};
- const first=await f.run({maxCases:3});assert.equal(f.calls,1);assert.equal(first.results[0].durationMs,120000);assert.equal(first.results[0].errorCode,'MODEL_TIMEOUT');
+ f.deps.evaluate=async(text,policy,port,options)=>{assert.deepEqual(Object.keys(options),['signal']);assert(options.signal instanceof AbortSignal);assert.equal(options.signal.aborted,false);f.calls++;now+=120000;throw Object.assign(Error('not retained'),{code:'MODEL_UNAVAILABLE'});};
+ const first=await f.run({maxCases:3});assert.equal(f.calls,1);assert.equal(first.results[0].durationMs,120000);assert.equal(first.results[0].errorCode,'MODEL_UNAVAILABLE');
  const retained=JSON.stringify(first.results[0]);now=0;const second=await f.run({maxCases:3});
  assert.equal(f.calls,2);assert.equal(second.results[1].caseId,'case1');assert.equal(JSON.stringify(second.results[0]),retained);
  assert.equal(second.report.errors.total,2);assert.equal(second.report.qualityPass,false);assert.equal(second.report.latencyPass,false);assert.equal(f.stops,2);
 });
 
-test('a valid short work budget stops incomplete without inventing a successful evaluation',async t=>{
- const f=setup(t);const state=await f.run({workBudgetMs:1000,maxCases:3});
- assert.equal(f.calls,0);assert.equal(f.stops,1);assert.equal(state.results.length,0);
+test('a short shared work budget aborts its active request and never starts the next case',async t=>{
+ const f=setup(t),entered=Promise.withResolvers();let signal;
+ t.mock.timers.enable({apis:['setTimeout']});
+ f.deps.evaluate=async(text,policy,port,options)=>{f.calls++;signal=options.signal;assert.deepEqual(Object.keys(options),['signal']);return new Promise((resolve,reject)=>{signal.addEventListener('abort',()=>reject(signal.reason),{once:true});entered.resolve();});};
+ const pending=f.run({workBudgetMs:1000,maxCases:3});await entered.promise;
+ assert(signal instanceof AbortSignal);assert.equal(signal.aborted,false);t.mock.timers.tick(999);assert.equal(signal.aborted,false);
+ t.mock.timers.tick(1);const state=await pending;
+ assert.equal(signal.aborted,true);assert.equal(f.calls,1);assert.equal(f.stops,1);assert.equal(state.results.length,1);
+ assert.equal(state.results[0].status,'error');assert.equal(state.results[0].errorCode,'MODEL_EVALUATION_FAILED');assert.equal(state.report.errors.total,1);
  assert.equal(state.report.complete,false);assert.equal(state.report.qualityPass,false);assert.equal(state.report.latencyPass,false);assert.equal(state.report.pass,false);
- assert.equal(state.sessions[0].deferredCase.caseId,'case0');assert.equal(state.sessions[0].deferredCase.requiredMs,120000);assert(state.sessions[0].deferredCase.remainingMs<=1000);
+ assert.equal(state.sessions[0].deferredCase,null);assert.equal(state.sessions[0].interrupted,true);
  assert.equal(state.report.runState,'stopped-cleanly');assert(!fs.existsSync(f.outputPath+'.lock'));
 });
