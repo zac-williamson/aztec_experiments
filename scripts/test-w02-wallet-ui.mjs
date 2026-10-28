@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 const source=['account.js','wallet-buttons.js'].map(p=>fs.readFileSync(new URL('../shared/'+p,import.meta.url),'utf8')).join('\n');
 const field=n=>'0x'+BigInt(n).toString(16).padStart(64,'0');
-const key=field(1),salt=field((1n<<200n)+13n),owner='0x'+'12'.repeat(20);
+const key=field(1),address=field(21),salt=field((1n<<200n)+13n),owner='0x'+'12'.repeat(20);
 async function fixture({fail=false}={}) {
  const elements=new Map(),logs=[],warnings=[],derived=[],listeners={},calls={sign:0,save:[],clear:0};
  let saved=null;
@@ -16,7 +16,7 @@ async function fixture({fail=false}={}) {
  const context=vm.createContext({console:{warn:(...args)=>warnings.push(args.join(' '))},BigInt,Uint8Array,setTimeout:()=>{},log:message=>logs.push(message),publicOperationFailure:e=>({message:'Safe wallet error '+(e.code||'unknown')}),
   location:{origin:'https://rolling.example',reload(){}},navigator:{locks:{request:async(_name,options,run)=>typeof options==='function'?options():run({})}},_getPublicConfig:()=>({network:{chainId:'31337'}}),
   document:{querySelector:()=>null,getElementById:element,createElement:()=>element('download'),body:{appendChild(){}}},
-  window:{BillboardEthereumSession:session,ethereum:{request:async({method})=>method==='eth_accounts'?new context.ethers.BrowserProvider().send('eth_accounts'):'0x7a69',on(name,fn){listeners[name]=fn;}},__aztec:{Fr,deriveSigningKey:()=>0,deriveKeys:async()=>({publicKeys:[]}),SchnorrInitializerlessAccountContract:class {async getContractArtifact(){return{};}async getImmutablesHash(){return 0;}},getContractInstanceFromInstantiationParams:async(_artifact,args)=>{derived.push(args.salt.value);if(fail)throw Error('secret-fixture-diagnostic');return{address:{toString:()=>key}};},computePartialAddress:async()=>({toString:()=>field(2)})}},
+  window:{BillboardEthereumSession:session,ethereum:{request:async({method})=>method==='eth_accounts'?new context.ethers.BrowserProvider().send('eth_accounts'):'0x7a69',on(name,fn){listeners[name]=fn;}},__aztec:{Fr,deriveSigningKey:()=>0,deriveKeys:async()=>({publicKeys:[]}),SchnorrInitializerlessAccountContract:class {async getContractArtifact(){return{};}async getImmutablesHash(){return 0;}},getContractInstanceFromInstantiationParams:async(_artifact,args)=>{derived.push(args.salt.value);if(fail)throw Error('secret-fixture-diagnostic');return{address:{toString:()=>address}};},computePartialAddress:async()=>({toString:()=>field(2)})}},
  });
  vm.runInContext(source,context);await context.initWalletButtons('container',{requireEth:false});
  return{context,element,logs,warnings,derived,listeners,calls,session,setSaved:value=>{saved=value;},getSaved:()=>saved};
@@ -31,7 +31,7 @@ const open=f=>f.context.window.BillboardAccount.connect(f.context.window.ethereu
 test('full Field salt reaches current derivation without placing keys in DOM or public state',async()=>{
  const f=await accountFixture();await open(f);
  assert.equal(f.derived[0],BigInt(salt));assert.equal(f.element('salt').value,'prior');assert.equal(f.context.window.walletState.aztec.salt,salt);
- const publicState=JSON.stringify(f.context.window.BillboardAccount.snapshot());assert(!publicState.includes(salt));assert(!publicState.includes('secretKey'));
+ const publicState=JSON.stringify(f.context.window.BillboardAccount.snapshot());assert(!publicState.includes(salt));assert(!publicState.includes(key));assert(!publicState.includes('secretKey'));
  assert.equal(f.calls.sign,1);assert.equal(f.calls.save.length,1);assert.equal(f.calls.save[0].wallet.salt,salt);
 });
 test('failed derivation does not activate or persist the account or expose diagnostics',async()=>{
@@ -222,7 +222,7 @@ test('same-chain announcements after activation preserve the session; a changed 
 
 test('opening a remembered account is silent and preserves its full key and salt',async()=>{
  const f=await accountFixture();await f.context.window.BillboardAccount.connect(f.context.window.ethereum);assert.equal(f.calls.sign,0);assert.equal(f.context.window.walletState.aztec,null);
- f.setSaved({wallet:{secretKey:key,salt,address:key},metadata:{ethereumAddress:owner,providerId:'test-wallet'}});
+ f.setSaved({wallet:{secretKey:key,salt,address},metadata:{ethereumAddress:owner,providerId:'test-wallet'}});
  assert.equal(await f.context.window.BillboardAccount.restoreRemembered(),true);assert.equal(f.calls.sign,0);assert.equal(f.calls.save.length,0);assert.equal(f.context.window.walletState.aztec.salt,salt);
 });
 test('cancelled signatures and changed context never activate or persist an account',async()=>{
