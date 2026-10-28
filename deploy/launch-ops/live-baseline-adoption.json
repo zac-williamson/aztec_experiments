@@ -1,0 +1,42 @@
+{
+  "backend": {
+    "assetCount": 116,
+    "securityHeaders": true,
+    "gzip": true
+  },
+  "proxy": {
+    "assetCount": 116,
+    "securityHeaders": true,
+    "gzip": true
+  },
+  "public": {
+    "assetCount": 116,
+    "securityHeaders": true,
+    "gzip": true
+  },
+  "status": "adopted",
+  "revision": "021fd7a6b574367be57c7c97b38d76f1d8daa473",
+  "applicationPid": "650923",
+  "otherServicePids": {
+    "rolling-application-proxy": "427800",
+    "board-prover": "641596",
+    "board-prover-proxy": "739",
+    "rolling-node": "561751",
+    "rolling-query": "561753",
+    "rolling-moderator": "604372",
+    "rolling-staging": "642898",
+    "rolling-ops": "600972"
+  },
+  "caddySha256": "0d224693b61bfa40eb5077fa8e46e35038b565735f1e6e503d0b51fd899e0db2",
+  "automaticReleaseEnabled": false,
+  "ssmCommand": "543693f8-150d-430b-b9d1-9b28718650eb",
+  "operatorScriptSha256": "e49bda55798094337e27e0b5702c224c729ae4d345b95a9ade546105148b65e3",
+  "previousAttempt": {
+    "command": "af25043c-682a-4556-9353-d1031d81e748",
+    "result": "stopped before application restart; identical IPAddressAllow rules reordered by systemd",
+    "narrowCorrection": "compare sorted literal IPAddressAllow tokens, preserving duplicates and every other guard"
+  },
+  "realJourneyPassed": false,
+  "operatorRollbackExercised": false,
+  "recordedAt": "2026-10-28T17:14:06Z"
+}

@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "status": "awaiting-new-contract-baseline-and-genuine-acceptance",
+  "recordedAt": "2026-10-28T19:32:58.820904+00:00",
+  "sourceRevision": "e1bd8abe0d24b4b18a3c7c105695835b3ed9b8a3",
+  "fullBuild": {
+    "revision": "aae73b012bec660f2ce4c05c2529479208a82b0c",
+    "runId": 40740398361,
+    "attempt": 2,
+    "conclusion": "success",
+    "included": [
+      "two clean builds",
+      "committed generated drift",
+      "recorded-byte reproducibility",
+      "native contract checks",
+      "browser/application checks",
+      "Docker model isolation"
+    ]
+  },
+  "firstActualRehearsal": {
+    "runId": 40746407699,
+    "attempt": 2,
+    "revision": "aae73b012bec660f2ce4c05c2529479208a82b0c",
+    "outcome": "blocked-before-promotion",
+    "error": "RELEASE_INCLUSION",
+    "diagnosis": "Native sendTx is gzipped; the installed observer parsed its wire bytes as JSON and captured no transaction hash. Same native transaction reproduced plain=one correct hash and gzip=zero.",
+    "liveRevisionUnchanged": "021fd7a6b574367be57c7c97b38d76f1d8daa473"
+  },
+  "repair": {
+    "sourceRevision": "e1bd8abe0d24b4b18a3c7c105695835b3ed9b8a3",
+    "focusedTestsPassed": 50,
+    "independentReviewer": "monitoring",
+    "integrationGate": "execution/evidence/launch-ops/ops-repair-gate-integrate.json",
+    "hostUpdateSsm": "b57b8a06-8522-4e9c-a81f-d495001b9fd6",
+    "installedFiles": [
+      "scripts/release/evidence.mjs",
+      "scripts/release/journey.mjs",
+      "scripts/release/pipeline.mjs"
+    ],
+    "installedDirectory": "/usr/local/lib/rolling-release",
+    "applicationServicesRestarted": false,
+    "newFullBuildRun": 40752724740,
+    "newFullBuildStatus": "cancelled-after-new-contract-source-superseded-it"
+  },
+  "nativeVerifierDiagnostic": {
+    "ssm": "e6ef2562-00b3-4c10-a968-ce0ce6204709",
+    "historicalAcceptedPostVerified": true,
+    "transactionsSent": false,
+    "scope": "Old-class diagnostic using unchanged bootstrap verifier; does not qualify the upcoming new contract deployment."
+  },
+  "immutableOidc": {
+    "stack": "rolling-chat-release-access",
+    "stackStatus": "UPDATE_COMPLETE",
+    "audience": "sts.amazonaws.com",
+    "subject": "repo:zac-williamson@1476668/aztec_experiments@1371600739:environment:rolling-testnet-release",
+    "actualRoleAssumptionSucceeded": true,
+    "runId": 40746407699,
+    "attempt": 2
+  },
+  "coordinatedHandoff": {
+    "at": "2026-10-28T19:14:51.894230Z",
+    "ssm": "192e0edc-ac04-4de2-9dd1-6551f59c5d05",
+    "automaticReleaseEnabled": false,
+    "releaseJobIdle": true,
+    "releaseLockPresent": false,
+    "reason": "Other implementation chat is deploying the user-requested new compact Board and matching SDK. Operations acceptance will use that new coherent baseline.",
+    "newBaselineSourceRevision": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+    "newBaselineStatus": "deployment-in-progress",
+    "newBaselineFullBuildRun": 40753383089
+  },
+  "remaining": [
+    "new compatible live/stage baseline and public verifier",
+    "fresh full build for subsequent candidate",
+    "free dedicated test-fund refill",
+    "real staged ETH/USDC signup, posting, reply, like, reload and Bok journey",
+    "automatic promotion with live byte verification",
+    "same-class operator rollback and return",
+    "fresh essential-control off-host restore"
+  ]
+}

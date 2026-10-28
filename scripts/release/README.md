@@ -57,6 +57,36 @@ those failures normally, without
 legacy test and prototype code remain intact; this split makes no claim that
 those prototype failures are repaired.
 
+## Acceptance checkpoint, 28 October 2026
+
+The complete pinned build passed for `aae73b01`, including both clean builds,
+byte reproducibility, native checks and Docker isolation. The first actual staged
+journey then stopped before promotion because its observer parsed compressed
+native transaction bytes as JSON. The repaired observer bounds both compressed
+and expanded bodies and reconstructs the same native transaction hash. Fifty
+focused release/backup checks passed; the installed three-file operator update
+was applied without restarting the application. The native hash regression is
+also part of the full build.
+
+GitHub now supplies the repository's immutable OIDC subject. The role condition
+pins the exact owner/repository IDs and `rolling-testnet-release` environment;
+its audience, actions and resources are unchanged. Actual role assumption and
+invocation of the fixed host job succeeded after the condition update.
+
+Automatic release is currently disabled for the coordinated fresh compact-Board
+deployment. Its exact baseline source is `48c2750f`; do not restore the old Board
+class during application rollback. After the new runtime is accepted, refresh the
+stopped stage and native verifier, seal/adopt its matching source and artifacts,
+and qualify a later same-class candidate through the existing full-build and
+real-journey gates. The live service must use the release pointer for promotion
+and rollback to control the served version. An `already live` result exercises
+neither journey nor rollback and does not count as acceptance.
+
+[`release-acceptance.json`](../../deploy/launch-ops/release-acceptance.json) records
+these observed boundaries and the outstanding work. Earlier preparation records
+below describe their own historical checkpoints; they are not evidence that the
+new-class rehearsal, promotion or rollback has completed.
+
 ## Installed preparation, 28 October 2026
 
 The stopped-stage baseline and public input proof are recorded in

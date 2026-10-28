@@ -1,0 +1,15 @@
+{
+  "status": "removed-retired-public-static-archives",
+  "removed": [
+    "/opt/rolling-ui/releases",
+    "/opt/rolling-ui/by-hash",
+    "/opt/rolling-ui/current"
+  ],
+  "files": 11387,
+  "availableBefore": 5417414656,
+  "availableAfter": 7446958080,
+  "reclaimedBytes": 2029543424,
+  "servicesUnchanged": true,
+  "recordedAt": "2026-10-28T17:30:51.513640+00:00",
+  "ssmCommand": "1f237141-87c9-49e7-b4ef-2be80102a4e3"
+}
