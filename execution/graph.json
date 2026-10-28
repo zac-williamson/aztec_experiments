@@ -9843,19 +9843,11 @@
     "resource_closeout": "execution/evidence/G12/resource-closeout-20261020/closeout.json"
   },
   "current_operating_request": {
-    "request": "Owner25October: apply all proven posting optimizations across ALL other application transaction flows; new goal at least50% end-to-end reduction for every flow against currentpublished74c baseline. Cover Ethereum/Aztec user and operator paths, preservevalidation and genuine usable completion.",
+    "request": "28 October owner: implement first-party anonymous analytics, private Growth/Reliability/Releases dashboard, operational monitoring and alerts, gated testnet CI/deployment, and minimal operating safeguards. No persistent user profiles. Incremental budget USD50 total.",
     "status": "active",
-    "execution_lane": "Root integrates measured transport/preparation fixes; read-only agents review gzip lifecycle, fixed-provider/predecessor guards, and full-flow coverage.",
-    "checkpoint": "Browser restored; e291 real warm funded opening2.255125s/1.914850s, name20.912730s, bio18.548505s, Like visible14.691035s, ETH\u2192usableBok55.345905s. Name/bio/Bok exceed50% observed reduction with recorded fixture/dwell caveats; Like misses. Freshsignup2s notverified: testETHbelow0.001minimumdeposit; fixture refill underway. No appsourcechanges.",
-    "next_action": "Implement and qualify result-stream compression and measured preparation corrections, publish narrowly, remeasure nativeincluded flows. Keep freshsignup2s and allflow50% incomplete.",
-    "account_opening_target": {
-      "maximum_seconds": 2,
-      "start": "Wallet selection click",
-      "end": "Correctly priced enabled payment button visibly rendered",
-      "wallet_approval": "Report total wall time and human wallet approval dwell separately; never hide application work in approval time.",
-      "coverage": "Fresh account, returning account, warm page and cold page; report page startup separately and immediate-click results.",
-      "requirement": "Remove private engine startup, private synchronization, constructor simulation and private balance discovery from funding quote dependencies. No placeholder payment readiness or costs moved blindly after Pay."
-    }
+    "execution_lane": "root integration/dashboard/deployment; isolated analytics, monitoring and CI owners",
+    "checkpoint": "Isolated from active onboarding/tipping release at635a33b3. AWS SSO and GitHub access verified; no resources created. No secrets copied.",
+    "next_action": "Agree event/privacy and service contracts; integrate focused implementations, independent review, deploy separate ops service and test release gates without interfering with active app release."
   },
   "completed_operating_requests": [
     {

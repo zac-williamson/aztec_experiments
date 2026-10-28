@@ -3053,5 +3053,29 @@
     "configSha256": "54ce190420f9d756786aa13b98a33c3b740e0bd1389d4d18373b988bbb3d7ae6",
     "proverPid": 728356,
     "unchangedOtherServicePids": true
+  },
+  "launch_operations_20261028": {
+    "authorization": "Owner: implement four deliverables; USD50 total incremental budget",
+    "ceilingUsd": 50,
+    "reservedUsd": 25,
+    "bufferUsd": 25,
+    "forecastWindowDays": 31,
+    "forecastComponentsUsd": {
+      "existingHostSidecars": 0,
+      "CognitoSmallOperatorPool": 1,
+      "externalMonitorLambdaScheduleLogs": 4,
+      "alarmsAndMetrics": 5,
+      "S3EncryptedBackups": 2,
+      "stagingTestTraffic": 8,
+      "contingency": 5
+    },
+    "status": "reserved-before-provisioning",
+    "constraints": [
+      "Reuse existing hosts; no new EC2",
+      "No application-user identity tracking",
+      "New-resource spend monitored separately; USD50 is not recurring allowance",
+      "No change to existing USD1500/month hosting authorization"
+    ],
+    "resources": []
   }
 }
