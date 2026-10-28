@@ -1,4 +1,5 @@
-import importlib.util, pathlib, tempfile, tarfile, io, json, unittest
+import importlib.util, pathlib, tempfile, tarfile, io, json, unittest, os
+from unittest.mock import patch
 spec=importlib.util.spec_from_file_location('bootstrap',pathlib.Path(__file__).with_name('bootstrap.py'));b=importlib.util.module_from_spec(spec);spec.loader.exec_module(b)
 class PayloadTests(unittest.TestCase):
  def packet(self,folder,member='source.mjs',kind=tarfile.REGTYPE):
@@ -21,6 +22,14 @@ class PayloadTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d:
    p=pathlib.Path(d);m=self.packet(p);m['application']['files']['source.mjs']['sha256']='0'*64;(p/'manifest.json').write_text(json.dumps(m))
    with self.assertRaises(ValueError):b.load_payload(p)
+ def test_unpacked_operator_directories_are_publicly_readable_under_private_umask(self):
+  with tempfile.TemporaryDirectory() as d:
+   p=pathlib.Path(d);self.packet(p,'scripts/release/gate.mjs');target=p/'operator';old=os.umask(0o077)
+   try:
+    with patch.object(b.os,'chown'):b.unpack(p,'operator',target)
+   finally:os.umask(old)
+   for name in ['', 'scripts', 'scripts/release']:self.assertEqual((target/name).stat().st_mode&0o777,0o755)
+   self.assertEqual((target/'scripts/release/gate.mjs').stat().st_mode&0o777,0o644)
  def test_configuration_never_silently_overwrites(self):
   with tempfile.TemporaryDirectory() as d:
    p=pathlib.Path(d)/'config.json';p.write_bytes(b'original')

@@ -43,6 +43,9 @@ Environment=HOME=/var/lib/rolling-release-job PATH=/opt/rolling-ops/runtime:/usr
 Environment=GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null GIT_TERMINAL_PROMPT=0
 Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/rolling-ci-bootstrap/browsers
 ExecStart=${cfg.nodeBinary} /usr/local/lib/rolling-release/scripts/release/host-job.mjs
+MemoryMax=8G
+CPUQuota=200%
+TasksMax=512
 TimeoutStartSec=1200
 TimeoutStopSec=30
 KillMode=control-group
@@ -62,9 +65,9 @@ export async function installReleaseJob(configFile){
   if(!user||user==='root'||user==='0'||user==='rolling-release')throw failure('RELEASE_APPLICATION_SERVICE_USER');
  }
  const unit='rolling-release-job.service';
- await fs.writeFile('/etc/systemd/system/'+unit,releaseJobUnit(cfg),{flag:'wx',mode:0o644});
+ await fs.writeFile('/etc/systemd/system/'+unit,releaseJobUnit(cfg),{flag:'wx',mode:0o644});await fs.chmod('/etc/systemd/system/'+unit,0o644);
  const sudoers='/etc/sudoers.d/rolling-release',temp=sudoers+'.pending-'+process.pid;
- try{await fs.writeFile(temp,'Defaults:rolling-release timestamp_timeout=0\nrolling-release ALL=(root) NOPASSWD: /usr/bin/systemctl restart rolling-staging.service, /usr/bin/systemctl restart rolling-application.service\n',{flag:'wx',mode:0o440});execFileSync('/usr/sbin/visudo',['-cf',temp],{stdio:'pipe'});await fs.link(temp,sudoers);}finally{await fs.rm(temp,{force:true});}
+ try{await fs.writeFile(temp,'Defaults:rolling-release timestamp_timeout=0\nrolling-release ALL=(root) NOPASSWD: /usr/bin/systemctl restart rolling-staging.service, /usr/bin/systemctl restart rolling-application.service\n',{flag:'wx',mode:0o440});await fs.chmod(temp,0o440);execFileSync('/usr/sbin/visudo',['-cf',temp],{stdio:'pipe'});await fs.link(temp,sudoers);}finally{await fs.rm(temp,{force:true});}
  return {unit,enabled:false,started:false};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){try{if(process.argv.length!==3)throw failure('RELEASE_USAGE');process.stdout.write(JSON.stringify(await installReleaseJob(process.argv[2]))+'\n');}catch(e){process.stderr.write((e.code?.startsWith('RELEASE_')?e.code:'RELEASE_JOB_INSTALL_FAILED')+'\n');process.exitCode=1;}}

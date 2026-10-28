@@ -38,6 +38,7 @@ def unpack(folder,kind,target):
    if dest.exists():require(dest.is_file() and dest.read_bytes()==raw,'Existing source differs')
    else:dest.write_bytes(raw)
    os.chown(dest,0,0);os.chmod(dest,0o644)
+ for current,dirs,files in os.walk(target):os.chmod(current,0o755)
 def directory(p,mode=0o755,uid=0,gid=0):
  require(not p.is_symlink(),'Unexpected directory link');p.mkdir(parents=True,exist_ok=True);os.chown(p,uid,gid);os.chmod(p,mode)
 def atomic(p,raw,mode=0o644,uid=0,gid=0):
@@ -104,7 +105,7 @@ def prepare(folder,m,p):
    os.chmod(current,0o755)
    for name in files:os.chmod(pathlib.Path(current)/name,0o644)
  else:require((baseline/'release.json').is_file(),'Incomplete existing baseline; inspect before retry')
- directory(OPERATOR);unpack(folder,'operator',OPERATOR);link(OPERATOR/'node_modules',dependencies)
+ directory(OPERATOR.parent);directory(OPERATOR);unpack(folder,'operator',OPERATOR);link(OPERATOR/'node_modules',dependencies)
  public.update({'port':8091,'cacheDirectory':'/var/lib/rolling-stage/index','artifactPath':str(STAGE/'current/billboard/target/rolling_contract-RollingBoard.json'),'bokArtifactPath':str(STAGE/'current/experiments/private-bok/target/private_bok-PrivateBok.json')})
  wallet['trustedQuery']['url']=p['stageOrigin']+'/prover/v1/node';wallet['remoteProver']['url']=p['stageOrigin']+'/prover';wallet['config']['aggregateFunding']['usdcRelayAddress']=address
  relay['signerFile']='/run/credentials/rolling-staging.service/relay-signer';relay['stateDirectory']='/var/lib/rolling-stage/relay';relay['policy']['relayer']=address

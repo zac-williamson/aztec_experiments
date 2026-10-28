@@ -9,7 +9,7 @@ export function validateJourneyConfig(value){
  const allowed=['stagingOrigin','liveOrigin','ethereumRpc','testFunderKey','ethPerAccountWei','usdcPerAccount','timeoutMs','testOnly'];
  if(!value||Object.keys(value).sort().join()!==allowed.sort().join()||value.testOnly!==true)throw failure('RELEASE_FIXTURE_CONFIG');
  for(const key of ['stagingOrigin','liveOrigin']){const u=new URL(value[key]);if(u.origin!==value[key]||u.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(u.hostname))throw failure('RELEASE_FIXTURE_CONFIG');}
- if(value.stagingOrigin===value.liveOrigin||!/^0x[0-9a-fA-F]{64}$/.test(value.testFunderKey)||!/^\d+$/.test(value.ethPerAccountWei)||BigInt(value.ethPerAccountWei)>10n**16n||BigInt(value.ethPerAccountWei)<=0n||!/^\d+$/.test(value.usdcPerAccount)||BigInt(value.usdcPerAccount)>10000000n||BigInt(value.usdcPerAccount)<=0n||!Number.isInteger(value.timeoutMs)||value.timeoutMs<1000||value.timeoutMs>540000)throw failure('RELEASE_FIXTURE_CONFIG');
+ if(value.stagingOrigin===value.liveOrigin||!/^0x[0-9a-fA-F]{64}$/.test(value.testFunderKey)||!/^\d+$/.test(value.ethPerAccountWei)||BigInt(value.ethPerAccountWei)>10n**16n||BigInt(value.ethPerAccountWei)<=0n||!/^\d+$/.test(value.usdcPerAccount)||BigInt(value.usdcPerAccount)>100000000n||BigInt(value.usdcPerAccount)<=0n||!Number.isInteger(value.timeoutMs)||value.timeoutMs<1000||value.timeoutMs>540000)throw failure('RELEASE_FIXTURE_CONFIG');
  const rpc=new URL(value.ethereumRpc);if(rpc.protocol!=='https:'&&!(rpc.protocol==='http:'&&rpc.hostname==='127.0.0.1'))throw failure('RELEASE_FIXTURE_CONFIG');
  return value;
 }

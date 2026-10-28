@@ -143,7 +143,7 @@ test('release transport has an exact environment trust and parameterless command
  const statements=role.Policies[0].PolicyDocument.Statement;assert.deepEqual(statements.map(x=>x.Action),['ssm:SendCommand','ssm:GetCommandInvocation']);assert.equal(statements[0].Resource.length,2);assert(!statements[0].Resource.includes('*'));
  const doc=template.Resources.ReleaseCommand.Properties.Content;assert.deepEqual(doc.parameters,{});assert.equal(doc.mainSteps.length,1);assert(doc.mainSteps[0].inputs.runCommand.includes('/usr/bin/systemctl start --wait rolling-release-job.service'));
  const unit=releaseJobUnit({releaseDirectory:'/opt/rolling-releases',stagingLink:'/opt/rolling-stage/current',liveLink:'/opt/rolling-release-live/current',stateFile:'/var/lib/rolling-release-state/state.json',nodeBinary:'/opt/rolling-ops/runtime/node'});
- assert.match(unit,/Type=oneshot/);assert.match(unit,/host-job\.mjs/);assert(!unit.includes('actions.runner'));assert(!unit.includes('[Install]'));
+ assert.match(unit,/MemoryMax=8G/);assert.match(unit,/CPUQuota=200%/);assert.match(unit,/TasksMax=512/);assert.match(unit,/Type=oneshot/);assert.match(unit,/host-job\.mjs/);assert(!unit.includes('actions.runner'));assert(!unit.includes('[Install]'));
 });
 
 test('gasless wallet bridge refuses even a zero-value transaction requiring gas',async()=>{
@@ -165,4 +165,10 @@ test('private job umask still permits the dashboard group to read sanitized rele
  const {writeReleaseState}=await import('./pipeline.mjs'),target=path.join(root,'state.json'),old=process.umask(0o077);
  try{await writeReleaseState(target,{status:'checking'});}finally{process.umask(old);}
  assert.equal((await fs.stat(target)).mode&0o777,0o640);
+});
+
+test('public sealed manifest stays readable under restrictive root installation umask',async t=>{
+ const f=await setup(t),target=path.join(f.root,'umask-baseline');await fs.mkdir(target);await fs.writeFile(path.join(target,'index.html'),'public');const old=process.umask(0o077);
+ try{await sealBundle(target,{revision,baseline:oldRevision,compatibility:{test:true},publicFiles:{'/':'index.html'}});}finally{process.umask(old);}
+ assert.equal((await fs.stat(path.join(target,'release.json'))).mode&0o777,0o644);
 });

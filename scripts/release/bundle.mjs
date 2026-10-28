@@ -47,7 +47,7 @@ export async function sealBundle(root,{revision,baseline,publicFiles,compatibili
   if(!/^\/(?:[A-Za-z0-9_.@-]+\/)*[A-Za-z0-9_.@-]*$/.test(url)||!Object.hasOwn(files,name))throw failure('RELEASE_PUBLIC_INVENTORY');
  }
  const manifest={schemaVersion:1,revision,baseline,compatibility,files,publicFiles};
- await fs.writeFile(output,JSON.stringify(manifest,null,2)+'\n',{flag:'wx',mode:0o644});return manifest;
+ await fs.writeFile(output,JSON.stringify(manifest,null,2)+'\n',{flag:'wx',mode:0o644});await fs.chmod(output,0o644);return manifest;
 }
 export async function verifyBundle(root){
  const raw=await fs.readFile(await regular(root,'release.json'));if(raw.length>2*1024*1024)throw failure('RELEASE_MANIFEST');

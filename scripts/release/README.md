@@ -130,7 +130,7 @@ Create `/etc/rolling-release/config.json`, mode `0600`, owned by the release use
 Create private `test-wallet.json` with exactly these fields: `stagingOrigin`,
 `liveOrigin` (same as above), `ethereumRpc` (Sepolia), `testFunderKey` (a dedicated
 test-only key), `ethPerAccountWei` (decimal string, at most `10000000000000000`),
-`usdcPerAccount` (decimal string, at most `10000000` test-USDC base units),
+`usdcPerAccount` (decimal string, at most `100000000` test-USDC base units),
 `timeoutMs` (`540000` maximum), and `testOnly: true`. Owner `rolling-release`,
 mode `0600`. Keep it out of GitHub, artifacts and logs. Fund it with free Sepolia
 ETH and the deployed router's test USDC. Each run creates two disposable accounts;
@@ -161,7 +161,8 @@ exact commit; a newer failed/incomplete run blocks it. No passed receipt, source
 archive, command or revision can be supplied by the caller. A manual workflow
 request checks the current master too; it does not deploy an old trigger SHA.
 
-The job's filesystem is read-only except its own checkout, releases, pointers and
+The job is bounded to 8GiB memory, two CPU cores and512 tasks on the shared
+host. Confirm those limits fit the host before installation. Its filesystem is read-only except its own checkout, releases, pointers and
 sanitized-state directory. Service configs and state, cloud-init data and home
 directories are inaccessible. Both EC2 metadata addresses are denied. AWS
 credential variables are removed and credential files point to `/dev/null`.
