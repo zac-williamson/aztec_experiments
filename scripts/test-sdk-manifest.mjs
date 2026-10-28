@@ -38,6 +38,7 @@ function fixture(t) {
     'node_modules/@aztec-foundation/noir-acvm_js/web/acvm_js.js':'// fixture acvm loader',
     'node_modules/@aztec-foundation/noir-noirc_abi/web/noirc_abi_wasm.js':'// fixture abi loader',
     'scripts/pxe-log-projection.mjs':fs.readFileSync(new URL('./pxe-log-projection.mjs',import.meta.url),'utf8'),
+    'scripts/pxe-owner-fact-writes.mjs':'// fixture unchanged owner fact transform',
     'node_modules/@aztec-labs/pxe/dest/node/caching_aztec_node.js':fs.readFileSync(new URL('../node_modules/@aztec-labs/pxe/dest/node/caching_aztec_node.js',import.meta.url),'utf8'),
     'scripts/pxe-sync-snapshot.mjs':'// fixture sync transform',
     'shared/owner-envelope.mjs':'// fixture envelope',
@@ -156,7 +157,7 @@ test('protocol version mismatch is rejected', t => {
   assert.throws(() => checkSdk(f.root), /protocol version differs/);
 });
 
-for (const [section, name] of [['inputs', 'scripts/rpc-zero-window.mjs'], ['inputs', 'node_modules/@aztec-labs/foundation/dest/json-rpc/client/safe_json_rpc_client.js'], ['inputs', 'shared/sdk-entry.mjs'], ['inputs', 'shared/sdk-store.mjs'], ['inputs', 'node_modules/@aztec-labs/pxe/dest/storage/metadata.js'], ['inputs', 'node_modules/@aztec-foundation/noir-acvm_js/web/acvm_js_bg.wasm'], ['outputs', 'sqlite.worker.js'], ['outputs', 'sqlite3.wasm']]) {
+for (const [section, name] of [['inputs', 'scripts/pxe-owner-fact-writes.mjs'], ['inputs', 'scripts/rpc-zero-window.mjs'], ['inputs', 'node_modules/@aztec-labs/foundation/dest/json-rpc/client/safe_json_rpc_client.js'], ['inputs', 'shared/sdk-entry.mjs'], ['inputs', 'shared/sdk-store.mjs'], ['inputs', 'node_modules/@aztec-labs/pxe/dest/storage/metadata.js'], ['inputs', 'node_modules/@aztec-foundation/noir-acvm_js/web/acvm_js_bg.wasm'], ['outputs', 'sqlite.worker.js'], ['outputs', 'sqlite3.wasm']]) {
   test(`omitting required ${section} entry ${name} is rejected`, t => {
     const f = fixture(t);
     delete f.manifest[section][name]; f.save();
