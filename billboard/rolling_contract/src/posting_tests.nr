@@ -389,7 +389,7 @@ unconstrained fn actual_private_bok_callback_activates_exact_funded_named_post()
     env.call_private(alice, RollingBoard::at(board).post_with_bok(chain, 201, d, Option::none(), Option::none(), 77, 401));
     let request = env.view_public(PrivateBok::at(bok).request(401));
     assert_eq(request.state, 2); assert_eq(request.invocation_hash, target);
-    assert_eq(request.available, 600); assert_eq(request.charged, 0);
+    assert_eq(request.available, 0); assert_eq(request.reserved, 600); assert_eq(request.charged, 0);
     assert_eq(env.execute_utility(PrivateBok::at(bok).balance_of(alice)), 400);
     assert_eq(env.view_public(RollingBoard::at(board).get_post_count()), 1);
     let (exists, record, _, _, _) = env.view_public(RollingBoard::at(board).get_post(post_id(board, 201)));
@@ -463,7 +463,7 @@ unconstrained fn paid_like_counts_are_independent_across_posts() {
 }
 
 // Actual board/escrow cross-contract reply path. TXE fixture funding only.
-unconstrained fn reply_setup(local: bool) -> (TestEnvironment, AztecAddress, AztecAddress, AztecAddress, AztecAddress, Field) {
+unconstrained fn reply_setup(local: bool, charge: u128) -> (TestEnvironment, AztecAddress, AztecAddress, AztecAddress, AztecAddress, Field) {
     let (env, board, op, user, _) = setup();
     let chain = fund(env, board, user, 901); let bok = configure_funded_bok(env, board, op, user);
     let mut d = draft();
@@ -471,6 +471,8 @@ unconstrained fn reply_setup(local: bool) -> (TestEnvironment, AztecAddress, Azt
     env.call_private(user, PrivateBok::at(bok).authorize_request(401, invocation_target(1, 1, board, bok, 201, d), 600));
     env.mine_block_at(env.last_block_timestamp() + 11);
     env.call_private(user, RollingBoard::at(board).post_with_bok(chain, 201, d, Option::none(), Option::none(), 77, 401));
+    // Activation reserves the budget atomically; resolve it before testing replies.
+    env.call_public(op, PrivateBok::at(bok).settle(401, 0, charge, 999));
     (env, board, op, user, bok, d.subboard)
 }
 #[test]
@@ -486,9 +488,7 @@ fn bot_reply_domains_bind_board_adapter_and_request() {
 fn human_draft_cannot_impersonate_bot_kind() { let mut d = draft(); d.kind = 4; validate_draft(d, 1); }
 #[test]
 unconstrained fn authenticated_bok_reply_preserves_thread_moderation_and_accounting() {
-    let (env, board, op, user, bok, subboard) = reply_setup(true);
-    // Activation already reserves the authorized budget; settle that reservation.
-    env.call_public(op, PrivateBok::at(bok).settle(401, 0, 40, 999));
+    let (env, board, op, user, bok, subboard) = reply_setup(true, 40);
     let before = env.view_public(PrivateBok::at(bok).request(401));
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 1));
     let id = crate::posting::bot_reply_id(board, bok, 401);
@@ -508,7 +508,7 @@ unconstrained fn authenticated_bok_reply_preserves_thread_moderation_and_account
 }
 #[test]
 unconstrained fn bot_reply_uses_current_policy_after_parent_policy_changes() {
-    let (env, board, op, _, bok, _) = reply_setup(false);
+    let (env, board, op, _, bok, _) = reply_setup(false, 0);
     env.call_public(op, RollingBoard::at(board).set_main_policy(text("Updated"), 7));
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 2, 0));
     let (exists, _, _, _, _) = env.view_public(RollingBoard::at(board).get_post(crate::posting::bot_reply_id(board, bok, 401)));
@@ -517,73 +517,73 @@ unconstrained fn bot_reply_uses_current_policy_after_parent_policy_changes() {
 
 #[test(should_fail_with="Only enabled plugin adapter")]
 unconstrained fn direct_human_reply_rejected() {
-    let (env, board, op, user, bok, _) = reply_setup(false);
+    let (env, board, op, user, bok, _) = reply_setup(false, 0);
     env.call_public(user, RollingBoard::at(board).publish_plugin_reply(401, 77, text("Done"), 4, 1, 0, 1, 17631683881184975370165255887551781615748388533673675138860));
 }
 
 #[test(should_fail_with="Only operator")]
 unconstrained fn wrong_operator_reply_rejected() {
-    let (env, board, op, user, bok, _) = reply_setup(false);
+    let (env, board, op, user, bok, _) = reply_setup(false, 0);
     env.call_private(user, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Already replied")]
 unconstrained fn reply_replay_rejected() {
-    let (env, board, op, user, bok, _) = reply_setup(false);
+    let (env, board, op, user, bok, _) = reply_setup(false, 0);
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Again"), 5, 1, 0));
 }
 
 #[test(should_fail_with="Unknown activated invocation")]
 unconstrained fn wrong_request_has_no_activation() {
-    let (env, board, op, user, bok, _) = reply_setup(false);
+    let (env, board, op, user, bok, _) = reply_setup(false, 0);
     env.call_public(bok, RollingBoard::at(board).publish_plugin_reply(402, 77, text("Done"), 4, 1, 0, 1, 17631683881184975370165255887551781615748388533673675138860));
 }
 
 #[test(should_fail_with="Unknown activated invocation")]
 unconstrained fn same_adapter_wrong_plugin_has_no_activation() {
-    let (env, board, op, user, bok, _) = reply_setup(false);
+    let (env, board, op, user, bok, _) = reply_setup(false, 0);
     env.call_public(op, RollingBoard::at(board).configure_plugin(78, bok, true));
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 78, text("Done"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Unknown activated invocation")]
 unconstrained fn wrong_adapter_has_no_activation() {
-    let (env, board, op, user, bok, _) = reply_setup(false);
+    let (env, board, op, user, bok, _) = reply_setup(false, 0);
     env.call_public(op, RollingBoard::at(board).configure_plugin(78, user, true));
     env.call_public(user, RollingBoard::at(board).publish_plugin_reply(401, 78, text("Done"), 4, 1, 0, 1, 17631683881184975370165255887551781615748388533673675138860));
 }
 
 #[test(should_fail_with="Only enabled plugin adapter")]
 unconstrained fn disabled_plugin_cannot_reply() {
-    let (env, board, op, user, bok, _) = reply_setup(false);
+    let (env, board, op, user, bok, _) = reply_setup(false, 0);
     env.call_public(op, RollingBoard::at(board).configure_plugin(77, bok, false));
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Policy changed")]
 unconstrained fn stale_reply_policy_rejected() {
-    let (env, board, op, user, bok, _) = reply_setup(false);
+    let (env, board, op, user, bok, _) = reply_setup(false, 0);
     env.call_public(op, RollingBoard::at(board).set_main_policy(text("Updated"), 7));
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Parent removed")]
 unconstrained fn removed_invocation_parent_blocks_reply() {
-    let (env, board, op, user, bok, _) = reply_setup(false);
+    let (env, board, op, user, bok, _) = reply_setup(false, 0);
     env.call_public(op, RollingBoard::at(board).remove_post(post_id(board, 201), 1, 0, text("Unsafe"), 6));
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Text padding")]
 unconstrained fn reply_text_padding_rejected() {
-    let (env, board, op, user, bok, _) = reply_setup(false);
+    let (env, board, op, user, bok, _) = reply_setup(false, 0);
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("DoneX"), 4, 1, 0));
 }
 
 #[test(should_fail_with="Subboard rejected")]
 unconstrained fn rejected_subboard_blocks_bot_reply() {
-    let (env, board, op, _, bok, subboard) = reply_setup(true);
+    let (env, board, op, _, bok, subboard) = reply_setup(true, 0);
     env.call_public(op, RollingBoard::at(board).reject_subboard(subboard, text("Invalid rules"), 13));
     env.call_private(op, PrivateBok::at(bok).publish_reply(401, 77, text("Done"), 4, 1, 1));
 }
