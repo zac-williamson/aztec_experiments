@@ -1,0 +1,27 @@
+{
+  "incremental": true,
+  "changedInputs": [
+    "billboard/private_fee_test/src/lib.nr",
+    "billboard/rolling_contract/src/main.nr",
+    "billboard/rolling_contract/src/posting.nr"
+  ],
+  "unchangedPrivate": [
+    "authenticate_name",
+    "cancel_deposit",
+    "claim_deposit",
+    "create_subboard",
+    "derive_plugin_tip_key",
+    "post",
+    "post_thread",
+    "post_with_bok",
+    "register_name",
+    "screen",
+    "set_avatar",
+    "set_bio",
+    "update_portal",
+    "withdraw"
+  ],
+  "artifactSha256": "4bca57e75da0c1afa81ad22af01a137d81221b1fcb946d7209bed019d453ef6b",
+  "sourceVerified": true,
+  "unchangedSdkVerified": true
+}

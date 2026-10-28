@@ -1,0 +1,18 @@
+{
+  "txHash": "0x2df477ea40f8cf26a37c24ed8880c62d9e8841177389ee715bb59590595e8024",
+  "blockNumber": 9466,
+  "content": "Paid tips smoke 1793196584165",
+  "utf8Bytes": 29,
+  "transactionFee": "3507011811121800000",
+  "gasPrice": {
+    "feePerDaGas": "0",
+    "feePerL2Gas": "1250000200000"
+  },
+  "totalBilledMana": 2805609,
+  "privateTailManaIncludingTeardown": 1564250,
+  "teardownAllocation": 817500,
+  "privateAndProtocolMana": 746750,
+  "publicExecutionMana": 1241359,
+  "protocolPublicTransactionOverheadMana": 540000,
+  "note": "One transaction in this block; gas partition decoded from native submitted Tx and its receipt. Previous prose byte counts27/42 were incorrect; actual29/44. Fee totals unchanged."
+}

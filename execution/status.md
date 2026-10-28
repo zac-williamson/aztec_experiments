@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: tips86be and static24f are live. Real-proof browser acceptance passed: signup claim9448, post9466, two20-FEE likes9467/9468 with count2 and exact self-tip conservation, secondpost9469. Actual post fees3.5070118111218/3.5784680725548FEE. Removed name-only obsolete pre-sync dispatch and stale witness class pins; focused checks and review passed. Generated consumer inventory synchronized. Performance remains paused; MetaMask hostname review and broader production qualification remain separate.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October gas work: compiled/native-tested duplicate public validation removal and sparse fresh-record writes: exact29byte post public1241359→482531gas. FPC native30336gas maximum; qualified40000/512allocation passes9valid+5negative cases. All14 Board private circuits/VKs unchanged. Same-price projectedtotal3.507→1.587FEE (54.76%less), NOT newliveacceptance. Integrationbasedd93 preservesops; operationsowns liveacceptance window. Oldlatencycampaign paused.
 
 ## Ready internal work
 

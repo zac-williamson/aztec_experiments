@@ -1,0 +1,106 @@
+{
+  "classId": "0x1486ccd3db8737232e7922da7b7fbc70d780043d51b1426986c7d2f20e3684c6",
+  "allocated": {
+    "daGas": 320,
+    "l2Gas": 40000
+  },
+  "feePerL2Gas": "1",
+  "rows": [
+    {
+      "name": "ordinary-positive",
+      "teardown": {
+        "daGas": 320,
+        "l2Gas": 30336
+      },
+      "total": {
+        "daGas": 416,
+        "l2Gas": 570336
+      },
+      "billed": {
+        "daGas": 416,
+        "l2Gas": 580000
+      }
+    },
+    {
+      "name": "ordinary-exact-fee",
+      "teardown": {
+        "daGas": 288,
+        "l2Gas": 9345
+      },
+      "total": {
+        "daGas": 384,
+        "l2Gas": 549345
+      },
+      "billed": {
+        "daGas": 416,
+        "l2Gas": 580000
+      }
+    },
+    {
+      "name": "like-success",
+      "teardown": {
+        "daGas": 320,
+        "l2Gas": 30336
+      },
+      "total": {
+        "daGas": 416,
+        "l2Gas": 570336
+      },
+      "billed": {
+        "daGas": 416,
+        "l2Gas": 580000
+      }
+    },
+    {
+      "name": "like-revert-principal",
+      "teardown": {
+        "daGas": 320,
+        "l2Gas": 30336
+      },
+      "total": {
+        "daGas": 416,
+        "l2Gas": 570336
+      },
+      "billed": {
+        "daGas": 416,
+        "l2Gas": 580000
+      }
+    },
+    {
+      "name": "like-success-exact-fee",
+      "teardown": {
+        "daGas": 288,
+        "l2Gas": 9345
+      },
+      "total": {
+        "daGas": 384,
+        "l2Gas": 549345
+      },
+      "billed": {
+        "daGas": 416,
+        "l2Gas": 580000
+      }
+    },
+    {
+      "name": "u128-max",
+      "teardown": {
+        "daGas": 320,
+        "l2Gas": 30336
+      },
+      "total": {
+        "daGas": 416,
+        "l2Gas": 570336
+      },
+      "billed": {
+        "daGas": 416,
+        "l2Gas": 580000
+      }
+    }
+  ],
+  "noNetwork": true,
+  "qualifiedLimit": {
+    "daGas": 512,
+    "l2Gas": 40000
+  },
+  "review": "Two independent source reviewers approved fixed-work branch coverage; full rollback remains separately covered by native paid-like integration."
+}

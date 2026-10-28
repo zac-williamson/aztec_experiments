@@ -1123,15 +1123,18 @@ pub contract RollingBoard {
     #[external("public")]
     #[only_self]
     fn _publish(nonce: Field, draft: PostDraft, plugin_id: Field, request_id: Field, key: TipKey) {
-        validate_draft(draft, nonce);
+        // Every enqueue is from post/post_with_bok/validated post_thread, whose
+        // private proof already constrains this exact draft and its UTF-8 bytes.
+        // only_self authenticates that boundary; mutable public checks stay here.
         assert((plugin_id == 0) == (request_id == 0), "Invalid invocation identity");
         let id = post_id(self.address, nonce);
         assert(id != 0, "Zero post identity");
         assert(!self.storage.post_exists.at(id).read(), "Post already exists");
         let local_version: u32 = if draft.subboard == 0 { 0 } else { 1 };
         if draft.subboard != 0 {
-            assert(self.storage.subboards.at(draft.subboard).read().exists, "Unknown subboard");
-            assert(!self.storage.subboards.at(draft.subboard).read().rejected, "Subboard rejected");
+            let subboard = self.storage.subboards.at(draft.subboard).read();
+            assert(subboard.exists, "Unknown subboard");
+            assert(!subboard.rejected, "Subboard rejected");
         }
         let main_version = self.storage.main_version.read();
         assert(main_version == draft.expected_main_policy_version, "Main policy changed");
@@ -1159,7 +1162,7 @@ pub contract RollingBoard {
         let count = self.storage.post_count.read();
         self.storage.post_count.write(count + 1);
         self.storage.post_id_by_order.at(count).write(id);
-        self.storage.post_records.at(id).write(record);
+        crate::posting::initialize_post_record(self.context, self.storage.post_records.at(id), record);
         self.storage.post_exists.at(id).write(true);
         self.storage.tip_key_hashes.at(id).write(private_credit::tip_key_hash(
             aztec::protocol::point::EmbeddedCurvePoint { x: key.x, y: key.y }));
@@ -1244,7 +1247,7 @@ pub contract RollingBoard {
         invocation.replied = true; slot.write(invocation);
         self.storage.post_count.write(count + 1);
         self.storage.post_id_by_order.at(count).write(id);
-        self.storage.post_records.at(id).write(record);
+        crate::posting::initialize_post_record(self.context, self.storage.post_records.at(id), record);
         self.storage.post_exists.at(id).write(true);
         self.storage.tip_key_hashes.at(id).write(private_credit::tip_key_hash(
             aztec::protocol::point::EmbeddedCurvePoint { x: key.x, y: key.y }));

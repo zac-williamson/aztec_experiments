@@ -49,7 +49,7 @@ jobs:
       - name: Artifact guards and baseline application tests
         run: |
           npm run check:artifacts
-          node --test scripts/private-credit-refund-gas.test.mjs
+          node --test scripts/private-credit-refund-gas.test.mjs scripts/rolling-post-gas.test.mjs
           node scripts/release-artifact-manifest.mjs write "$RUNNER_TEMP/release-artifacts.json"
           node scripts/release-artifact-manifest.mjs check "$RUNNER_TEMP/release-artifacts.json"
           node --test scripts/test-release-artifact-manifest.mjs scripts/test-release-test-isolation.mjs scripts/test-frontend-provenance.mjs scripts/test-native-prover-pin.mjs scripts/test-txe-message-witness.mjs scripts/test-noir-test-batches.mjs

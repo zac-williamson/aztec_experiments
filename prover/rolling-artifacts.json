@@ -5,7 +5,7 @@
     {
       "name": "RollingBoard",
       "path": "billboard/target/rolling_contract-RollingBoard.json",
-      "sha256": "96aba61059de1feed48b85d90447272010e824c9528492bad5a9f6fb02eecd7d"
+      "sha256": "4bca57e75da0c1afa81ad22af01a137d81221b1fcb946d7209bed019d453ef6b"
     },
     {
       "name": "PrivateBok",
@@ -31,6 +31,11 @@
     "billboard/owner_delivery/Nargo.toml": "1f4e03126b3fc41b8b089504e124b1687d943473f17bc2424d437f6bfbf71712",
     "scripts/prepare-owner-noir.mjs": "7caf3a8293538ae3f89935705d7ea11eb82812c85648fb8a4ae6362edb12486d",
     "scripts/owner-delivery-noir-sources.json": "e1cdbbc98f254799fd63db119fffa491813943db1ffd64ca099a9b3ea34e5dad",
+    "billboard/rolling_contract/src/admission.nr": "5b4cb9af637f8bf0b213a396f36b93096f94ca4022e692176f08650927848eb4",
+    "billboard/rolling_contract/src/encoding.nr": "32d1ddbca7c6cdf607a24ad1ecdf7ab4be6667877cf7c34b3cf370a02efcfd07",
+    "billboard/rolling_contract/src/main.nr": "4a2ceb101ae6357ae242f8d04d0c25534cbbd74d8bb5eb0797cc3dc5dc6c0457",
+    "billboard/rolling_contract/src/posting.nr": "c6123659ba8497aa2fdece72ae3bd3fabe7a20a29f3c4e7b7262db2feb40204e",
+    "billboard/rolling_contract/src/profiles.nr": "b12124ca50d181f9798c24e3373f9ba358697fdb433cc7d696c3a69ac9d53efd",
     ".build/owner-delivery/aztec-nr/aztec/src/context/note_existence_request.nr": "836e89da0ad9b361aeabdefaabde70a9c72df96774df2bb06a4e0a999b0ef6f9",
     ".build/owner-delivery/aztec-nr/aztec/src/context/nullifier_existence_request.nr": "31aca4abf88163d5e527c8b2012a4ea5fe7f80f8e31e1ec20d9c44e4ef9da2cb",
     ".build/owner-delivery/aztec-nr/aztec/src/context/private_context.nr": "adbadf6b1fd8f9944918cd80210f8d39bd1d4fdf52a7864f67d83f8403a7ef96",
@@ -109,15 +114,10 @@
     ".build/owner-delivery/aztec-nr/aztec/src/utils/array/subbvec.nr": "2dd8033f8cb959162f2e7ebf0ef40bb0534f63636d1d5d8d845248bfad3d85a0",
     ".build/owner-delivery/aztec-nr/aztec/src/utils/comparison.nr": "125cb1fc9eb9946062aefba5eb8b74bc31551cbbbc534f11577c3fc59c1d20fc",
     ".build/owner-delivery/aztec-nr/aztec/src/utils/with_hash.nr": "bcfbe016c916dd0eaa8a109d7996fd0fd81acac5bfccf7423f1198742e584852",
-    ".build/owner-delivery/aztec-nr/uint-note/src/uint_note.nr": "d49059160d8919a9cabb22527d3d5fae30eed1bde325e8838d72a50c22dfa5b7",
     "billboard/owner_delivery/src/delivery.nr": "5e903fdd5a8e112d90483db7ec43a656bb65dc63f6a7aa2fe50ababd12d31991",
     "billboard/owner_delivery/src/envelope.nr": "ec947f9a7c93fa5d99ff06ed31f81e117938161b2b5fd9158d3186d07f952728",
+    ".build/owner-delivery/aztec-nr/uint-note/src/uint_note.nr": "d49059160d8919a9cabb22527d3d5fae30eed1bde325e8838d72a50c22dfa5b7",
     "billboard/private_credit/src/lib.nr": "6b7e01fbeffc7fd562c38d95c030785fe76d6ea560bd91a59441a22b8d0398ff",
-    "billboard/rolling_contract/src/admission.nr": "5b4cb9af637f8bf0b213a396f36b93096f94ca4022e692176f08650927848eb4",
-    "billboard/rolling_contract/src/encoding.nr": "32d1ddbca7c6cdf607a24ad1ecdf7ab4be6667877cf7c34b3cf370a02efcfd07",
-    "billboard/rolling_contract/src/main.nr": "08640d90bf12b092735932e343d49eec4874e3aae91da59e0ed8c556668c2b05",
-    "billboard/rolling_contract/src/posting.nr": "a611f42a5b1de2e2353a923f072eef20e5a20188c35be8a26a183c62abdfb27b",
-    "billboard/rolling_contract/src/profiles.nr": "b12124ca50d181f9798c24e3373f9ba358697fdb433cc7d696c3a69ac9d53efd",
     "experiments/private-bok/escrow/src/main.nr": "1073f0874c8f7197df5c4d0a5d667484ba3f050f67f5894d3df48b62fcfcb5ad",
     ".build/owner-delivery/aztec-nr/aztec/src/context/returns_hash.nr": "b37560f27c929c2643e6c0616f00f82d015577f57f15727126fc70d2c3b972ce",
     ".build/owner-delivery/aztec-nr/aztec/src/oracle/call_private_function.nr": "21cf8450b2017a6d065f729de2a37d5ddf7aec63dcd7e8839768c6bee8be2853",

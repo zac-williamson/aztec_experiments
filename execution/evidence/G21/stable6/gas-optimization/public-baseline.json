@@ -1,0 +1,222 @@
+{
+  "artifactClass": "0x0dba82a391f851f4831f5667dd1f4d90edc587badf0c424aab9098bad1c92218",
+  "artifactSha256": "96aba61059de1feed48b85d90447272010e824c9528492bad5a9f6fb02eecd7d",
+  "measurements": [
+    {
+      "label": "main/anonymous/root/live-29",
+      "bytes": 29,
+      "daGas": 2656,
+      "l2Gas": 1241359,
+      "gasUsed": {
+        "totalGas": {
+          "daGas": 2752,
+          "l2Gas": 1781359
+        },
+        "publicGas": {
+          "daGas": 2656,
+          "l2Gas": 1241359
+        },
+        "teardownGas": {
+          "daGas": 0,
+          "l2Gas": 0
+        },
+        "billedGas": {
+          "daGas": 2752,
+          "l2Gas": 1781359
+        }
+      },
+      "stats": {
+        "total_instructions_executed": "31964"
+      }
+    },
+    {
+      "label": "subboard/named/reply-quote/live-29",
+      "bytes": 29,
+      "daGas": 2656,
+      "l2Gas": 1283929,
+      "gasUsed": {
+        "totalGas": {
+          "daGas": 2752,
+          "l2Gas": 1823929
+        },
+        "publicGas": {
+          "daGas": 2656,
+          "l2Gas": 1283929
+        },
+        "teardownGas": {
+          "daGas": 0,
+          "l2Gas": 0
+        },
+        "billedGas": {
+          "daGas": 2752,
+          "l2Gas": 1823929
+        }
+      },
+      "stats": {
+        "total_instructions_executed": "32372"
+      }
+    },
+    {
+      "label": "main/anonymous/root/ascii-22",
+      "bytes": 22,
+      "daGas": 2656,
+      "l2Gas": 1239217,
+      "gasUsed": {
+        "totalGas": {
+          "daGas": 2752,
+          "l2Gas": 1779217
+        },
+        "publicGas": {
+          "daGas": 2656,
+          "l2Gas": 1239217
+        },
+        "teardownGas": {
+          "daGas": 0,
+          "l2Gas": 0
+        },
+        "billedGas": {
+          "daGas": 2752,
+          "l2Gas": 1779217
+        }
+      },
+      "stats": {
+        "total_instructions_executed": "31880"
+      }
+    },
+    {
+      "label": "subboard/named/reply-quote/ascii-22",
+      "bytes": 22,
+      "daGas": 2656,
+      "l2Gas": 1281787,
+      "gasUsed": {
+        "totalGas": {
+          "daGas": 2752,
+          "l2Gas": 1821787
+        },
+        "publicGas": {
+          "daGas": 2656,
+          "l2Gas": 1281787
+        },
+        "teardownGas": {
+          "daGas": 0,
+          "l2Gas": 0
+        },
+        "billedGas": {
+          "daGas": 2752,
+          "l2Gas": 1821787
+        }
+      },
+      "stats": {
+        "total_instructions_executed": "32288"
+      }
+    },
+    {
+      "label": "main/anonymous/root/ascii-992",
+      "bytes": 992,
+      "daGas": 2656,
+      "l2Gas": 1536037,
+      "gasUsed": {
+        "totalGas": {
+          "daGas": 2752,
+          "l2Gas": 2076037
+        },
+        "publicGas": {
+          "daGas": 2656,
+          "l2Gas": 1536037
+        },
+        "teardownGas": {
+          "daGas": 0,
+          "l2Gas": 0
+        },
+        "billedGas": {
+          "daGas": 2752,
+          "l2Gas": 2076037
+        }
+      },
+      "stats": {
+        "total_instructions_executed": "43520"
+      }
+    },
+    {
+      "label": "subboard/named/reply-quote/ascii-992",
+      "bytes": 992,
+      "daGas": 2656,
+      "l2Gas": 1578607,
+      "gasUsed": {
+        "totalGas": {
+          "daGas": 2752,
+          "l2Gas": 2118607
+        },
+        "publicGas": {
+          "daGas": 2656,
+          "l2Gas": 1578607
+        },
+        "teardownGas": {
+          "daGas": 0,
+          "l2Gas": 0
+        },
+        "billedGas": {
+          "daGas": 2752,
+          "l2Gas": 2118607
+        }
+      },
+      "stats": {
+        "total_instructions_executed": "43928"
+      }
+    },
+    {
+      "label": "main/anonymous/root/utf8-992",
+      "bytes": 992,
+      "daGas": 2656,
+      "l2Gas": 1862050,
+      "gasUsed": {
+        "totalGas": {
+          "daGas": 2752,
+          "l2Gas": 2402050
+        },
+        "publicGas": {
+          "daGas": 2656,
+          "l2Gas": 1862050
+        },
+        "teardownGas": {
+          "daGas": 0,
+          "l2Gas": 0
+        },
+        "billedGas": {
+          "daGas": 2752,
+          "l2Gas": 2402050
+        }
+      },
+      "stats": {
+        "total_instructions_executed": "54090"
+      }
+    },
+    {
+      "label": "subboard/named/reply-quote/utf8-992",
+      "bytes": 992,
+      "daGas": 2656,
+      "l2Gas": 1904620,
+      "gasUsed": {
+        "totalGas": {
+          "daGas": 2752,
+          "l2Gas": 2444620
+        },
+        "publicGas": {
+          "daGas": 2656,
+          "l2Gas": 1904620
+        },
+        "teardownGas": {
+          "daGas": 0,
+          "l2Gas": 0
+        },
+        "billedGas": {
+          "daGas": 2752,
+          "l2Gas": 2444620
+        }
+      },
+      "stats": {
+        "total_instructions_executed": "54498"
+      }
+    }
+  ]
+}

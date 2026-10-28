@@ -1,5 +1,6 @@
 use aztec::protocol::{address::AztecAddress, hash::poseidon2_hash_with_separator, traits::{Deserialize, Serialize, Packable, ToField}};
 use crate::encoding::validate_text;
+use aztec::state_vars::StateVariable;
 
 #[derive(Deserialize, Serialize, Eq)]
 pub struct PostDraft {
@@ -120,4 +121,16 @@ pub fn validate_thread(board: AztecAddress, nonces: [Field; 4], drafts: [PostDra
     }
     assert((invocations <= 1) & ((invocations == 0) | (count <= 3)), "Thread Bok capacity exceeded");
     ids
+}
+
+/// Only for a new post whose caller has asserted !post_exists(id). Neither
+/// publication path overwrites or clears records: skipped fields retain the
+/// native zero default, with the exact same Packable layout and read API.
+pub fn initialize_post_record(context: aztec::context::PublicContext,
+    entry: aztec::state_vars::PublicMutable<PostRecord, aztec::context::PublicContext>, record: PostRecord) {
+    let fields = record.pack();
+    let slot = entry.get_storage_slot();
+    for i in 0..fields.len() {
+        if fields[i] != 0 { context.raw_storage_write(slot + i as Field, [fields[i]]); }
+    }
 }

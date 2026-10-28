@@ -4,6 +4,8 @@ Current handover: 28 October 2026. The owner's current request takes precedence 
 
 ## Live work and next action
 
+Latest owner task: [gas optimization](docs/GAS_OPTIMIZATION_20261028.md). Public execution reductions and a40,000-gas refund allowance are implemented and native-tested, but not yet deployed. Coordinate with launch-operations maintenance before any runtime changes. Measured public gas1,241,359→482,531; calculated same-price total3.507→1.587 FEE. Existing latency goal remains paused.
+
 **Performance work remains paused by the owner.** Harry feedback wallet/account/payment UX and Home ranking are published. Images and the moderation-information item were dropped. MetaMask’s official hostname scanner returns BLOCK for the current CloudFront hostname; manual classification review is needed. See docs/METAMASK_ALERT_20261028.md. No external report has been sent. [Current release report](docs/HARRY_FEEDBACK_20261028.md).
 
 The private paid-like contracts and application release `86be52150de16ad6fe628000404e44e3592705bb` are deployed. Each Like transfers 20 FEE to the author, plus actual network fees; repeated paid likes are supported. Atomic threads, name and avatar updates, Home ranking and the consolidated funding router remain integrated. **Real-proof browser acceptance passed:** fresh signup, a post, two paid likes with count 2 and exact self-tip fee accounting, then another post. See the recorded boundaries in the acceptance evidence; this is not a production security audit. See [private paid likes](docs/PRIVATE_PAID_LIKES.md).
@@ -18,7 +20,7 @@ Browser acceptance uses the owned test EIP1193 adapter, not the MetaMask extensi
 
 ## Performance targets and evidence
 
-Current-release measured post cost: a 27-byte post paid **3.5070118111218 FEE**, and a 42-byte post paid **3.5784680725548 FEE**. Both appeared after native Aztec inclusion. Each paid like transferred 20 FEE and paid an additional **2.1318353410936 FEE** in network fees. These are actual receipts, not the configured maximum. [Browser acceptance evidence](execution/evidence/G21/stable6/private-paid-likes/browser-acceptance.json).
+Current-release measured post cost: a 29-byte post paid **3.5070118111218 FEE**, and a 44-byte post paid **3.5784680725548 FEE**. Both appeared after native Aztec inclusion. Each paid like transferred 20 FEE and paid an additional **2.1318353410936 FEE** in network fees. These are actual receipts, not the configured maximum. [Browser acceptance evidence](execution/evidence/G21/stable6/private-paid-likes/browser-acceptance.json).
 
 Historical cost observation: a 22-byte ordinary post on release `8e68ac4a` paid **2.5016104002576 FEE**, with a configured ceiling of **124.140375552 FEE**. The real-proof transaction was checkpointed successfully. This is one measurement on the previous Board, not a quote or benchmark for the new paid-tip contracts. [Exact receipt evidence](execution/evidence/G21/stable6/private-paid-likes/basic-post-actual-cost.json).
 
