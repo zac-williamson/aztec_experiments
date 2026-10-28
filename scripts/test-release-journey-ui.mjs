@@ -7,12 +7,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
-import {closeJourneyAccountPanel,openJourneyComposer,submitJourneyComposer,buyJourneyBokCredit} from './release/journey.mjs';
+import {closeJourneyAccountPanel,openJourneyMainBoard,journeyPostCard,openJourneyComposer,submitJourneyComposer,buyJourneyBokCredit} from './release/journey.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const fixture=`<!doctype html><html><body><button id="write">Write a post</button><button id="reply">Reply</button>
+const fixture=`<!doctype html><html><head><meta charset="utf-8"></head><body><nav aria-label="Community"><a href="#/home">Home</a><a href="#/board/0">Main board</a></nav><section id="feed"></section><button id="write">Write a post</button><button id="reply">Reply</button>
 <script type="module">
 import {mountRollingWalletPanel} from '/apps/rolling/wallet-panel.mjs';
 import {executeRollingAction} from '/apps/rolling/wallet-action.mjs';
+import {createFeedRanking} from '/apps/rolling/feed-ranking.mjs';
 window.calls={prepared:[],submitted:[],payments:[],claims:0,signins:0};
 let account=new URL(location.href).searchParams.has('locked')?null:{},prepared,credit='0';
 const cap={defaultPrivateFeeCap:'1000000000000000',ethAvailable:true,usdcAvailable:true,
@@ -32,6 +33,14 @@ application.executeAction=(action,options)=>executeRollingAction(application,str
 const session={application,busy:false,ordinaryPostingFeeLimit:'1000000000000000',postingFeeLimit:'1000000000000000',bokConfigured:true,topup:{bok:cap}};
 const runtime={getAccount:()=>account,account:{configure(){}},createSession:async()=>session,
  fundingWallets:()=>[{id:'test',name:'CI test wallet'}],signInWallet:async()=>{calls.signins++;account={};}};
+let publicPosts=[],priorityTxs=[];
+window.showPublicPosts=(posts=publicPosts,priorities=priorityTxs)=>{
+ publicPosts=posts;priorityTxs=priorities;
+ const items=location.hash==='#/board/0'?[...posts].reverse():createFeedRanking({items:posts,now:1000,seed:'ui-regression',priorityTxs}).page().items;
+ document.querySelector('#feed').replaceChildren(...items.map(post=>{const article=document.createElement('article');article.className='post';article.id='post-'+post.id;article.textContent=post.text;const like=document.createElement('button');like.textContent='Like · 20 credits';like.onclick=()=>calls.liked=post.id;article.append(like);return article;}));
+ document.querySelector('#write').toggleAttribute('data-board-compose',location.hash==='#/board/0');
+};
+addEventListener('hashchange',()=>showPublicPosts());
 window.panel=mountRollingWalletPanel({loadRuntime:async()=>runtime});
 document.querySelector('#write').onclick=()=>panel.open({type:'post',subboard:'0'});
 document.querySelector('#reply').onclick=()=>panel.open({type:'reply',parent:'10',root:'10',subboard:'0'});
@@ -85,4 +94,19 @@ test('release buys one Bok credit then posts the retained mention draft once',{t
  assert.equal(await dialog.getByLabel('Message',{exact:true}).inputValue(),'@bok UI regression request');
  await submitJourneyComposer(page,'bok',remaining);await dialog.waitFor({state:'hidden'});
  const calls=await page.evaluate(()=>window.calls);assert.deepEqual(calls.payments,[{asset:'ETH',amount:'1000000'}]);assert.equal(calls.claims,1);assert.equal(calls.prepared[0].type,'bok');assert.equal(calls.submitted.length,1);
+});
+
+test('release uses chronological Main board and pins Like to the original receipt ID',{timeout:15000},async t=>{
+ const {page,remaining}=await setup(t);await closeJourneyAccountPanel(page,remaining);
+ const hash='0x'+'1'.repeat(64),tag='Release check test';
+ const post=(id,parent,text)=>({id,record:{root:'1',parent,name_id:'0',subboard:'0'},text,timestamp:'1000',likes:'0',position:{txHash:id==='2'?hash:'0x'+'2'.repeat(64)}});
+ const posts=[post('1','0',tag),post('2','1',tag+' reply')];
+ await page.evaluate(({posts,hash})=>showPublicPosts(posts,[hash]),{posts,hash});
+ assert.deepEqual(await page.locator('article.post').evaluateAll(nodes=>nodes.map(n=>n.id)),['post-2'],'actual Home ranking replaces the root with the newly included reply');
+ await openJourneyMainBoard(page,remaining);
+ assert.deepEqual(await page.locator('article.post').evaluateAll(nodes=>nodes.map(n=>n.id)),['post-2','post-1']);
+ const old=page.locator('article.post').filter({hasText:tag}).first();assert.equal(await old.getAttribute('id'),'post-2','old text locator silently retargets the reply even on Main board');
+ await journeyPostCard(page,'post-1').getByRole('button',{name:'Like · 20 credits',exact:true}).click();
+ assert.equal(await page.evaluate(()=>calls.liked),'1');
+ assert.throws(()=>journeyPostCard(page,'post-1, article'),{code:'RELEASE_INCLUSION'});
 });

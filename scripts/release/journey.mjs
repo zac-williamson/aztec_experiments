@@ -61,6 +61,15 @@ export async function closeJourneyAccountPanel(page,remaining){
   await dialog.waitFor({state:'hidden',timeout:actionTimeout(remaining)});
  }
 }
+export async function openJourneyMainBoard(page,remaining){
+ await page.locator('nav[aria-label="Community"]').getByRole('link',{name:'Main board',exact:true}).click({timeout:actionTimeout(remaining)});
+ await page.waitForURL('**/#/board/0',{timeout:actionTimeout(remaining)});
+ await page.locator('[data-board-compose]').waitFor({state:'visible',timeout:actionTimeout(remaining)});
+}
+export function journeyPostCard(page,id){
+ if(typeof id!=='string'||!/^post-[1-9][0-9]{0,76}$/.test(id))throw failure('RELEASE_INCLUSION');
+ return page.locator('article.post#'+id);
+}
 export async function openJourneyComposer(page,message,remaining){
  await closeJourneyAccountPanel(page,remaining);
  await page.getByRole('button',{name:'Write a post',exact:true}).first().click({timeout:actionTimeout(remaining)});
@@ -139,6 +148,9 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
     await record('signup-'+asset);
     failureStep='close-account';await closeJourneyAccountPanel(page,remaining);
     if(asset==='USDC'){result.proofResponses+=proofs;if(!proofs||pageErrors)throw failure('RELEASE_BROWSER_ERRORS');continue;}
+    // Home keeps one ranked representative per conversation. The chronological
+    // board retains both our root and reply, including after reload.
+    failureStep='post-compose';await openJourneyMainBoard(page,remaining);
     const tag='Release check '+randomUUID();
     async function compose(message,{buyBokCredit=false}={}){
      const start=submissions.length,kind=buyBokCredit?'bok':'post';
@@ -151,7 +163,7 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
      if(!/^0x[0-9a-f]{64}$/.test(receipt.hash??'')||!/^0x[0-9a-f]{64}$/.test(receipt.blockHash??'')||!(Number(receipt.block)>0))throw failure('RELEASE_INCLUSION');
      const hashes=await hashesSince(start);if(!hashes.includes(receipt.hash))throw failure('RELEASE_INCLUSION');
      const events=await evidence.require([receipt.hash],events=>events.some(e=>e.type==='PostPublished'&&e.payload.id===receipt.id.slice(5)&&e.payload.record.parent==='0'&&e.payload.record.root===e.payload.id&&evidence.text(e.payload)===message)&&events.some(e=>e.type==='PostTipKey'&&e.payload.post===receipt.id.slice(5)),remaining);
-     return {card,receipt,events};
+     return {card:journeyPostCard(page,receipt.id),receipt,events};
     }
     const {card,receipt}=await compose(tag);await record('post');
     failureStep='reply-compose';const replyStart=submissions.length;

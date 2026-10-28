@@ -428,3 +428,8 @@ Bok payment-to-draft transition; real native inclusion remains mandatory in the
 separate testnet journey. Failed journeys retain only completed step names and a
 closed `journeyFailedStep` label (for example `post-compose` or `post-inclusion`),
 never browser text, wallet addresses or request parameters.
+The journey selects chronological Main board after signup, because Home shows
+only one representative per conversation. Once native evidence verifies a post,
+later reply/like controls use its exact post ID; a reply containing the same
+text cannot retarget those actions. The UI regression covers this ranking and
+locator boundary without submitting transactions.
