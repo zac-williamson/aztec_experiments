@@ -65,5 +65,19 @@
     "ethPerEthAccountWei": "10000000000000000",
     "ethPerUsdcAccountWei": "0",
     "usdcPerAccountBaseUnits": "100000000"
-  }
+  },
+  "reallocation": {
+    "chainId": 11155111,
+    "testOnly": true,
+    "from": "0xB100C6C628b598e5Fe30b047765C2dD16C8554bf",
+    "to": "0x8d83fed116a7542934CA2E968055555317F91CA4",
+    "valueWei": "15000000000000000",
+    "status": "success",
+    "nonce": 2,
+    "hash": "0xc30a70f3b48799968a8031ea1b8a9b08ccb1b4befff8cf755ee9be0b6ccf773b",
+    "block": "12012806",
+    "recipientBalanceWei": "33971239351380410",
+    "fixtureBalanceWei": "12675112184446535"
+  },
+  "fixtureReadiness": "Not ready for current expensive Sepolia pool quote; dedicated balance/caps require replenishment before journey. No real-money purchase authorized."
 }
