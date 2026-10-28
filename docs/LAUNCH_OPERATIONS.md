@@ -1,17 +1,73 @@
 # Rolling operations
 
-The 28 October scope is first-party aggregate analytics, a private Growth / Reliability / Releases dashboard, independent monitoring and Slack alerts, gated testnet releases, and minimal recovery/abuse controls. No application visitor profiles or persistent visitor identifiers. Operator login accounts are separate and have no link to board activity.
+Open the [operator dashboard](https://d30njln0kead8n.cloudfront.net/_ops/) for
+Growth, Reliability and Releases. Team access is invite-only through Cognito,
+with a password and authenticator MFA. Each operator has their own login;
+operator accounts have no link to anonymous board activity. The dashboard is
+read-only. Deployment controls stay in GitHub.
 
-Design: retain Rolling's self-hosted DM Sans, violet #5b4df0, ink #17223b, pale ground #f6f7fb, white #ffffff and lines #e5e8f0. Use a narrow left navigation, one page title and a compact metric strip above useful tables. Align labels and values consistently. Status colours convey measured state only. No illustrative data, inferred healthy state, decorative motion or external fonts.
+## What is verified, and what is pending
 
-The dashboard uses invite-only Cognito password + authenticator access. Its public client has no client secret, code flow uses PKCE and state/nonce checks, and operator sessions are held in memory for at most one hour. Cookies are secure, HTTP-only and restricted to /_ops. Public visitors send no operator identity. Production has no development-auth bypass.
+The dashboard and independent monitoring are installed. Slack alert delivery to
+`#rolling-chat-updates` was verified on 28 October: an explicit test ALARM arrived,
+then real healthy datapoints produced an OK recovery message. This tested alert
+and recovery delivery without causing an application outage or restart. See
+[`slack.json`](../deploy/launch-ops/slack.json) for the observed messages.
 
-Analytics accepts predefined events, coarse attribution and timing buckets. It retains daily aggregates, not individual event histories. One-use batch identifiers remain only in a bounded short-lived deduplication map. No raw IPs, user agents, URLs, wallet/account addresses, transaction identifiers or post content enter the analytics database. Reverse-proxy, CDN and collector request-body logging must remain disabled for collection. Page sessions are not people; a reload starts a new session. Browser reports can be missing or falsified and are not financial accounting.
+The initial encrypted off-host backup and actual restore passed on both hosts
+on 28 October: ten core inputs and four Bok inputs. Candidate `89dbc88c` also
+[passed its full build](https://github.com/zac-williamson/aztec_experiments/actions/runs/40755838251)
+on 28 October. That result belongs to the exact revision; later changes require
+their own normal checks.
 
-Deployment controls remain in GitHub; the dashboard is read-only. A public health check reports only availability and software revision. Private APIs require operator login and are never cached. Monitoring must treat missing/stale observations as unknown. Runtime failures must not stop healthy application services.
+Final release-workflow acceptance, including the genuine real-proof journey and
+promotion, the two-leg operator rollback exercise, and the expanded twenty-input
+core backup/restore remain **pending final receipts**. Do not infer acceptance
+from a configured workflow or a prepared installer.
+See [`release-acceptance.json`](../deploy/launch-ops/release-acceptance.json) and
+[backup acceptance and procedure](../ops/LAUNCH-ESSENTIALS.md).
 
-Budget: USD50 total incremental authorization for this work. Reuse existing application hosts; do not provision another EC2 server. The project ledger reserves USD25 and USD25 buffer for initial operation. This is not a new recurring monthly allowance. Existing USD1500/month hosting is separate. Track new resources and observed charges before any expansion.
+## Anonymous analytics
 
-Invitations: use the dedicated user pool recorded in deploy/launch-ops/identity.json. Administrators create an invited user with their email and add them to operators (or administrators only if they manage access). Cognito sends the temporary-password email. Users set their own password and authenticator at first sign-in. Remove group membership and disable a departing operator; existing short-lived sessions expire within one hour. Do not share passwords or add public self-registration.
+There are no persistent visitor profiles or visitor identifiers. Analytics
+accepts predefined events, coarse attribution and timing buckets, then stores
+daily aggregates rather than individual event histories. One-use batch IDs exist
+only in a bounded, short-lived deduplication map. No raw IPs, user agents, URLs,
+wallet/account addresses, transaction identifiers or post content enter the
+analytics database. Collection request-body and access logging must remain off.
+Visitors can opt out through Help and privacy; Do Not Track is honoured.
 
-Remaining acceptance is recorded in execution/graph.json. A configured workflow is not evidence that a real-proof journey, Slack delivery, recovery or rollback has passed; each needs an actual observed result before completion.
+Page sessions are not people: a reload starts a new session. Browser reports can
+be missing or falsified and are not financial accounting. Missing or stale
+reliability observations must display as unknown. Monitoring must not stop
+healthy application services after an observation failure.
+
+## Team access
+
+Use the dedicated user pool in [`identity.json`](../deploy/launch-ops/identity.json).
+Administrators invite a user by email and add them to `operators`, or to
+`administrators` only if they manage access. Cognito sends the temporary-password
+email; the user sets their own password and authenticator at first sign-in.
+Do not share passwords or enable public registration. Remove group membership
+and disable a departing operator; existing sessions expire within one hour.
+
+Login uses PKCE with state/nonce checks. Operator sessions are held in memory for
+at most one hour; secure, HTTP-only cookies are restricted to `/_ops`. Private
+APIs require login and are never cached. Production has no development-auth bypass.
+
+## Budget and review date
+
+The total incremental authorization is **$50**. The current planning forecast is
+**$25 for the first 31 days**, leaving a $25 buffer. Actual billed launch charges
+remain unknown; the separate $1,500/month application-hosting allowance is not
+part of this authorization. Reuse the existing hosts and reconcile the project
+ledger before expanding resources.
+
+The monitoring schedule ends **28 November 2026 at 11:12 UTC**. Review whether to
+renew or retire the dedicated monitoring resources before then; alarms, storage
+and KMS can still incur charges after the schedule ends. Keep backup keys until
+all retained archives expire. The dashboard's Recorded estimate becomes unknown
+after 48 hours unless an operator performs a fresh cost review. It is a planning
+estimate, not an automatic billing cap. See
+[`spending-estimate.json`](../deploy/launch-ops/spending-estimate.json) and
+[`monitoring-reservation.json`](../deploy/launch-ops/monitoring-reservation.json).

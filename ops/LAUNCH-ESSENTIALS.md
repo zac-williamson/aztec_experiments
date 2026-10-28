@@ -1,5 +1,19 @@
 # Small launch safeguards
 
+Open the [private operator dashboard](https://d30njln0kead8n.cloudfront.net/_ops/).
+Team access is invite-only with individual logins and authenticator MFA; board
+visitors have no persistent analytics profile. See the
+[operations guide](../docs/LAUNCH_OPERATIONS.md) for access and ownership.
+
+Slack ALARM and subsequent OK recovery delivery were actually observed on
+28 October using an explicit test alarm and real healthy datapoints, without an
+application outage. Candidate `89dbc88c` passed its full build on 28 October;
+that evidence applies only to the exact revision. Final release-workflow
+acceptance, genuine real-proof journey/promotion, operator rollback and the
+expanded twenty-input core backup/restore are still **pending final receipts**.
+The successful original ten-input core/four-input
+Bok backup drill below does not establish the expanded coverage.
+
 The public reader now links to Help and privacy. It explains public posting and
 funding, the trusted prover, aggregate analytics, retention and the existing
 browser opt-out. Its problem-report link is the existing public GitHub issue
@@ -47,9 +61,8 @@ not restart services or invoke a signer. Each run:
 
 Failure leaves previous successful timestamps intact. Upload success and restore
 success are separate. `backup-failed`, `restore-failed` and `cleanup-failed`
-immediately produce critical backup checks in `buildReliability`. The dashboard
-collector should read the status through `projectBackupStatus` and put it in
-`buildReliability({backup: ...})`; never forward archive paths or AWS responses.
+immediately produce critical backup checks in `buildReliability`. The installed snapshot collector projects these status fields into Reliability;
+never forward archive paths or AWS responses.
 
 ## Root deployment sequence
 
@@ -169,6 +182,12 @@ it never installs recovered files or starts a signer. Changes to active secret
 or configuration locations require reviewing and updating that role's explicit
 private configuration. No application service was restarted by this installation.
 
+A post-cutover read-only check at 20:35 UTC on 28 October confirmed that Bok
+release `48c2750f` still uses all four configured backup inputs: its service
+configuration, operator credential, GitHub App key and provider environment file.
+The running configuration and loaded credential references matched the inventory.
+No credential contents were read and no backup or restore was started by that check.
+
 The two added IAM policy names are `RollingLaunchBackupCore20261028` and
 `RollingLaunchBackupBok20261028`; existing policies were retained. Both hosts
 share the same instance role and therefore have the union of these permissions.
@@ -184,12 +203,16 @@ admitted live wallet/release configs and eight exact live control-file names.
 records their observed paths and the additive change from ten to twenty inputs.
 This is a prepared update, not evidence that those files have been backed up.
 
-The integrating operator applies it in a coordinated window:
+The integrating operator applies it only after the deployment owner confirms
+configuration writes are complete. Do not pause the backup timer during a
+concurrent application cutover. Use the reviewed installer in a coordinated window:
 
 1. Pause only the core backup timer, confirm its job is inactive, and read the
    current units/config references again. Require all ten paths to be canonical
    regular files; missing or changed references block the update. Record current
-   ownership/modes without reading file contents into logs.
+   ownership/modes without reading file contents into logs. Match the effective
+   application service command and running process to the backed-up public,
+   wallet and relay config paths; a stale but unchanged file is not coverage.
 2. Install the reviewed backup source into a new immutable
    `/opt/rolling-ops-backup/releases/FULL_COMMIT` directory and verify its source
    hashes. Keep the existing pinned Node runtime, cloud adapter dependencies,
@@ -202,7 +225,9 @@ The integrating operator applies it in a coordinated window:
    directory to the new immutable source and reload systemd.
 4. Start `rolling-ops-backup-core.service` once. Require successful encrypted
    upload, actual download/restore integrity checks and cleanup before recording
-   the fresh projected status and resuming its daily timer. Preserve a failed
+   the fresh projected status and resuming its daily timer. Require unchanged
+   essential-file metadata and active application references throughout this
+   drill; analytics SQLite uses its concurrent snapshot. Preserve a failed
    result honestly; do not change any application, prover or proxy service.
 
 The restore drill recovers exact bytes into a private directory; it does not
@@ -238,7 +263,7 @@ active allocation tags](https://docs.aws.amazon.com/cost-management/latest/userg
 
 The practical guard is the small fixed resource set and service limits: existing
 hosts, one monitoring worker with bounded memory/runtime/concurrency and no
-retries, a two-minute schedule ending 28 November, explicit small daily backups
+retries, a two-minute schedule ending 28 November 2026 at 11:12 UTC, explicit small daily backups
 with seven-day retention, and existing proof/relay/provider spending limits.
 The $25 forecast leaves a $25 unallocated buffer. This is not an automatic AWS
 billing cap. Review before additional paid work, refresh the manual forecast
