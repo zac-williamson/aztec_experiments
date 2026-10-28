@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "reviewed-reserved",
+  "status": "provisioned",
   "recordedAt": "2026-10-28T11:09:15Z",
   "incrementalTaskLimitUsd": 50,
   "monitoringReservationUsd": 10,
@@ -33,6 +33,182 @@
   },
   "cleanup": "Schedule EndDate stops invocations after31days. Reconcile/renew or delete dedicated stack; alarm charges continue until deletion. Do not stop existing application hosts.",
   "actualBilledSpendUsd": null,
-  "createdResources": [],
-  "endDate": "2026-11-28T11:12:00.000Z"
+  "createdResources": [
+    {
+      "type": "AWS::CloudWatch::Alarm",
+      "logicalId": "BokHostAlarm",
+      "id": "rolling-chat-launch-monitor-BokHostAlarm-MjVk0VyinylM"
+    },
+    {
+      "type": "AWS::CloudWatch::Alarm",
+      "logicalId": "CoreHostAlarm",
+      "id": "rolling-chat-launch-monitor-CoreHostAlarm-i8Tt4hVLEtE5"
+    },
+    {
+      "type": "AWS::CloudWatch::Alarm",
+      "logicalId": "FeedAlarm",
+      "id": "rolling-chat-launch-monitor-FeedAlarm-RtdLt1o07vRF"
+    },
+    {
+      "type": "AWS::CloudWatch::Alarm",
+      "logicalId": "HeartbeatAlarm",
+      "id": "rolling-chat-launch-monitor-HeartbeatAlarm-n7r35nCgdDpd"
+    },
+    {
+      "type": "AWS::SSM::Document",
+      "logicalId": "HostDocument",
+      "id": "rolling-chat-launch-monitor-HostDocument-3ZtoCYOhOzdj"
+    },
+    {
+      "type": "AWS::Lambda::Function",
+      "logicalId": "Probe",
+      "id": "rolling-chat-launch-monitor-Probe-jlhTTVH3ySxm"
+    },
+    {
+      "type": "AWS::IAM::Role",
+      "logicalId": "ProbeRole",
+      "id": "rolling-chat-launch-monitor-ProbeRole-DaLm9y2ovKly"
+    },
+    {
+      "type": "AWS::CloudWatch::Alarm",
+      "logicalId": "ProverAlarm",
+      "id": "rolling-chat-launch-monitor-ProverAlarm-RXSTDJ8kDtUW"
+    },
+    {
+      "type": "AWS::Scheduler::Schedule",
+      "logicalId": "Schedule",
+      "id": "rolling-chat-launch-monitor-Schedule-PZC1C44UFO8N"
+    },
+    {
+      "type": "AWS::IAM::Role",
+      "logicalId": "ScheduleRole",
+      "id": "rolling-chat-launch-monitor-ScheduleRole-AqYpix301YiR"
+    },
+    {
+      "type": "AWS::S3::Bucket",
+      "logicalId": "SnapshotBucket",
+      "id": "rolling-chat-launch-monitor-snapshotbucket-jduoeorrrixk"
+    },
+    {
+      "type": "AWS::S3::BucketPolicy",
+      "logicalId": "SnapshotBucketPolicy",
+      "id": "rolling-chat-launch-monitor-snapshotbucket-jduoeorrrixk"
+    },
+    {
+      "type": "AWS::SNS::Topic",
+      "logicalId": "Topic",
+      "id": "arn:aws:sns:us-east-1:052665140763:rolling-chat-launch-monitor-Topic-Dlc9HT2pNi3T"
+    },
+    {
+      "type": "AWS::CloudWatch::Alarm",
+      "logicalId": "WebsiteAlarm",
+      "id": "rolling-chat-launch-monitor-WebsiteAlarm-Mtme81BKJCKs"
+    }
+  ],
+  "endDate": "2026-11-28T11:12:00.000Z",
+  "stackId": "arn:aws:cloudformation:us-east-1:052665140763:stack/rolling-chat-launch-monitor/582050f0-d2c1-11f1-ba9e-0effff19fd25",
+  "outputs": {
+    "ProbeName": "rolling-chat-launch-monitor-Probe-jlhTTVH3ySxm",
+    "SnapshotObjectArn": "arn:aws:s3:::rolling-chat-launch-monitor-snapshotbucket-jduoeorrrixk/snapshots/latest.json",
+    "TopicArn": "arn:aws:sns:us-east-1:052665140763:rolling-chat-launch-monitor-Topic-Dlc9HT2pNi3T",
+    "SnapshotReadPolicy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"s3:GetObject\",\"Resource\":\"arn:aws:s3:::rolling-chat-launch-monitor-snapshotbucket-jduoeorrrixk/snapshots/latest.json\"}]}",
+    "SnapshotBucket": "rolling-chat-launch-monitor-snapshotbucket-jduoeorrrixk",
+    "HostDocumentName": "rolling-chat-launch-monitor-HostDocument-3ZtoCYOhOzdj",
+    "ScheduleName": "rolling-chat-launch-monitor-Schedule-PZC1C44UFO8N"
+  },
+  "verification": {
+    "checkedAt": "2026-10-28T11:23:58.236868+00:00",
+    "stackStatus": "CREATE_COMPLETE",
+    "publicAccessBlock": {
+      "BlockPublicAcls": true,
+      "IgnorePublicAcls": true,
+      "BlockPublicPolicy": true,
+      "RestrictPublicBuckets": true
+    },
+    "bucketEncryption": {
+      "Rules": [
+        {
+          "ApplyServerSideEncryptionByDefault": {
+            "SSEAlgorithm": "AES256"
+          },
+          "BucketKeyEnabled": false,
+          "BlockedEncryptionTypes": {
+            "EncryptionType": [
+              "SSE-C"
+            ]
+          }
+        }
+      ]
+    },
+    "snapshotEncryption": "AES256",
+    "snapshotBytes": 268,
+    "observedAt": "2026-10-28T11:23:02.772638+00:00",
+    "hostsObserved": [],
+    "external": {
+      "website": true,
+      "prover": true,
+      "feed": true
+    },
+    "lambda": {
+      "State": "Active",
+      "Timeout": 75,
+      "MemorySize": 128
+    },
+    "schedule": {
+      "State": "ENABLED",
+      "ScheduleExpression": "rate(2 minutes)",
+      "EndDate": "2026-11-28T16:42:00+05:30"
+    },
+    "alarms": [
+      {
+        "AlarmName": "rolling-chat-launch-monitor-BokHostAlarm-MjVk0VyinylM",
+        "MetricName": "BokHostReady",
+        "StateValue": "ALARM",
+        "TreatMissingData": "breaching",
+        "EvaluationPeriods": 2
+      },
+      {
+        "AlarmName": "rolling-chat-launch-monitor-CoreHostAlarm-i8Tt4hVLEtE5",
+        "MetricName": "CoreHostReady",
+        "StateValue": "ALARM",
+        "TreatMissingData": "breaching",
+        "EvaluationPeriods": 2
+      },
+      {
+        "AlarmName": "rolling-chat-launch-monitor-FeedAlarm-RtdLt1o07vRF",
+        "MetricName": "ExternalFeedHealthy",
+        "StateValue": "OK",
+        "TreatMissingData": "breaching",
+        "EvaluationPeriods": 2
+      },
+      {
+        "AlarmName": "rolling-chat-launch-monitor-HeartbeatAlarm-n7r35nCgdDpd",
+        "MetricName": "ObserverHeartbeat",
+        "StateValue": "OK",
+        "TreatMissingData": "breaching",
+        "EvaluationPeriods": 2
+      },
+      {
+        "AlarmName": "rolling-chat-launch-monitor-ProverAlarm-RXSTDJ8kDtUW",
+        "MetricName": "ExternalProverHealthy",
+        "StateValue": "OK",
+        "TreatMissingData": "breaching",
+        "EvaluationPeriods": 2
+      },
+      {
+        "AlarmName": "rolling-chat-launch-monitor-WebsiteAlarm-Mtme81BKJCKs",
+        "MetricName": "ExternalWebsiteHealthy",
+        "StateValue": "OK",
+        "TreatMissingData": "breaching",
+        "EvaluationPeriods": 2
+      }
+    ],
+    "snsSubscriptions": 0
+  },
+  "notes": [
+    "First create automatically rolled back after Scheduler rejected an EndDate without milliseconds; all failed-create resources deleted before successful recreation.",
+    "Host observations pending root observer installation; external website, prover/query and feed observed healthy.",
+    "SNS topic has no subscription yet; Slack delivery must be connected and verified by root.",
+    "No shared host role or application services changed by monitoring provisioning."
+  ]
 }
