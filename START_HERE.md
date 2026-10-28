@@ -6,15 +6,19 @@ Current handover: 28 October 2026. The owner's current request takes precedence 
 
 **Performance work remains paused by the owner.** Harry feedback wallet/account/payment UX and Home ranking are published. Images and the moderation-information item were dropped. MetaMask’s official hostname scanner returns BLOCK for the current CloudFront hostname; manual classification review is needed. See docs/METAMASK_ALERT_20261028.md. No external report has been sent. [Current release report](docs/HARRY_FEEDBACK_20261028.md).
 
-28 October current publication: core application and static UI8e68ac4ae34fb214f9816cec0ffc75a4a3e60727; Bok051a530c; prover63e4c1d3. The new Board and optional Bok use one consolidated funding router. Atomic Post all, name+avatar, character ring, main posting-credit controls, ETH/USDC top-ups and one-like-per-account UI are published. PR9 branding and nested messaging remain integrated. Private paid tips are integrated as an unpublished20-FEE release candidate. Canonical contract/SDK builds, focused integration checks, repeated-like browser behavior, native tip transfers/spending and atomic Bok invocation checks passed. Real-proof acceptance and publication remain pending; see docs/PRIVATE_PAID_LIKES.md.
+The private paid-like contracts and application release `86be52150de16ad6fe628000404e44e3592705bb` are deployed. Each Like transfers 20 FEE to the author, plus actual network fees; repeated paid likes are supported. Atomic threads, name and avatar updates, Home ranking and the consolidated funding router remain integrated. **Real-proof acceptance of this fresh deployment is pending.** Native development checks passed, but they do not establish live acceptance. See [private paid likes](docs/PRIVATE_PAID_LIKES.md).
+
+An uninterrupted fresh signup paid ETH successfully, then failed before proof submission with `ROLLING_ABI_MISMATCH`. Board claim preparation still required the old ordinary-post gas-profile class. Commit `83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06` instead verifies the deployed Board against its authenticated artifact, preserving layout and anchor checks. Its static wallet publication is in progress at this handoff; acceptance must be recorded after the actual flow completes. This fix changes no contracts.
 
 Portal activation **does not require an epoch proof**. The explicit immutable testnet deployment operator activates after checking the canonical checkpoint binding. Actual activation was observed16seconds after that checkpoint on27October. User withdrawals/refunds retain their ordinary protocol proofs.
 
-Nine services checked active; Bokready/active0. First live acceptance found stale published Aztec L2 fee-price ceilings (2.129e12 below observed9.491e12). The static wallet update set the ceiling to18.9817e12 and regenerated matching registration/manifest. Registration capture now rejects stale fee prices. Published UI updates only those ceilings; unchanged contracts, gas limits, credentials, provider settings and running services. Live signup quote now succeeds (0.00100951ETH / approximately$2.37 testnet reference). Fresh signup, name+avatar, atomic two-post thread, Like/reload and ETH posting-credit topup succeeded. Both posts have actual native inclusion positions in one transaction; nested replies render and collapse. USDC swap inventory was replenished. The first100-credit claim exposed a transient balance refresh being misreported as payment failure; UI1e83d0df fixes that. A second30-credit USDC purchase completed uninterrupted with one signature, automatic claim and balance529.2636→550.7869. MetaMask-extension prompts and new-release Bok requests were not rerun.
+Earlier signup, thread, name/avatar and ETH/USDC top-up successes were on the previous Board. They are historical evidence, not acceptance for the paid-tip deployment. The published fee ceiling is 18,981,708,800,000 base units per L2 gas; the read-only observation at 12:48 UTC on 28 October found a minimum of 1,250,000,200,000, so stale pricing did not explain the new signup failure.
 
-Current browser test uses owned test EIP1193 wallet, not the MetaMask extension. One retained build: `/private/tmp/rolling-browser-proof-spans-build`. Reviewed application source8e68ac4a is pushed to master and both application branches. Prior performance reports are historical and do not establish current release timings. No optimization agent is active.
+Browser acceptance uses the owned test EIP1193 adapter, not the MetaMask extension. Reuse `/private/tmp/rolling-browser-proof-spans-build`. The sealed deployed campaign is `/private/tmp/rolling-tips-20261028-r1`; source and deployment records are retained there without copying actor credentials. Do not repeat payments or treat an interrupted test as a successful claim.
 
 ## Performance targets and evidence
+
+Historical cost observation: a 22-byte ordinary post on release `8e68ac4a` paid **2.5016104002576 FEE**, with a configured ceiling of **124.140375552 FEE**. The real-proof transaction was checkpointed successfully. This is one measurement on the previous Board, not a quote or benchmark for the new paid-tip contracts. [Exact receipt evidence](execution/evidence/G21/stable6/private-paid-likes/basic-post-actual-cost.json).
 
 - Every nonordinary transaction flow: at least50% end-to-end reduction against a comparable recorded baseline. This goal remains unachieved; live measurements are available above.
 - Normal account opening: wallet selection→correctly priced enabled payment button within2s. Report immediate/cold and warm cases separately, with wallet approval dwell. The old1.729s warm explicit-new-account shortcut was NOT normal onboarding acceptance.
@@ -31,7 +35,7 @@ All old test application data is disposable. No migration, old-account recovery 
 
 Follows, bookmarks and read state are off-chain; obsolete contract paths are removed. The public server has a persistent SQLite index, but ordinary reads still gate on fresh synchronization. The owner requested diagnosis only: do not change that request-gating architecture without a later instruction.
 
-Signup funding, posting-credit top-ups and Bok top-ups now share one router; standalone BokCreditRouter paths are removed. Private paid tips are integrated as an unpublished20-FEE release candidate. Canonical contract/SDK builds, focused integration checks, repeated-like browser behavior, native tip transfers/spending and atomic Bok invocation checks passed. Real-proof acceptance and publication remain pending; see docs/PRIVATE_PAID_LIKES.md. Do not redeploy contracts for UI changes.
+Signup funding, posting-credit top-ups and Bok top-ups share one router; standalone BokCreditRouter paths are removed. The 20-FEE paid-like contracts are deployed, with real-proof acceptance pending. See [private paid likes](docs/PRIVATE_PAID_LIKES.md). Do not redeploy contracts for UI changes.
 
 ## Hosting and ownership
 
@@ -48,22 +52,21 @@ Repository: https://github.com/zac-williamson/aztec_experiments — default bran
 
 Network: Aztec stable6.0.0, rollup `0x1f435a7f2da358caf887a470faeee7d5d5f4efba`, version679261766, Ethereum Sepolia11155111. No mainnet work.
 
-| Component | Installed source |
+| Component | Installed source or publication status |
 | --- | --- |
-| Browser UI | `/opt/rolling-ui/releases/1e83d0dfc1e019e3f1de853b29420e9cda0fca28` |
-| Running application and moderator | `/opt/rolling-app/releases/051a530c16086f099365487adf2a46368d4fe8ac` |
-| Configured next application source | `/opt/rolling-app/releases/ui-1e83d0dfc1e0` |
-| Prover | `/opt/board-prover/releases/prover-gzip-63e4c1d3a11a5689c6400ce9e55fe13bff02d33a` |
-| Bok | `/opt/rolling-bok/releases/051a530c16086f099365487adf2a46368d4fe8ac` |
+| Browser UI | `/opt/rolling-ui/releases/86be52150de16ad6fe628000404e44e3592705bb`; static signup fix `83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06` publishing |
+| Application and moderator | `/opt/rolling-app/releases/86be52150de16ad6fe628000404e44e3592705bb` |
+| Prover | `/opt/board-prover/releases/fresh-board-86be52150de16ad6fe628000404e44e3592705bb` |
+| Bok | `/opt/rolling-bok/releases/86be52150de16ad6fe628000404e44e3592705bb` |
 
 | Contract | Current address |
 | --- | --- |
-| Board | `0x0a7f5a7759e057b620ddaa331f38db3e9a80ac2e57620f38504ded2ba0e8e351` |
-| Private fee contract | `0x2fff4f1bed0f240982804499d6693530343bd3f9236fe82851fb7d46be990b3c` |
-| Bok | `0x2064c2256f9fa155665a0c2dec7e3268092a4fc7117fd83876879e328712f813` |
-| Posting deposit portal | `0xb3244958333e5c4eaa8a8de3ae1e9f04c748f266` |
-| Single funding router | `0x0d19f70fe4d309b84907ef3b2d875f9ff3fc61df` |
-| Bok portal | `0x5357586a6f902493c6b3193d7d2acd7cf813dfef` |
+| Board | `0x2d6210a94af00fadeb5c69c20ed9fce3e20a8feca7d2b190354307ef0d235bee` |
+| Private fee contract | `0x2d71392cfb41aa25a62c5ecc510400167dda9f3669676d2b539413a4fa0bcbb7` |
+| Bok | `0x204a501c723939244387d75b4c8f67a851f21018102c308ceef006f70ef6f534` |
+| Posting deposit portal | `0x0c81b38be26619dd8587455ff400ec9c6ab6a0a7` |
+| Single funding router | `0x0547e56ac6fdb8952a3435090c8a01f10893b0fe` |
+| Bok portal | `0x6183c511c8057a0e4462a9ffb13c37b6c0ab8789` |
 
 Canonical Bok plugin ID is `0x0000000000000000000000000000000000000000000000000000000000626f6b`. This fresh contract scope has replaced the old test board; previous performance results are historical until repeated on the current scope.
 

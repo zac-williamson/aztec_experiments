@@ -81,13 +81,39 @@ const manifest=JSON.parse(await fs.readFile(source+'/.build/rolling-wallet/manif
 // Validators above bind source, artifacts, SDK, CRS, configuration and deployment.
 process.stdout.write(JSON.stringify({runtime:wallet.runtime,files:manifest.files}));'''
 
+def bound_wallet_file(key):
+ selected=pathlib.Path(m[key]);assert selected.is_absolute()
+ assert str(selected) in m['configHashes'] and digest(selected)==m['configHashes'][str(selected)]
+ return selected
+
+def running_wallet_file():
+ selected=bound_wallet_file('runningWalletFile')
+ argv=pathlib.Path('/proc/'+str(m['appPid'])+'/cmdline').read_bytes().decode().rstrip('\0').split('\0')
+ assert len(argv)==5 and argv[1]=='apps/rolling/start.mjs' and argv[3]==str(selected)
+ return selected
+
+def configured_wallet_file():
+ selected=bound_wallet_file('configuredWalletFile')
+ starts=re.findall(r'^ExecStart=(.*)$',pathlib.Path(m['appUnit']).read_text(),re.M);assert len(starts)==1
+ configured=shlex.split(starts[0]);assert len(configured)==5 and configured[1]=='apps/rolling/start.mjs' and configured[3]==str(selected)
+ return selected
+
 def wallet_file(source):
- local=source/'deploy/runtime-wallet.json'
- return local if local.is_file() else pathlib.Path('/etc/rolling-app/wallet.json')
+ if source==NEXT:
+  if 'deploy/runtime-wallet.json' in m['files']:return NEXT/'deploy/runtime-wallet.json'
+  return configured_wallet_file()
+ assert source==RUNNING
+ return running_wallet_file()
+
+def next_wallet_startup(updated):
+ rows=updated.splitlines(keepends=True);starts=[i for i,line in enumerate(rows) if line.startswith('ExecStart=')];assert len(starts)==1
+ index=starts[0];args=shlex.split(rows[index][10:]);assert len(args)==5 and args[1]=='apps/rolling/start.mjs'
+ args[3]=str(wallet_file(NEXT));rows[index]='ExecStart='+shlex.join(args)+'\n'
+ return ''.join(rows)
 
 def validate_fee_override():
  if 'deploy/runtime-wallet.json' not in m['files']:return
- old=json.loads(wallet_file(SOURCE).read_text())
+ old=json.loads(configured_wallet_file().read_text())
  new=json.loads(confined_payload_file(P/'files','deploy/runtime-wallet.json').read_text())
  prices=new['config']['privateFee']['gasSettings']['maxFeesPerGas']
  assert set(prices)=={'feePerDaGas','feePerL2Gas'}
@@ -357,14 +383,12 @@ if mode=='stage':
  assert rows.count('WorkingDirectory='+str(SOURCE)+'\n')==1
  starts=[line for line in rows if line.startswith('ExecStart=')];assert len(starts)==1 and shlex.split(starts[0][10:])[0]==node
  updated=''.join(line.replace(str(SOURCE),str(NEXT)) if line.startswith(('WorkingDirectory=','ExecStart=')) else line for line in rows)
- if (NEXT/'deploy/runtime-wallet.json').is_file():
-  updated=updated.replace('/etc/rolling-app/wallet.json',str(NEXT/'deploy/runtime-wallet.json'))
-  assert str(NEXT/'deploy/runtime-wallet.json') in updated
+ updated=next_wallet_startup(updated)
  assert shlex.split(next(line[10:] for line in updated.splitlines() if line.startswith('ExecStart=')))[0]==node
  atomic(P/'application.service.next',updated.encode(),0o600)
  public_directory(UI);export_assets(RUNNING,old);export_assets(NEXT,new,UI)
  for url,name in PUBLIC.items():public_file(UI/(url.lstrip('/')+('index.html' if url.endswith('/') else '')),(NEXT/'apps/rolling'/name).read_bytes())
- result={'schemaVersion':1,'dependencyRoot':str(dependency_root(NEXT)),'payloadArchiveSha256':archive_hash,'commit':m['commit'],'source':str(NEXT),'ui':str(UI),'planSha256':digest(P/'plan.json'),'publisherSha256':digest(pathlib.Path(__file__)),'caddySha256':m['caddySha256'],'notifySha256':m['notifySha256'],'expectedCurrentUi':m['expectedCurrentUi'],'unitSha256':digest(P/'application.service.next'),'walletConfigSha256':digest(NEXT/'deploy/runtime-wallet.json') if (NEXT/'deploy/runtime-wallet.json').is_file() else None,'files':{str(f.relative_to(UI)):digest(f) for f in UI.rglob('*') if f.is_file()}}
+ result={'schemaVersion':1,'dependencyRoot':str(dependency_root(NEXT)),'payloadArchiveSha256':archive_hash,'commit':m['commit'],'source':str(NEXT),'ui':str(UI),'planSha256':digest(P/'plan.json'),'publisherSha256':digest(pathlib.Path(__file__)),'caddySha256':m['caddySha256'],'notifySha256':m['notifySha256'],'expectedCurrentUi':m['expectedCurrentUi'],'unitSha256':digest(P/'application.service.next'),'walletConfigSha256':digest(NEXT/'deploy/runtime-wallet.json') if 'deploy/runtime-wallet.json' in m['files'] else None,'files':{str(f.relative_to(UI)):digest(f) for f in UI.rglob('*') if f.is_file()}}
  atomic(P/'stage-result.json',json.dumps(result,sort_keys=True).encode(),0o600)
  for name,entry in m['files'].items():assert (not (SOURCE/name).exists()) if entry['previousSha256'] is None else digest(SOURCE/name)==entry['previousSha256']
  preserved();print(json.dumps({'staged':True,'files':len(result['files'])}))

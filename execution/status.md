@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October:tips86be published/servicesready; actualsignup found staleold-gas-profileclass in Boardclaim prefetch. Fixed authenticatedartifact/currentclass binding with layout/nativeanchorchecks retained;34focused nativeprefetch tests passed; SDK/wallet/apps rebuilt, contractsunchanged. StaticSDKpublication then realUI signup/post/repeatedpaidlikes pending.17trackedgeneratedconsumers synchronized to normalbuild (5deployedcontractoutputs,12legacyapps/dist outputs). Basic22-byte postactual2.5016104002576FEE; performancepaused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: tips release 86be is deployed. Signup witness class fix 83f3 passed 34 focused checks. Static publication stopped before activation because the publisher selected an inherited stale wallet config; it now binds running and configured wallet paths separately, with 38 focused checks and independent review. Restage and actual signup/post/repeated paid-like acceptance remain pending. Basic 22-byte post on prior 8e68 cost 2.5016104002576 FEE. Performance remains paused.
 
 ## Ready internal work
 
