@@ -1,4 +1,6 @@
-// Native class/discovery enforcement remains covered by pxe-validated-prove.test.mjs.
+// Application/status unit fixture: current SDK private-credit reader is an explicit
+// double. Native credit reconstruction is covered by private-credit.test.mjs;
+// class/discovery enforcement remains covered by pxe-validated-prove.test.mjs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -22,13 +24,18 @@ function fixture({synchronized=true}={}){
  const sdk={Fr,AztecAddress,isTrustedPrivateNode:n=>n===node,isPrivateWalletForNode:(w,n)=>w===wallet&&n===node,isPrivatePXEForNode:(p,n)=>p===wallet.pxe&&n===node,
   inspectTrustedNode:async()=>{state.networkChecks++;if(state.networkError)throw state.networkError;},
   preparePrivateFeePayment:async()=>{state.payments++;assert.fail('Status must not prepare a transaction');},
+  readPrivateFeeCredit:async input=>{
+   assert.equal(input.wallet,wallet);assert.equal(input.node,node);assert.equal(input.owner,owner);
+   assert.equal(String(input.fpc),hex(2));assert.equal(input.fpcArtifact,feeArtifact);
+   assert.equal(String(input.board),hex(1));assert.equal(input.boardArtifact,boardArtifact);
+   assert.equal(input.chainId,'31337');assert.equal(input.version,'1');assert.equal(typeof input.cache,'function');
+   state.reads.push('readPrivateFeeCredit');await state.beforeBalance?.();if(state.balanceError)throw state.balanceError;return state.credit;
+  },
   Contract:{at:async(address,artifact,selectedWallet)=>{
-   assert.equal(selectedWallet,wallet);
-   const fee=address.toString()===hex(2);assert.equal(artifact,fee?feeArtifact:boardArtifact);
+   assert.equal(selectedWallet,wallet);assert.equal(String(address),hex(1));assert.equal(artifact,boardArtifact);
    return {methods:new Proxy({},{get:(_,name)=>(...args)=>({simulate:async options=>{
-    assert.equal(options.from,owner);assert.equal(args[0],owner);assert.equal(name,fee?'balance_of':'get_deposit_ids');
+    assert.equal(options.from,owner);assert.equal(args[0],owner);assert.equal(name,'get_deposit_ids');
     state.reads.push(name);
-    if(fee){await state.beforeBalance?.();if(state.balanceError)throw state.balanceError;return {result:state.credit};}
     await state.beforeIds?.();if(state.idsError)throw state.idsError;return {result:state.ids};
    }})})};
   }},
@@ -43,7 +50,7 @@ function fixture({synchronized=true}={}){
 for(const synchronized of [true,false])test('native account balance replaces payment preparation; synchronized='+synchronized,async()=>{
  const f=fixture({synchronized}),result=await f.app.readAccountStatus({opening:true});
  assert.equal(result.status,'fee-ready');assert.equal(result.privateFeeCredit,'77');assert.deepEqual(result.depositIds,[hex(9)]);
- assert.equal(f.state.discoveries,1);assert.equal(f.state.payments,0);assert.equal(f.state.networkChecks,1);assert.deepEqual(f.state.reads,['get_deposit_ids','balance_of']);assert.equal(f.state.sends,0);
+ assert.equal(f.state.discoveries,1);assert.equal(f.state.payments,0);assert.equal(f.state.networkChecks,1);assert.deepEqual(f.state.reads,['get_deposit_ids','readPrivateFeeCredit']);assert.equal(f.state.sends,0);
 });
 
 for(const empty of [false,true])for(const credit of [0n,77n])test('zero and positive native credit keep opening classification; empty='+empty+' credit='+credit,async()=>{
