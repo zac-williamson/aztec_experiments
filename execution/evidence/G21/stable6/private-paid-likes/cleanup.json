@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "remote": [
+    {
+      "schemaVersion": 1,
+      "kind": "core",
+      "commit": "75b6ec2aa477278874db874e4c463494e1a142b6",
+      "removed": [
+        "/opt/rolling-app/releases/75b6ec2aa477278874db874e4c463494e1a142b6",
+        "/var/lib/rolling-bootstrap-private/rolling-tips-75b6ec2aa477/source/files",
+        "/var/lib/rolling-bootstrap-private/rolling-tips-75b6ec2aa477/source.tgz",
+        "/var/lib/rolling-bootstrap-private/rolling-tips-75b6ec2aa477/core-overlay.tgz"
+      ],
+      "alreadyAbsent": [],
+      "servicesUnchanged": true,
+      "preservedConfigurationAndReceipts": true,
+      "finishedAt": "2026-10-28T14:40:15.452165+00:00"
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "bok",
+      "commit": "75b6ec2aa477278874db874e4c463494e1a142b6",
+      "removed": [
+        "/opt/rolling-bok/releases/75b6ec2aa477278874db874e4c463494e1a142b6",
+        "/var/lib/rolling-bootstrap-private/rolling-tips-75b6ec2aa477/source/files",
+        "/var/lib/rolling-bootstrap-private/rolling-tips-75b6ec2aa477/source.tgz",
+        "/var/lib/rolling-bootstrap-private/rolling-tips-75b6ec2aa477/bok-overlay.tgz"
+      ],
+      "alreadyAbsent": [],
+      "servicesUnchanged": true,
+      "preservedConfigurationAndReceipts": true,
+      "finishedAt": "2026-10-28T14:40:17.373170+00:00"
+    }
+  ],
+  "localRemoved": [
+    "/private/tmp/ui-35dd5068ebf4",
+    "/private/tmp/ui-35dd5068ebf4.tgz"
+  ],
+  "publicHealth": [
+    {
+      "path": "/api/status",
+      "http": 200,
+      "state": "ready",
+      "complete": true
+    },
+    {
+      "path": "/prover/healthz",
+      "http": 200,
+      "ready": true
+    }
+  ],
+  "checkedAt": "2026-10-28T14:41:02.194647+00:00"
+}

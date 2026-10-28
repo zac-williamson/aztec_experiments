@@ -6,9 +6,9 @@ Current handover: 28 October 2026. The owner's current request takes precedence 
 
 **Performance work remains paused by the owner.** Harry feedback wallet/account/payment UX and Home ranking are published. Images and the moderation-information item were dropped. MetaMask’s official hostname scanner returns BLOCK for the current CloudFront hostname; manual classification review is needed. See docs/METAMASK_ALERT_20261028.md. No external report has been sent. [Current release report](docs/HARRY_FEEDBACK_20261028.md).
 
-The private paid-like contracts and application release `86be52150de16ad6fe628000404e44e3592705bb` are deployed. Each Like transfers 20 FEE to the author, plus actual network fees; repeated paid likes are supported. Atomic threads, name and avatar updates, Home ranking and the consolidated funding router remain integrated. **Real-proof acceptance of this fresh deployment is pending.** Native development checks passed, but they do not establish live acceptance. See [private paid likes](docs/PRIVATE_PAID_LIKES.md).
+The private paid-like contracts and application release `86be52150de16ad6fe628000404e44e3592705bb` are deployed. Each Like transfers 20 FEE to the author, plus actual network fees; repeated paid likes are supported. Atomic threads, name and avatar updates, Home ranking and the consolidated funding router remain integrated. **Real-proof browser acceptance passed:** fresh signup, a post, two paid likes with count 2 and exact self-tip fee accounting, then another post. See the recorded boundaries in the acceptance evidence; this is not a production security audit. See [private paid likes](docs/PRIVATE_PAID_LIKES.md).
 
-An uninterrupted fresh signup paid ETH successfully, then failed before proof submission with `ROLLING_ABI_MISMATCH`. Board claim preparation still required the old ordinary-post gas-profile class. Commit `83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06` instead verifies the deployed Board against its authenticated artifact, preserving layout and anchor checks. Its static wallet publication completed without restarting the application, prover or proxy. Acceptance must be recorded after the actual flow completes. This fix changes no contracts.
+An uninterrupted fresh signup paid ETH successfully, then failed before proof submission with `ROLLING_ABI_MISMATCH`. Board claim preparation still required the old ordinary-post gas-profile class. Commit `83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06` instead verifies the deployed Board against its authenticated artifact, preserving layout and anchor checks. Its static wallet publication completed without restarting the application, prover or proxy. Fresh signup completed with one Ethereum payment and one Aztec claim. Follow-up commit `24f707f6` removed an old class-specific sync heuristic from the generic posting path and corrected the ordinary-post witness helper. The real post → two paid likes → post check then passed. These browser fixes change no contracts.
 
 Portal activation **does not require an epoch proof**. The explicit immutable testnet deployment operator activates after checking the canonical checkpoint binding. Actual activation was observed16seconds after that checkpoint on27October. User withdrawals/refunds retain their ordinary protocol proofs.
 
@@ -17,6 +17,8 @@ Earlier signup, thread, name/avatar and ETH/USDC top-up successes were on the pr
 Browser acceptance uses the owned test EIP1193 adapter, not the MetaMask extension. Reuse `/private/tmp/rolling-browser-proof-spans-build`. The sealed deployed campaign is `/private/tmp/rolling-tips-20261028-r1`; source and deployment records are retained there without copying actor credentials. Do not repeat payments or treat an interrupted test as a successful claim.
 
 ## Performance targets and evidence
+
+Current-release measured post cost: a 27-byte post paid **3.5070118111218 FEE**, and a 42-byte post paid **3.5784680725548 FEE**. Both appeared after native Aztec inclusion. Each paid like transferred 20 FEE and paid an additional **2.1318353410936 FEE** in network fees. These are actual receipts, not the configured maximum. [Browser acceptance evidence](execution/evidence/G21/stable6/private-paid-likes/browser-acceptance.json).
 
 Historical cost observation: a 22-byte ordinary post on release `8e68ac4a` paid **2.5016104002576 FEE**, with a configured ceiling of **124.140375552 FEE**. The real-proof transaction was checkpointed successfully. This is one measurement on the previous Board, not a quote or benchmark for the new paid-tip contracts. [Exact receipt evidence](execution/evidence/G21/stable6/private-paid-likes/basic-post-actual-cost.json).
 
@@ -35,7 +37,7 @@ All old test application data is disposable. No migration, old-account recovery 
 
 Follows, bookmarks and read state are off-chain; obsolete contract paths are removed. The public server has a persistent SQLite index, but ordinary reads still gate on fresh synchronization. The owner requested diagnosis only: do not change that request-gating architecture without a later instruction.
 
-Signup funding, posting-credit top-ups and Bok top-ups share one router; standalone BokCreditRouter paths are removed. The 20-FEE paid-like contracts are deployed, with real-proof acceptance pending. See [private paid likes](docs/PRIVATE_PAID_LIKES.md). Do not redeploy contracts for UI changes.
+Signup funding, posting-credit top-ups and Bok top-ups share one router; standalone BokCreditRouter paths are removed. The 20-FEE paid-like contracts are deployed, with real-proof browser acceptance recorded. See [private paid likes](docs/PRIVATE_PAID_LIKES.md). Do not redeploy contracts for UI changes.
 
 ## Hosting and ownership
 
@@ -54,8 +56,8 @@ Network: Aztec stable6.0.0, rollup `0x1f435a7f2da358caf887a470faeee7d5d5f4efba`,
 
 | Component | Installed source or publication status |
 | --- | --- |
-| Browser UI | `/opt/rolling-ui/releases/83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06` |
-| Configured next application source | `/opt/rolling-app/releases/ui-83f3cb7c5469` |
+| Browser UI | `/opt/rolling-ui/releases/24f707f659d8f5b6bbb83614dfbf4a28767885c9` |
+| Configured next application source | `/opt/rolling-app/releases/ui-24f707f659d8` |
 | Application and moderator | `/opt/rolling-app/releases/86be52150de16ad6fe628000404e44e3592705bb` |
 | Prover | `/opt/board-prover/releases/fresh-board-86be52150de16ad6fe628000404e44e3592705bb` |
 | Bok | `/opt/rolling-bok/releases/86be52150de16ad6fe628000404e44e3592705bb` |

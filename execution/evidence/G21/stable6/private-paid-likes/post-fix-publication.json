@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-28T14:33:09.895919+00:00",
+  "operation": "static ordinary-post witness and generic proof dispatch fix publication",
+  "runtimeCommit": "24f707f659d8f5b6bbb83614dfbf4a28767885c9",
+  "publisherCommit": "afd5f0c1a427bab0692a763cdf5c0af4b522af67",
+  "baselineCommit": "83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06",
+  "publication": {
+    "status": "Success",
+    "activated": true,
+    "appRestarted": false,
+    "proxyRestarted": false,
+    "payloadCleaned": true,
+    "sdkRetentionCleaned": true,
+    "activationCommandId": "df519640-e3bc-49d5-86ab-68c3f3f28e60",
+    "verificationCommandId": "c46de3c3-8d08-42ac-bc7f-2a3b8b5f1f84",
+    "verificationStatus": "Success",
+    "runtimeSha256": "ac4bd2c4cc334ace581ed02d9107fa8b215d104d3989313aa2898a77520c34b0",
+    "publisherSha256": "1a148674db679470a96bf9ffcb9e0fed4c78b1bf101bc83b4a31c56317526a43",
+    "runningSource": "/opt/rolling-app/releases/86be52150de16ad6fe628000404e44e3592705bb",
+    "nextSource": "/opt/rolling-app/releases/ui-24f707f659d8",
+    "ui": "/opt/rolling-ui/releases/24f707f659d8f5b6bbb83614dfbf4a28767885c9",
+    "previousUi": "/opt/rolling-ui/releases/83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06",
+    "protectedPids": {
+      "board-prover-proxy.service": 739,
+      "board-prover.service": 604038,
+      "rolling-application-proxy.service": 427800,
+      "rolling-application.service": 604361,
+      "rolling-moderator.service": 604372,
+      "rolling-node.service": 561751,
+      "rolling-query.service": 561753
+    },
+    "caddySha256": "e3650dac882a5dd4e1a0faaba7ab6e7f95ef48d8e04fa34de77a67230bdcd83c",
+    "notifySha256": "aa8f21c2b5ff13c58983a4b1cbf6482cfb303db74566198102f8b051d46a53ae"
+  },
+  "packet": {
+    "archive": "/private/tmp/ui-24f707f659d8.tgz",
+    "sha256": "5c85fd571844c1149f0643339596b4e6e9bd9fb240a160ff666073a5a0aae8f9",
+    "bytes": 30101004,
+    "fileCount": 6,
+    "files": [
+      ".build/rolling-wallet/manifest.json",
+      ".build/sdk/aztec_browser.js",
+      ".build/sdk/aztec_bundle.js",
+      ".build/sdk/sdk-manifest.json",
+      "apps/src/billboard/user/engine.js",
+      "shared/ordinary-post-witnesses.mjs"
+    ],
+    "inspectionSha256": "fa94a144c77f720a31b22e6fd9b2924ffdebebeb95a878f50573597c3cb5d912"
+  },
+  "scope": {
+    "contractsChanged": false,
+    "runtimeConfigurationChanged": false,
+    "deploymentRegistrationChanged": false,
+    "nativeDependenciesChanged": false,
+    "browserAcceptance": "Owner reported post included at block9466 with fee3.5070118111218FEE. This record independently verifies publication only; receipt details originate from owner. Likes are still running."
+  },
+  "readOnlyVerificationCommands": [
+    [
+      "python3",
+      "/private/tmp/owner-ssm.py",
+      "get",
+      "core",
+      "df519640-e3bc-49d5-86ab-68c3f3f28e60"
+    ],
+    [
+      "python3",
+      "/private/tmp/owner-ssm.py",
+      "get",
+      "core",
+      "c46de3c3-8d08-42ac-bc7f-2a3b8b5f1f84"
+    ]
+  ],
+  "walletBindings": {
+    "runningWalletFile": "/etc/rolling-app/wallet.json",
+    "configuredWalletFile": "/etc/rolling-app/wallet.json",
+    "sha256": "dea3c6968ffbc1c5d65407dc3807877185f3f5c61391054ef4feb9c87ebad0be"
+  },
+  "ownerReportedPost": {
+    "included": true,
+    "blockNumber": 9466,
+    "feeFEE": "3.5070118111218",
+    "independentlyVerifiedInThisRecord": false
+  },
+  "cleanupExecuted": false
+}

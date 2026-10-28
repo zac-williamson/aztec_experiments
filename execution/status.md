@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: fresh signup passed on live83f3 with one Ethereum payment and native claim block9448. First post stopped unsigned before proving. Source tracing found engine name-only [pay_fee,post] heuristic entering old class-qualified native sync; removed, two focused request/capsule tests passed and independently reviewed. Separate saved-review error BB_POST_FEE_PROFILE_MISMATCH captured and fixed with actual-artifact witness binding;22 checks passed. SDK/wallet rebuilt; combined static publication and paid-like acceptance next. Performance paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: tips86be and static24f are live. Real-proof browser acceptance passed: signup claim9448, post9466, two20-FEE likes9467/9468 with count2 and exact self-tip conservation, secondpost9469. Actual post fees3.5070118111218/3.5784680725548FEE. Removed name-only obsolete pre-sync dispatch and stale witness class pins; focused checks and review passed. Generated consumer inventory synchronized. Performance remains paused; MetaMask hostname review and broader production qualification remain separate.
 
 ## Ready internal work
 
