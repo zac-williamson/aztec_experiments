@@ -31,7 +31,9 @@ identities. This is basic overload control, not a claim of DDoS protection.
 # Daily backup and restore job
 
 `ops/backup-job.mjs` is a root-owned, one-shot job using the existing instance
-role and AWS CLI. It does not restart services or invoke a signer. Each run:
+role and its installed Python/boto3 runtime. A fixed-operation adapter takes JSON
+through a private stdin pipe; cloud errors and metadata never enter logs. It does
+not restart services or invoke a signer. Each run:
 
 1. Prunes the core analytics database even if nobody visited the site.
 2. Requires a private S3 bucket, seven-day prefix expiration and no versioning.
@@ -55,9 +57,11 @@ Use a dedicated, unversioned private S3 bucket. Generate its public-access,
 ownership, lifecycle, TLS-only bucket policy and narrow instance-role policy
 using `backupCloudConfiguration` from `ops/backup-deployment.mjs`. It has no cloud
 side effects. Apply the returned documents with the authorized deployment role.
-The runtime role can only read/write its own archive prefix, inspect the bucket
-controls, and decrypt its one SSM parameter through SSM with the matching KMS
-encryption context. It cannot replace the key, alter retention, or delete objects.
+Each returned policy permits only its selected archive prefix, bucket control
+reads, and one SSM parameter through SSM with the matching KMS encryption context.
+It cannot replace the key, alter retention, or delete objects. The current hosts
+share one instance IAM role: attaching both policies gives that role both scopes.
+These separate archive/key namespaces do not establish isolation between hosts.
 
 Provision separate random keys at `/rolling/operations/backup-key/core` and
 `/rolling/operations/backup-key/bok` as SSM SecureStrings under an operator-managed
@@ -103,8 +107,8 @@ reconciliation remains necessary before any restored signer is started.
 
 Use `backupUnits` to generate `rolling-ops-backup-{core,bok}.service` and `.timer`.
 Supply the installed pinned Node binary, immutable operations code directory,
-private config path, and the core analytics directory. The job expects AWS CLI
-at `/usr/local/bin/aws`. Units run daily with a ten-minute ceiling, private
+private config path, and the core analytics directory. The job expects Python
+and boto3 at `/usr/bin/python3`. Units run daily with a ten-minute ceiling, private
 runtime directories and read-only system paths. State files must be under the
 generated `/var/lib/rolling-ops-backup-ROLE` directory. The core analytics directory
 must be writable for pruning and SQLite locking. Validate and install the units,
@@ -137,4 +141,5 @@ cleanup. They do not establish that an AWS installation or timer is active.
 
 ```sh
 node --test ops/backup.test.mjs ops/backup-job.test.mjs ops/monitor.test.mjs ops/analytics.test.mjs scripts/rolling-public-capacity.test.mjs
+python3 -m unittest discover -s ops -p 'backup_cloud_test.py'
 ```

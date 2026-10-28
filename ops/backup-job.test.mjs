@@ -4,6 +4,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {tmpdir} from 'node:os';
 import {randomBytes} from 'node:crypto';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 import {runBackupJob,validateBackupJobConfig,projectBackupStatus} from './backup-job.mjs';
 import {backupCloudConfiguration,backupUnits} from './backup-deployment.mjs';
@@ -62,4 +65,13 @@ test('deployment grants one role only its archive prefix and separate key; timer
  assert(c.lifecycle.Rules.every(r=>r.Expiration.Days===7));assert.equal(c.rolePolicy.Statement[0].Resource,'arn:aws:s3:::rolling-backup-example/rolling-ops/core/*');assert(!JSON.stringify(c.rolePolicy).includes('PutParameter'));assert(!JSON.stringify(c.rolePolicy).includes('DeleteObject'));
  const units=backupUnits({role:'core',nodeBinary:'/opt/node/bin/node',codeDirectory:'/opt/rolling-ops/current',configFile:'/etc/rolling-ops/core-backup.json',analyticsDirectory:'/var/lib/rolling-ops'});
  assert(units.timer.includes('Persistent=true'));assert(units.service.includes('RuntimeDirectoryMode=0700'));assert(units.service.includes('ProtectSystem=strict'));assert(!units.service.includes('restart'));
+});
+test('backup job invoked through a release symlink executes and fails closed without configuration',async t=>{
+ const f=await fixture(t),link=path.join(f.root,'backup-job.mjs');await fs.symlink(fileURLToPath(new URL('./backup-job.mjs',import.meta.url)),link);
+ await assert.rejects(promisify(execFile)(process.execPath,[link]),e=>e.code===1&&e.stderr==='BACKUP_USAGE\n');
+});
+test('retention CLI invoked through a release symlink actually removes expired rows',async t=>{
+ const f=await fixture(t),link=path.join(f.root,'prune.mjs'),dbPath=path.join(f.root,'analytics.sqlite');await fs.symlink(fileURLToPath(new URL('./prune-analytics.mjs',import.meta.url)),link);
+ const db=new DatabaseSync(dbPath);db.exec("CREATE TABLE analytics_daily(day TEXT,event TEXT,dimension TEXT,value TEXT,bucket TEXT,n INTEGER,PRIMARY KEY(day,event,dimension,value,bucket)); INSERT INTO analytics_daily VALUES ('2020-01-01','visit','total','all','none',1)");db.close();
+ const result=await promisify(execFile)(process.execPath,[link,dbPath]);assert.equal(JSON.parse(result.stdout).removedRows,1);
 });

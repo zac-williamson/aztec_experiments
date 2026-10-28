@@ -2,13 +2,12 @@
  * No directory discovery, raw AWS output, service restart or signer invocation. */
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {execFile} from 'node:child_process';
-import {promisify} from 'node:util';
+import {spawn} from 'node:child_process';
 import {randomUUID,createHash} from 'node:crypto';
-import {pathToFileURL} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createBackup,restoreBackup} from './backup.mjs';
 import {pruneAnalytics} from './prune-analytics.mjs';
-const exec=promisify(execFile),hash=data=>createHash('sha256').update(data).digest('hex');
+const hash=data=>createHash('sha256').update(data).digest('hex');
 export const BACKUP_NAMES=Object.freeze({
  core:['configuration/application.json','configuration/wallet.json','configuration/funding-relay.json','configuration/prover.json','configuration/moderator.json','configuration/operations.json','configuration/release.json','credentials/moderator.json','credentials/funding-relayer.json','analytics.sqlite'],
  bok:['configuration/bok.json','credentials/bok-operator.json','credentials/github-app.pem','credentials/model-provider.env'],
@@ -31,8 +30,17 @@ export async function readBackupJobConfig(file){
  return validateBackupJobConfig(JSON.parse(await fs.readFile(file,'utf8')));
 }
 export async function awsCommand(args,{region}){
- try{const result=await exec('/usr/local/bin/aws',['--region',region,'--no-cli-pager','--output','json',...args],{timeout:90000,maxBuffer:65536,env:{...process.env,AWS_PAGER:''}});return result.stdout.trim()?JSON.parse(result.stdout):{};}
- catch{throw failed('BACKUP_CLOUD_UNAVAILABLE');}
+ // The installed hosts already have boto3. Requests go through stdin, and the
+ // separate key response stays in this captured pipe, never logs or arguments.
+ return new Promise((resolve,reject)=>{
+  const child=spawn('/usr/bin/python3',[fileURLToPath(new URL('./backup-cloud.py',import.meta.url))],{stdio:['pipe','pipe','pipe']});let bytes=0,chunks=[],settled=false;
+  const finish=(error,result)=>{if(settled)return;settled=true;clearTimeout(timer);error?reject(failed('BACKUP_CLOUD_UNAVAILABLE')):resolve(result);};
+  const timer=setTimeout(()=>{child.kill('SIGKILL');finish(true);},90000);
+  child.stdout.on('data',chunk=>{bytes+=chunk.length;if(bytes>65536){child.kill('SIGKILL');finish(true);}else chunks.push(chunk);});
+  child.stderr.resume();child.on('error',()=>finish(true));child.stdin.on('error',()=>finish(true));
+  child.on('close',code=>{if(code!==0)return finish(true);try{finish(false,JSON.parse(Buffer.concat(chunks).toString('utf8')));}catch{finish(true);}});
+  child.stdin.end(JSON.stringify({region,args}));
+ });
 }
 const date=value=>typeof value==='string'&&Number.isFinite(Date.parse(value))?new Date(value).toISOString():null;
 export function projectBackupStatus(value){return {configured:true,lastSuccessAt:date(value?.lastSuccessAt),lastVerifiedRestoreAt:date(value?.lastVerifiedRestoreAt),lastOutcome:['uploaded','verified','backup-failed','restore-failed','cleanup-failed'].includes(value?.lastOutcome)?value.lastOutcome:'unknown'};}
@@ -86,7 +94,8 @@ export async function runBackupJob(c,{aws=awsCommand,now=Date.now,workRoot}={}){
   finally{await lock.close();await fs.rm(lockFile,{force:true});}
  }
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
+const invokedFile=process.argv[1]&&await fs.realpath(process.argv[1]).catch(()=>null);
+if(invokedFile&&import.meta.url===pathToFileURL(invokedFile).href){
  try{if(process.argv.length!==3)throw failed('BACKUP_USAGE');const status=await runBackupJob(await readBackupJobConfig(process.argv[2]));process.stdout.write(JSON.stringify(projectBackupStatus(status))+'\n');}
  catch(e){process.stderr.write((/^BACKUP_[A-Z_]+$/.test(e.code??'')?e.code:'BACKUP_FAILED')+'\n');process.exitCode=1;}
 }
