@@ -10,12 +10,12 @@ const timestamp = value => typeof value==='string' && Number.isFinite(Date.parse
 const fresh = (value,now,maxAgeMs) => { const at=timestamp(value); return at && now-Date.parse(at)>=-30000 && now-Date.parse(at)<=maxAgeMs; };
 const overall = checks => checks.reduce((v,c)=>rank[c.status]>rank[v]?c.status:v,'healthy');
 const metricKeys = ['cpuPercent','memoryPercent','diskPercent','loadAverage1'];
-const countKeys = ['active','queued','retainedJobs','completed','failed','oldestJobAgeSeconds','ingestAgeSeconds','headLagBlocks','pendingPayments','feeBalance','minimumFeeBalance','providerSpendUsd'];
+const countKeys = ['active','queued','retainedJobs','completed','failed','oldestJobAgeSeconds','oldestActiveAgeSeconds','lastWorkerMs','lastQueueWaitMs','ingestAgeSeconds','headLagBlocks','pendingPayments','feeBalance','minimumFeeBalance','providerSpendUsd'];
 const action = id => id.startsWith('backup') ? 'Inspect backup job and verify a fresh restore.' : id==='spending' ? 'Review the forecast and stop new optional paid work before the allowance is exhausted.' : id.startsWith('external') ? 'Check the public site and current release; use release rollback if needed.' : 'Inspect the affected service through the private operator session.';
 const checkIds=new Set(['external.website','external.prover','spending','backup.freshness','backup.restore']);
 for(const role of ['core','bok']) {
   for(const name of ['observation',...SERVICES[role],'cpuPercent','memoryPercent','diskPercent'])checkIds.add(`${role}.${name}`);
-  for(const name of role==='core'?['prover','query','moderator','funding']:['bok'])for(const suffix of ['health','queueAge','ingestion','liquidity'])checkIds.add(`${role}.${name}.${suffix}`);
+  for(const name of role==='core'?['prover','query','moderator','funding']:['bok'])for(const suffix of ['health','queueAge','activeAge','ingestion','liquidity'])checkIds.add(`${role}.${name}.${suffix}`);
 }
 const labels={'external.website':'Public website','external.prover':'Public proof service',spending:'Additional spending forecast','backup.freshness':'Latest backup','backup.restore':'Verified restore'};
 const label = id => labels[id]??id.replace(/^core\./,'Core · ').replace(/^bok\./,'Bok · ').replaceAll('.',' · ').replaceAll('-',' ').replace('cpuPercent','CPU').replace('memoryPercent','Memory').replace('diskPercent','Disk');
@@ -52,6 +52,7 @@ export function buildReliability({hosts={},external,spending,backup,now=Date.now
     for(const [name,h]of Object.entries(host.health)) {
       add(`${role}.${name}.health`,h.status);
       if(h.oldestJobAgeSeconds!==undefined)add(`${role}.${name}.queueAge`,h.oldestJobAgeSeconds>300?'critical':h.oldestJobAgeSeconds>120?'warning':'healthy',h.oldestJobAgeSeconds,'seconds');
+      if(h.oldestActiveAgeSeconds!==undefined)add(`${role}.${name}.activeAge`,h.oldestActiveAgeSeconds>300?'critical':h.oldestActiveAgeSeconds>120?'warning':'healthy',h.oldestActiveAgeSeconds,'seconds');
       if(h.ingestAgeSeconds!==undefined)add(`${role}.${name}.ingestion`,h.ingestAgeSeconds>180?'critical':h.ingestAgeSeconds>90?'warning':'healthy',h.ingestAgeSeconds,'seconds');
       if(h.feeBalance!==undefined && h.minimumFeeBalance!==undefined)add(`${role}.${name}.liquidity`,h.feeBalance<h.minimumFeeBalance?'critical':'healthy',h.feeBalance,'credits');
     }

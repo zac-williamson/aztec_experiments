@@ -30,7 +30,9 @@ unavailable sources and they remain unknown. CPU needs two successive `/proc/sta
 samples; the first is unknown. Process availability and work health are separate.
 
 Existing prover `jobs` includes completed results and is called `retainedJobs`,
-not queue length. Current Bok health exposes active jobs and readiness, not its
+not queue length. The new queue projection adds distinct waiting/active counts,
+oldest waiting/active age, and latest worker/queue-wait duration. These measure
+existing progress only; they never cancel or advance work. Current Bok health exposes active jobs and readiness, not its
 full queue, cost or latency. Exact node/index lag, provider spending and funding
 liquidity need real aggregate sources; this patch does not invent their values.
 An optional loopback funding source accepts

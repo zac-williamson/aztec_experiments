@@ -15,9 +15,9 @@ def project_health(name, value):
   result['status']='healthy' if value.get('ready') is True and value.get('proofs')=='real' else 'critical'
   queue=value.get('queue') if isinstance(value.get('queue'),dict) else {}
   # Existing `jobs` includes completed results awaiting acknowledgement.
-  for source,target in [('jobs','retainedJobs'),('queued','queued'),('completed','completed'),('failed','failed'),('oldestJobAgeSeconds','oldestJobAgeSeconds')]:
+  for source,target in [('jobs','retainedJobs'),('queued','queued'),('completed','completed'),('failed','failed'),('oldestJobAgeSeconds','oldestJobAgeSeconds'),('oldestActiveAgeSeconds','oldestActiveAgeSeconds'),('lastWorkerMs','lastWorkerMs'),('lastQueueWaitMs','lastQueueWaitMs')]:
    if number(queue.get(source)) is not None: result[target]=queue[source]
-  result['active']=1 if queue.get('running') is True else 0
+  result['active']=queue['active'] if number(queue.get('active')) is not None else 1 if queue.get('running') is True else 0
  elif name=='query':
   query=value.get('query') if isinstance(value.get('query'),dict) else {}
   result['status']='healthy' if query.get('enabled') is True and query.get('ready') is True else 'critical'
