@@ -1,16 +1,35 @@
 // W03 regression of the original B09 reproduction. Actual SDK receipt classes;
 // real shared/deploy wallet implementations; controlled prover/RPC and clock.
-import test from 'node:test';
+import {test as nodeTest} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {MinedTxReceipt,PendingTxReceipt,DroppedTxReceipt,TxHash} from '@aztec-labs/stdlib/tx';
 import {BlockHash} from '@aztec-labs/stdlib/block';
 import * as outcomes from '../shared/transaction-outcomes.mjs';
+// Wallets run in a VM, but imported outcomes and the native SDK waiter run here.
+// Control both realms, including the SDK's monotonic Timer. Drain asynchronous
+// work before advancing a poll interval; wall-clock scheduling cannot expire a
+// fixture. The real test-runner watchdog only reports a stuck test.
+function test(name,run) {
+ return nodeTest(name,{timeout:5000},async t=>{
+  t.mock.timers.enable({apis:['Date','setTimeout'],now:1_000_000});
+  t.mock.method(performance,'now',()=>Date.now());
+  let settled=false;
+  const result=Promise.resolve().then(()=>run(t));
+  result.then(()=>{settled=true;},()=>{settled=true;});
+  while(!settled) {
+   await new Promise(setImmediate);
+   t.signal.throwIfAborted();
+   if(!settled)t.mock.timers.tick(10);
+  }
+  await result;
+ });
+}
 const hash=TxHash.zero();
 const mined=(executionResult='success',status='checkpointed')=>MinedTxReceipt.from({txHash:hash,status,executionResult,transactionFee:0n,blockHash:BlockHash.ZERO,blockNumber:1,slotNumber:1,txIndexInBlock:0,epochNumber:0});
 function fixture(consumer,{receipts=[mined()],submitError,proofError,simulationError,blockHash=BlockHash.ZERO,validation={result:'valid'},preProveHook,transactionJournal,progress}={}) {
- let now=0;const logs=[],calls={simulation:0,proof:0,submit:0,receipt:0};
+ const logs=[],pollTimes=[],calls={simulation:0,proof:0,submit:0,receipt:0};
  const gas={l2Gas:100,daGas:10,mul(){return this;},computeFee(){return{toBigInt:()=>1n};}};
  class BaseWallet {
   constructor(pxe,node){this.pxe=pxe;this.aztecNode=node;}
@@ -22,12 +41,11 @@ function fixture(consumer,{receipts=[mined()],submitError,proofError,simulationE
  const sdk={...outcomes,isPrivatePXEForNode:()=>true,BaseWallet,GasSettings:{from:value=>({...value,getFeeLimit:()=>({toBigInt:()=>1n})})}};
  const pxe={proveTx:async()=>{calls.proof++;if(proofError)throw proofError;return{toTx:async()=>({getTxHash:()=>hash})};}};
  const node={sendTx:async()=>{calls.submit++;if(submitError)throw submitError;},
-  getTxReceipt:async()=>{const value=receipts[Math.min(calls.receipt++,receipts.length-1)];if(value instanceof Error)throw value;return value;},
+  getTxReceipt:async()=>{pollTimes.push(Date.now());const value=receipts[Math.min(calls.receipt++,receipts.length-1)];if(value instanceof Error)throw value;return value;},
   getBlock:async()=>({hash:blockHash}),isValidTx:async()=>validation};
  if(transactionJournal)transactionJournal.waitForCompletion=async(txHash,options)=>{assert.equal(txHash,String(hash));return outcomes.waitForSuccessfulReceipt(node,{getTxHash:()=>hash},options);};
- class Clock extends Date {static now(){return now;}}
  const log=(message,level)=>logs.push({message,level});
- const c=vm.createContext({window:{__aztec:sdk},performance,Date:Clock,log,toAztec:String,setTimeout:(fn,ms)=>{now+=ms;queueMicrotask(fn);},clearTimeout(){}});
+ const c=vm.createContext({window:{__aztec:sdk},performance,Date,log,toAztec:String,setTimeout,clearTimeout});
  let wallet;
  if(consumer==='shared') {
   vm.runInContext(fs.readFileSync(new URL('../shared/aztec-lib.js',import.meta.url),'utf8'),c);
@@ -39,12 +57,25 @@ function fixture(consumer,{receipts=[mined()],submitError,proofError,simulationE
    ? c.testWalletFactory(sdk,pxe,node,node,log,null,{preProveHook,transactionJournal,progress})
    : c.testWalletFactory(sdk,pxe,node,node,log,{preProveHook,transactionJournal,progress});
  }
- return{wallet,node,routing:c.BillboardPrivateFeeRouting,calls,logs,send:()=>wallet.sendTx({},{from:'fixture',wait:{timeout:0.03,interval:0.01}}),confirmed:()=>logs.some(x=>x.level==='success'&&x.message.includes('Tx confirmed!'))};
+ return{wallet,node,routing:c.BillboardPrivateFeeRouting,calls,logs,pollTimes,send:()=>wallet.sendTx({},{from:'fixture',wait:{timeout:0.03,interval:0.01}}),confirmed:()=>logs.some(x=>x.level==='success'&&x.message.includes('Tx confirmed!'))};
 }
 for(const consumer of ['shared','deploy','user']) {
- test(`${consumer}: proposed success waits for canonical checkpoint`,async()=>{const f=fixture(consumer,{receipts:[mined('success','proposed'),mined()]});await f.send();assert.equal(f.calls.receipt,2);assert(f.confirmed());});
+ test(`${consumer}: proposed success waits for canonical checkpoint`,async()=>{const f=fixture(consumer,{receipts:[mined('success','proposed'),mined()]});await f.send();assert.equal(f.calls.receipt,2);assert.deepEqual(f.pollTimes.map(time=>time-f.pollTimes[0]),[0,10]);assert(f.confirmed());});
  for(const status of ['checkpointed','proven','finalized'])test(`${consumer}: ${status} application revert never confirms`,async()=>{
   const f=fixture(consumer,{receipts:[mined('reverted',status)]});await assert.rejects(f.send(),e=>e.code==='BB_TRANSACTION_FAILED');assert(!f.confirmed());assert.equal(f.calls.submit,1);
+ });
+ test(`${consumer}: pending receipt expires only after the native 30 ms deadline`,async()=>{
+  const f=fixture(consumer,{receipts:[PendingTxReceipt.empty()]});
+  await assert.rejects(f.send(),{code:'BB_SUBMISSION_UNKNOWN'});
+  assert.deepEqual(f.pollTimes.map(time=>time-f.pollTimes[0]),[0,10,20,30]);
+  assert.equal(Date.now()-f.pollTimes[0],40);assert(!f.confirmed());
+  assert.equal(f.calls.submit,1);assert.equal(f.calls.proof,1);
+ });
+ test(`${consumer}: stalled receipt read expires at its 30 ms bound`,async()=>{
+  const f=fixture(consumer,{receipts:[new Promise(()=>{})]});
+  await assert.rejects(f.send(),{code:'BB_SUBMISSION_UNKNOWN'});
+  assert.equal(f.calls.receipt,1);assert.equal(Date.now()-f.pollTimes[0],30);
+  assert(!f.confirmed());assert.equal(f.calls.submit,1);assert.equal(f.calls.proof,1);
  });
  test(`${consumer}: dropped receipt with no proven conflict remains unknown`,async()=>{const f=fixture(consumer,{receipts:[DroppedTxReceipt.empty()]});await assert.rejects(f.send(),e=>e.code==='BB_SUBMISSION_UNKNOWN');assert(!f.confirmed());});
  test(`${consumer}: structured revalidated state conflict requests fresh proof without resubmitting`,async()=>{const f=fixture(consumer,{receipts:[DroppedTxReceipt.empty()],validation:{result:'invalid',reason:['Existing nullifier']}});await assert.rejects(f.send(),e=>e.code==='BB_STATE_CONFLICT');assert.equal(f.calls.proof,1);assert.equal(f.calls.submit,1);});
