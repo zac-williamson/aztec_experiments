@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "awaiting-new-contract-baseline-and-genuine-acceptance",
+  "status": "baseline-adopted-awaiting-corrected-journey-acceptance",
   "recordedAt": "2026-10-28T19:32:58.820904+00:00",
   "sourceRevision": "e1bd8abe0d24b4b18a3c7c105695835b3ed9b8a3",
   "fullBuild": {
@@ -69,12 +69,44 @@
     "newBaselineFullBuildRun": 40753383089
   },
   "remaining": [
-    "new compatible live/stage baseline and public verifier",
-    "fresh full build for subsequent candidate",
-    "free dedicated test-fund refill",
+    "independently reviewed current-control journey repair and exact-candidate full build",
     "real staged ETH/USDC signup, posting, reply, like, reload and Bok journey",
     "automatic promotion with live byte verification",
-    "same-class operator rollback and return",
-    "fresh essential-control off-host restore"
-  ]
+    "same-class operator rollback and return"
+  ],
+  "updatedAt": "2026-10-28T20:58:21.172268+00:00",
+  "acceptedBaseline": {
+    "revision": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+    "fullBuildRun": 40753383089,
+    "fullBuildConclusion": "success",
+    "sealedFilesVerified": 1704,
+    "stageSsm": "340dc7b2-376e-40ea-a59d-872b02933525",
+    "adoptionSsm": "3b97c39e-3107-47ac-a52e-6ae4b9f2270f",
+    "status": "adopted-live",
+    "nativeAcceptedPostReverified": true,
+    "publicAssetsVerified": 118
+  },
+  "subsequentCandidateAttempt": {
+    "revision": "89dbc88cfdc3b3901f7a9c9b91e44e4299959b89",
+    "fullBuildRun": 40755838251,
+    "fullBuildConclusion": "success",
+    "releaseRun": 40760770007,
+    "attempt": 2,
+    "outcome": "blocked-before-promotion",
+    "completed": [
+      "signup-ETH"
+    ],
+    "error": "RELEASE_JOURNEY_FAILED",
+    "failedFlow": "first post after ETH signup",
+    "diagnosis": "The harness searched for Close, but the actual dialog uses Close account panel; the modal intercepted the first post control. Reproduced with actual wallet-panel code in Chromium. USDC signup had not yet been attempted.",
+    "liveRevisionUnchanged": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+    "holdSsm": "b33a4d4f-70b8-44d2-92ab-e83d1d024244",
+    "automaticReleaseEnabled": false
+  },
+  "verifiedSupportingWork": {
+    "freeTestFundsReceived": true,
+    "coreAndBokBackupRestore": "deploy/launch-ops/backup-verification.json",
+    "stalePublicCandidateCleanupSsm": "a5f46e7d-0ffc-4dc8-89ff-3689b6f86e4c",
+    "cleanupApplicationServicesUnchanged": true
+  }
 }
