@@ -1,0 +1,16 @@
+{
+  "name": "rolling-testnet-release",
+  "repository": "zac-williamson/aztec_experiments",
+  "deploymentBranchPolicy": {
+    "protected_branches": false,
+    "custom_branch_policies": true
+  },
+  "allowedBranches": [
+    {
+      "name": "master",
+      "type": "branch"
+    }
+  ],
+  "manualApprovalRequired": false,
+  "cloudRoleConfigured": false
+}
