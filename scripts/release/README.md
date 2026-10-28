@@ -90,6 +90,8 @@ crate, and checks that no production artifact file map or SDK input includes it.
 The library manifest and every other `billboard/` path remain protected. This
 does not rewrite a provenance hash or claim an unperformed contract build: the
 original manifests and the source input they actually fingerprint stay intact.
+The dependency-free focused lane checks the path guard; the full pinned build
+runs `scripts/test-release-test-isolation.mjs` with the locked TOML parser.
 
 ## One-time host setup
 
