@@ -1,5 +1,5 @@
 import http from 'node:http';
-import {readFile,stat} from 'node:fs/promises';
+import {readFile,stat,realpath} from 'node:fs/promises';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createOperatorAuth} from './auth.mjs';
 import {buildReliability} from './monitor.mjs';
@@ -61,7 +61,8 @@ async function main(){
  const server=createOpsServer({config,analytics});server.listen(config.port||4320,'127.0.0.1',()=>process.stdout.write('Rolling operations ready\n'));
  process.on('SIGTERM',()=>server.close(()=>{analytics.close();process.exit(0);}));
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(()=>{process.stderr.write('Operations configuration or startup failed\n');process.exitCode=1;});
+const invokedFile=process.argv[1]&&await realpath(process.argv[1]).catch(()=>null);
+if(invokedFile&&import.meta.url===pathToFileURL(invokedFile).href)main().catch(()=>{process.stderr.write('Operations configuration or startup failed\n');process.exitCode=1;});
 
 const releaseStates=new Set(['pending','running','passed','failed','blocked','ready','deployed','rolled_back','not_configured','staged','verified']);
 const revision=value=>{const r=typeof value==='string'?value:value?.revision;return typeof r==='string'&&/^[a-f0-9]{40}$/.test(r)?r:null;};

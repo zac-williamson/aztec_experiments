@@ -103,7 +103,11 @@ def install(packet,files):
  directory(BASE);directory(BASE/'releases');directory(CONFIG,0o750,0,gid);directory(DATA,0o700,uid,gid)
  release=BASE/'releases'/packet['revision'];directory(release)
  for relative,raw in files.items():
-  destination=release/relative;directory(destination.parent)
+  destination=release/relative
+  # Explicit permissions for every intermediate directory: installer umask is0077.
+  parent=release
+  for part in pathlib.PurePosixPath(relative).parts[:-1]:
+   parent=parent/part;directory(parent)
   if destination.exists():require(not destination.is_symlink() and destination.read_bytes()==raw,'Source revision already installed with different bytes')
   else:atomic(destination,raw)
  atomic(CONFIG/'observer.json',json.dumps(packet['observerConfig'],separators=(',',':')).encode(),0o600)
