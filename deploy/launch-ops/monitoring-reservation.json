@@ -34,5 +34,5 @@
   "cleanup": "Schedule EndDate stops invocations after31days. Reconcile/renew or delete dedicated stack; alarm charges continue until deletion. Do not stop existing application hosts.",
   "actualBilledSpendUsd": null,
   "createdResources": [],
-  "endDate": "2026-11-28T11:12:00Z"
+  "endDate": "2026-11-28T11:12:00.000Z"
 }

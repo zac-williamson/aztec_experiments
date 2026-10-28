@@ -53,7 +53,7 @@ test('notification limit delays undelivered changes without losing them',()=>{
 });
 test('external monitoring has bounded schedule and no restart/deploy capabilities',()=>{
  const value=externalMonitorTemplate('def handler(event, context): pass'),r=value.Resources;
- assert.deepEqual(r.Schedule.Properties.EndDate,{Ref:'EndDate'});assert.equal(r.Probe.Properties.ReservedConcurrentExecutions,1);
+ assert.deepEqual(r.Schedule.Properties.EndDate,{Ref:'EndDate'});assert(new RegExp('^'+value.Parameters.EndDate.AllowedPattern+'$').test('2026-11-28T11:00:00.000Z'));assert.equal(r.Probe.Properties.ReservedConcurrentExecutions,1);
  for(const name of ['WebsiteAlarm','ProverAlarm','FeedAlarm','HeartbeatAlarm']){assert.equal(r[name].Properties.TreatMissingData,'breaching');assert.equal(r[name].Properties.DatapointsToAlarm,2);}
  const statements=r.ProbeRole.Properties.Policies[0].PolicyDocument.Statement;
  const send=statements.find(s=>s.Action==='ssm:SendCommand');assert.equal(send.Resource.length,3);assert(JSON.stringify(send.Resource).includes('${HostDocument}'));
