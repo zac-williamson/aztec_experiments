@@ -515,3 +515,17 @@ dialog::backdrop{background:rgb(15 23 42/.45);backdrop-filter:blur(2px);animatio
  .context{padding-top:0}
  .archive-page .feed{margin:12px auto}
 }
+
+/* Wallet connection, totals and account navigation. */
+.account-dialog .wallet-install{padding:16px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface-2)}
+.account-dialog .wallet-install h3{margin-top:0}
+.account-dialog .wallet-payment-total{display:flex;flex-direction:column;gap:6px;padding:20px;margin:16px 0;background:var(--brand-soft);border-radius:var(--radius-lg);color:var(--brand-ink)}
+.account-dialog .wallet-payment-total>strong{font-size:30px;line-height:1.2;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.account-dialog .wallet-payment-total>p{margin:0}
+.account-dialog .wallet-cost-breakdown .funding-line:last-of-type{border-bottom:0}
+.account-dialog .wallet-account-menu{display:grid;gap:8px;margin:8px 0 18px}
+.account-dialog .wallet-account-menu>.button{margin:0;width:100%;justify-content:flex-start;min-height:48px;background:var(--surface-2)}
+.account-dialog .wallet-credit-context{padding:16px;border:1px solid var(--line);border-radius:var(--radius-lg)}
+.account-dialog .wallet-credit-context h3{margin-top:0}
+.account-dialog .wallet-credit-context p{font-size:13px;color:var(--muted)}
+.account-dialog .wallet-setup-prompt{margin-bottom:18px}

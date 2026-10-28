@@ -35,6 +35,11 @@ const seek=(index,where,order)=>`SELECT ${columns} FROM projection INDEXED BY ${
 export const ROLLING_PUBLIC_QUERY_SQL=Object.freeze({
  accounting:seek('projection_accounting','idnum>?','idnum ASC'),
  predecessor:seek('projection_pending_thread',"kind='posts' AND json_extract(value,'$.invocation') IS NOT NULL AND json_extract(value,'$.invocation.reply') IS NULL AND root=? AND json_extract(value,'$.invocation.pluginId')=? AND json_extract(value,'$.invocation.adapter')=? AND ord<? AND ord>?",'ord ASC'),
+ candidateFirst:seek('projection_candidate_rank','1=1','likes DESC,stamp DESC,idnum'),
+ candidateLikes:seek('projection_candidate_rank','likes<?','likes DESC,stamp DESC,idnum'),
+ candidateStamp:seek('projection_candidate_rank','likes=? AND stamp<?','stamp DESC,idnum'),
+ candidateId:seek('projection_candidate_rank','likes=? AND stamp=? AND idnum>?','idnum'),
+ explore:seek('projection_accounting','idnum>?','idnum ASC'),
  feed:seek('projection_order','ord<?','ord DESC'),
  chronological:seek('projection_order','ord>?','ord ASC'),
  pending:seek('projection_pending',"kind='posts' AND json_extract(value,'$.invocation') IS NOT NULL AND json_extract(value,'$.invocation.reply') IS NULL AND ord>?",'ord ASC'),
@@ -91,6 +96,7 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
  CREATE INDEX IF NOT EXISTS projection_board ON projection(g,kind,board,ord,k);
  CREATE INDEX IF NOT EXISTS projection_name ON projection(g,kind,name,ord,k);
  CREATE INDEX IF NOT EXISTS projection_root ON projection(g,kind,root,ord,k);
+ CREATE INDEX IF NOT EXISTS projection_candidate_rank ON projection(g,kind,likes DESC,stamp DESC,idnum);
  CREATE INDEX IF NOT EXISTS projection_rank ON projection(g,kind,board,likes DESC,stamp DESC,idnum);
  CREATE INDEX IF NOT EXISTS projection_slug ON projection(g,kind,slug,k);
  CREATE TABLE IF NOT EXISTS events(g TEXT NOT NULL,pos TEXT NOT NULL,segment TEXT NOT NULL,value TEXT NOT NULL,PRIMARY KEY(g,pos)) WITHOUT ROWID;
@@ -260,9 +266,10 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
  // alone earns canonical publication and authenticates opaque external cursors.
  function readPublicPage({expectedControl,view,params={},after=null,homeSubboards=[],throughBlock=null,throughHash=null}){
   const expected=captureExpected(expectedControl),input=captureExpected(params),curated=['0',...normalizeHomeSubboards(captureExpected(homeSubboards))];
-  const allowed={likes:['posts'],'bok-accounting':[],home:[],feed:[],following:['boards','names'],bookmarks:['ids'],chronological:[],pending:[],board:['id'],directory:['query'],thread:['root'],profile:['nameId'],post:['id']};
+  const allowed={candidates:['pool'],likes:['posts'],'bok-accounting':[],home:[],feed:[],following:['boards','names'],bookmarks:['ids'],chronological:[],pending:[],board:['id'],directory:['query'],thread:['root'],profile:['nameId'],post:['id']};
   requireThat(typeof view==='string'&&Object.hasOwn(allowed,view));requireThat(Object.keys(input).every(k=>k==='limit'||allowed[view].includes(k)));
   const limit=input.limit??50;requireThat(bounded(limit,1,100));
+  if(view==='candidates')requireThat(['recent','engaged','explore'].includes(input.pool));
   requireThat(throughBlock===null?throughHash===null:view==='bok-accounting'&&uint(throughBlock,53)&&(throughHash===null||hash(throughHash)));
   const field=v=>uint(v)&&BigInt(v)<0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001n;
   const selections={};let selectionCount=0;
@@ -298,7 +305,7 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
    const policy=version=>{const p=point('policies',version);requireThat(p);return {version,digest:p.digest,text:p.text};};
    const boardValue=id=>{const board=point('boards',id);if(!board)return null;return {...clone(board),mainVersion:c.scalars.version,mainRules:policy(c.scalars.version).text};};
    const visible=p=>{requireThat(p);const value=clone(p);if(value.removal||point('boards',p.record.subboard)?.rejected)value.text=null;return value;};
-   let fixed={};if(view==='board'){
+   let fixed=view==='candidates'?{pool:input.pool}:{};if(view==='board'){
     const board=input.id==='0'?null:boardValue(input.id);requireThat(input.id==='0'||board,'ROLLING_PUBLIC_NOT_FOUND');fixed={boardId:input.id,board};
    }else if(view==='thread')requireThat(point('posts',input.root)?.record.root===input.root);
    else if(view==='profile'){requireThat(point('names',input.nameId),'ROLLING_PUBLIC_NOT_FOUND');fixed={identity:identity(input.nameId)};}
@@ -373,7 +380,18 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
    }else{
     const prior=after===null?null:point('posts',after);requireThat(after===null||prior,'ROLLING_PUBLIC_CURSOR_STALE');
     const high='f'.repeat(64),low='';let candidates;
-    if(view==='following'){
+    if(view==='candidates'){
+     if(input.pool==='recent')candidates=rows('feed',[prior?key(prior.order):high],limit+1);
+     else if(input.pool==='explore')candidates=rows('explore',[prior?key(prior.id):low],limit+1);
+     else if(!prior)candidates=rows('candidateFirst',[],limit+1);
+     else{
+      // Three disjoint indexed ranges, each bounded to one page. No global
+      // projection materialization, OFFSET, or request-time SQL sort.
+      const likes=key(prior.likes),stamp=key(prior.timestamp),id=key(prior.id);
+      candidates=[...rows('candidateId',[likes,stamp,id],limit+1),...rows('candidateStamp',[likes,stamp],limit+1),...rows('candidateLikes',[likes],limit+1)]
+       .sort((a,b)=>a.likes!==b.likes?(a.likes>b.likes?-1:1):a.stamp!==b.stamp?(a.stamp>b.stamp?-1:1):a.idnum<b.idnum?-1:a.idnum>b.idnum?1:0).slice(0,limit+1);
+     }
+    }else if(view==='following'){
      if(prior)requireThat(selections.boards.includes(prior.record.subboard)||selections.names.includes(prior.record.name_id),'ROLLING_PUBLIC_CURSOR_STALE');
      const bound=prior?key(prior.order):high,found=new Map();
      // Each target uses its existing indexed seek; at most 100*(limit+1)

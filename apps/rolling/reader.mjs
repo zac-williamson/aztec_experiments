@@ -1,17 +1,20 @@
 import {createReaderUpdates} from './reader-updates.mjs';
 import {beginRollingMeasure} from './performance.mjs';
 import {createPublicReader} from './reader-client.mjs';
+import {createRankedHomeReader} from './home-reader.mjs';
+import {createFeedPreferences} from './feed-preferences.mjs';
 import {createPublicAvatar,createPublicProfile} from './profile-view.mjs';
 import {createMessageContent as richText,createInlineActionRegistry,savedPreferenceControl,savedReaderSelection,savedReaderRoute,createIcon,createBrand,createSkeletonFeed,createThreadView,boardTone,boardInitial} from './model.mjs';
 import {captureRoutePosition,focusRoute,skipToContent,revealIncludedPost} from './navigation.mjs';
 
-const read=createPublicReader(),app=document.querySelector('#app'),positions=new Map();
+const app=document.querySelector('#app'),positions=new Map(),feedPreferences=createFeedPreferences(),priorityTxs=new Set();
+const read=createRankedHomeReader({read:createPublicReader(),getPreferences:()=>feedPreferences.snapshot(privatePanel?.savedItemsSnapshot?.()),getPriorityTxs:()=>[...priorityTxs]});
 const currentRoute=()=>savedReaderRoute(location.hash==='#/new-account'?'/home':location.hash.slice(1)||'/home');
 let controller,sequence=0,route=currentRoute(),main,renderedRoute,loadedPages=1,loadedThreadEnd=false,renderActive=0,activeThread=null;
 // Collapse choices per conversation survive paging, live refresh and Back.
 const threadStates=new Map();
 function threadState(root){if(!threadStates.has(root)){if(threadStates.size>40)threadStates.delete(threadStates.keys().next().value);threadStates.set(root,{collapsed:new Set(),expanded:new Set()});}return threadStates.get(root);}
-let walletPanel,privatePanel,savedItemsLoad,accountPreparation,savedItemsAttempted=false,savedItemsRevision=null;
+let feedAccountVersion=null,walletPanel,privatePanel,savedItemsLoad,accountPreparation,savedItemsAttempted=false,savedItemsRevision=null;
 async function preparePublicAssetCache(){
  if(!navigator.serviceWorker)return;
  try{
@@ -42,16 +45,19 @@ function hydrateSavedItems(){
  savedItemsAttempted=true;void loadSavedItems().catch(()=>{});
 }
 function privateChanged(){
+ const accountVersion=privatePanel?.privateAccountVersion?.()??null,accountChanged=feedAccountVersion!==accountVersion;feedAccountVersion=accountVersion;feedPreferences.scope(accountVersion);
+ if(accountChanged)priorityTxs.clear();
+ updateAccountButton();
  hydrateSavedItems();
  for(const node of app.querySelectorAll('[data-moderator-action]'))showModeratorButton(node);
  const revision=JSON.stringify([privatePanel?.privateStatus?.(),privatePanel?.savedItemsSnapshot?.()??null]),changed=revision!==savedItemsRevision;savedItemsRevision=revision;
- if(changed&&privateViews.has(route.split('/')[1])){controller?.abort();main?.replaceChildren();void render();}
+ if(changed&&privateViews.has(route.split('/')[1])||accountChanged&&route==='/home'&&renderedRoute){controller?.abort();main?.replaceChildren();void render();}
  else updatePreferenceControls();
  updateLikeControls();
 }
 async function accountPanel(){
  return walletPanel??=import('./wallet-panel.mjs').then(({mountRollingWalletPanel})=>mountRollingWalletPanel({
-   loadRuntime:prepareAccountTools,onIncludedPostRendered:post=>{activeThread?.reveal(post?.id);return revealIncludedPost(post);},onPublicEffect:()=>!main?.querySelector('.public-content')||privateViews.has(route.split('/')[1])||route.split('/')[1]==='directory'?render({live:!!main?.querySelector('.public-content')}):updates.request(),onPrivateChange:privateChanged})).then(panel=>{privatePanel=panel;void Promise.resolve(panel.initialize()).then(privateChanged).catch(()=>{});return panel;});
+   loadRuntime:prepareAccountTools,onIncludedPostRendered:post=>{activeThread?.reveal(post?.id);const shown=revealIncludedPost(post);if(shown)priorityTxs.delete(post?.txHash);return shown;},onPublicEffect:effect=>{if(['post','reply','quote','repost','thread','bok'].includes(effect?.type)&&/^0x[0-9a-f]{64}$/.test(effect?.txHash)){priorityTxs.add(effect.txHash);if(priorityTxs.size>10)priorityTxs.delete(priorityTxs.values().next().value);}return !main?.querySelector('.public-content')||privateViews.has(route.split('/')[1])||route.split('/')[1]==='directory'?render({live:!!main?.querySelector('.public-content')}):updates.request();},onPrivateChange:privateChanged})).then(panel=>{privatePanel=panel;void Promise.resolve(panel.initialize()).then(privateChanged).catch(()=>{});return panel;});
 }
 // `extras` carries display-only hints (such as the post being answered); the action itself is `defaults`.
 async function openWallet(defaults={},extras={}){
@@ -179,10 +185,15 @@ function postCard(post,data){
   more(button([createIcon('quote'),'Quote'],()=>openWallet({type:'quote',reference:post.id,subboard:r.subboard})),
    button([createIcon('repeat'),'Repost'],()=>openWallet({type:'repost',reference:post.id,subboard:r.subboard})),provenance),
   link([createIcon('message'),'View conversation'],'/thread/'+r.root,{class:'post-link'})));
+ article.addEventListener('click',event=>{const target=event.target.closest?.('a,button');if(!target)return;const to=target.getAttribute('href')??'';feedPreferences.engage(post,{readThread:to.startsWith('#/thread/'),weight:to.startsWith('#/thread/')?2:1});});
  article.append(afterConfirmation(moderatorButton('Remove this post',{type:'moderate-post',post:post.id})));
  return article;
 }
 function timestamp(value){const n=Number(value);if(!Number.isSafeInteger(n)||n<0)return '';const date=new Date(n*1000);return Number.isFinite(date.getTime())?date.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'}):'';}
+function updateAccountButton(){
+ const node=app.querySelector('[data-account-button]');if(!node)return;
+ const signedIn=privatePanel?.privateStatus?.()&&privatePanel.privateStatus()!=='locked',label=signedIn?'Your account':'Connect wallet';node.querySelector('.label').textContent=label;node.setAttribute('aria-label',label);node.classList.toggle('primary',!signedIn);
+}
 function shell(title,{boardId=null}={}){
  document.title=title+' · rollingchat';
  const nav=(label,to,icon)=>link([el('span',{class:'nav-icon','aria-hidden':'true'},createIcon(icon)),label],to);
@@ -193,7 +204,7 @@ function shell(title,{boardId=null}={}){
  rail.append(button(createIcon('close'),closeMenu,{class:'mobile-close','aria-label':'Close navigation'}));rail.inert=narrow.matches;
  rail.addEventListener('keydown',event=>{if(event.key==='Escape')closeMenu();if(event.key==='Tab'&&rail.classList.contains('open')){const targets=[...rail.querySelectorAll('a,button')],first=targets[0],last=targets.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}});
  // A route returning to a saved position skips entrance motion: the restore measures the anchor's box, which a transform would shift.
- main=el('main',{id:'content',tabindex:'-1',...(positions.get(route)?{class:'restored'}:{})},el('header',{class:'page-head'},el('div',{},el('h1',{tabindex:'-1'},title),el('p',{class:'intro'},title==='Home'?'Fresh conversations from the main board and featured boards.':title==='Conversation'?'Join in with a reply.':'Public conversations. Private participation.'))));
+ main=el('main',{id:'content',tabindex:'-1',...(positions.get(route)?{class:'restored'}:{})},el('header',{class:'page-head'},el('div',{},el('h1',{tabindex:'-1'},title),el('p',{class:'intro'},title==='Home'?'Conversations for you, from across the community.':title==='Conversation'?'Join in with a reply.':'Public conversations. Private participation.'))));
  if(boardId!==null||route==='/home')main.querySelector('.page-head').append(button([createIcon('pen'),'Write a post'],()=>openWallet({type:'post',subboard:boardId??'0'}),{class:'button primary',...(boardId!==null?{'data-board-compose':'',disabled:''}:{})}));
  const bokBalance=el('section',{class:'bok-balance','aria-label':'Bok balance',hidden:''});
  const postingName=el('div',{class:'posting-name','data-posting-name':''});main.insertBefore(postingName,main.querySelector('.page-head').nextSibling);
@@ -203,8 +214,8 @@ function shell(title,{boardId=null}={}){
   el('section',{},el('h2',{},createIcon('message'),'Your place to talk'),el('p',{},'Start a conversation, join a board, or reply to someone. Post anonymously or under a name you choose.'),link([createIcon('compass'),'Find a board'],'/directory',{class:'button'})),
   el('section',{class:'context-help'},el('h2',{},createIcon('sparkle'),'Meet Bok'),el('p',{},'Bok is the AI assistant in every thread. Mention @bok in a post or reply, set a spending limit, and pay only for the work it does.')),
   el('section',{},el('h2',{},createIcon('shield'),'How it works'),el('ol',{},el('li',{},'Read everything. No account needed.'),el('li',{},'Connect a wallet to post, reply and like.'),el('li',{},'Nobody can tell which posts share an account.'))));
- app.replaceChildren(el('div',{class:'shell'},el('header',{class:'topbar'},menu,link(createBrand(),'/home',{class:'brand'}),link([createIcon('search'),'Explore boards'],'/directory',{class:'search-link'}),el('div',{class:'topbar-actions'},button([createIcon('user'),el('span',{class:'label'},'Your account')],()=>openWallet(),{'aria-label':'Your account'}))),el('div',{class:'shell-body'},rail,el('div',{class:'workspace'},el('div',{class:'layout'},main,context)))));
- return main;
+ app.replaceChildren(el('div',{class:'shell'},el('header',{class:'topbar'},menu,link(createBrand(),'/home',{class:'brand'}),link([createIcon('search'),'Explore boards'],'/directory',{class:'search-link'}),el('div',{class:'topbar-actions'},button([createIcon('user'),el('span',{class:'label'},'Connect wallet')],()=>openWallet(),{'aria-label':'Connect wallet','data-account-button':''}))),el('div',{class:'shell-body'},rail,el('div',{class:'workspace'},el('div',{class:'layout'},main,context)))));
+ updateAccountButton();return main;
 }
 function boardCard(board){
  const rules=el('details',{},el('summary',{},'Board rules'),el('h3',{},'Site rules'),richText(board.mainRules),el('h3',{},'Additional rules'),richText(board.rules));
@@ -298,9 +309,12 @@ async function render({live=false,publicationRevision}={}){
  const thread=api==='thread'?createThreadView({root:parameters.root,state:threadState(parameters.root),announce,signals:post=>({likes:Number(post.likes)||0,bot:Boolean(post.bot),removed:post.text===null||Boolean(post.removal),pending:post.confirmation==='pending'})}):null;
  if(thread)thread.mount(container);activeThread=thread;
  const seenIds=new Set(),seenCursors=new Set();let lastPosition=null,lastPositionHash=null;
- const pendingPublicPages=[];
+ const pendingPublicPages=[],viewed=new Set();
+ const viewObserver=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting&&entry.intersectionRatio>=.5){const id=entry.target.id.slice(5);if(!viewed.has(id)){viewed.add(id);feedPreferences.seen(id);}viewObserver.unobserve(entry.target);}},{threshold:.5}):null;
+ signal.addEventListener('abort',()=>viewObserver?.disconnect(),{once:true});
  function notifyRenderedPosts(){
   if(!container.isConnected||!pendingPublicPages.length)return;
+  for(const node of container.querySelectorAll('.post'))if(!viewed.has(node.id.slice(5)))viewObserver?.observe(node);
   const pages=pendingPublicPages.splice(0);currentLikeSnapshot=pages.at(-1).snapshot;
   void walletPanel?.then(panel=>{if(current===sequence&&!signal.aborted&&container.isConnected){updateLikeControls();for(const page of pages)panel.observePublicPosts?.(page.items,page.snapshot);}}).catch(()=>{});
  }
@@ -319,7 +333,7 @@ async function render({live=false,publicationRevision}={}){
     !policyVersion(response.mainPolicy?.version)||typeof response.mainPolicy.text!=='string'||!Array.isArray(response.policies))throw Error('Invalid board page');
   }
   const next=response.nextCursor;
-  if(next!==null&&next!==undefined&&(typeof next!=='string'||!next.length||next.length>4096||seenCursors.has(next)||!items.length&&api!=='directory'))throw Error('Invalid next cursor');
+  if(next!==null&&next!==undefined&&(typeof next!=='string'||!next.length||next.length>4096||seenCursors.has(next)||!items.length&&!['directory','home'].includes(api)))throw Error('Invalid next cursor');
   const ids=new Set();for(const item of items){if(!field(item?.id)||seenIds.has(item.id)||ids.has(item.id))throw Error('Duplicate public item');ids.add(item.id);}
   // Validate/build the whole page before changing visible content or paging state.
   let visible=items,nextPosition=lastPosition,nextPositionHash=lastPositionHash;
@@ -334,7 +348,7 @@ async function render({live=false,publicationRevision}={}){
   if(nodes.length)container.querySelector('.empty')?.remove();lastPosition=nextPosition;lastPositionHash=nextPositionHash;
   if(thread){visible.forEach((item,index)=>thread.add(item,nodes[index]));thread.commit();}else container.append(...nodes);
   for(const id of ids)seenIds.add(id);if(next)seenCursors.add(next);
-  if(api!=='directory'){pendingPublicPages.push({items,snapshot:{checkpoint:response.checkpoint,confirmationCheckpoint:response.confirmationCheckpoint,revision:response.revision,renderedPosts:visible}});notifyRenderedPosts();}
+  if(api!=='directory'){pendingPublicPages.push({items:api==='home'?(response.observedPosts??items):items,snapshot:{checkpoint:response.checkpoint,confirmationCheckpoint:response.confirmationCheckpoint,revision:response.revision,renderedPosts:visible}});notifyRenderedPosts();}
   return nodes;
  }
 
@@ -344,7 +358,7 @@ async function render({live=false,publicationRevision}={}){
   const finishDOM=beginRollingMeasure('reader.dom');
   append(data);showFollowing(data.following);
   let cursor=data.nextCursor;
-  while(api!=='directory'&&cursor&&(pages<(saved?.pages??1)||api==='thread'&&saved?.threadEnd||saved?.anchor&&!seenIds.has(saved.anchor.id.slice(5)))){
+  while(api!=='directory'&&cursor&&(pages<(saved?.pages??1)||api==='thread'&&saved?.threadEnd||api!=='home'&&saved?.anchor&&!seenIds.has(saved.anchor.id.slice(5)))){
    const page=await read(api,{...parameters,cursor},restoreSignal,{revision:data.revision});if(current!==sequence)return;append(page);cursor=page.nextCursor;pages++;
   }
   loading.remove();
@@ -356,27 +370,27 @@ async function render({live=false,publicationRevision}={}){
   if(api==='profile'&&data.identity){main.querySelector('h1').textContent=text(data.identity.first)+' '+text(data.identity.last);contentHost.append(createPublicProfile(data.identity,{signal}),preferenceButton('Follow name',3,parameters.nameId,text(data.identity.first)+' '+text(data.identity.last)),moderatorButton('Remove this avatar',{type:'moderate-avatar',name:parameters.nameId}));}
   document.title=main.querySelector('h1').textContent+' · rollingchat';
   if(!container.childElementCount){
-   const copy=privateView?{following:['No posts from your follows yet','The people and boards above have no available posts.'],bookmarks:['Saved posts unavailable','Your saved posts are not available in the current public feed.']}[privateView]:api==='directory'?['Find a board',cursor?'No matches on this page. Check the next page or try another search.':'No boards match. Try another topic or create a board.']:['Start the conversation','There are no posts here yet.'];
+   const copy=privateView?{following:['No posts from your follows yet','The people and boards above have no available posts.'],bookmarks:['Saved posts unavailable','Your saved posts are not available in the current public feed.']}[privateView]:api==='directory'?['Find a board',cursor?'No matches on this page. Check the next page or try another search.':'No boards match. Try another topic or create a board.']:api==='home'&&cursor?['More conversations to explore','Continue to the next page.']:['Start the conversation','There are no posts here yet.'];
    const empty=el('div',{class:'empty'},el('h2',{},copy[0]),el('p',{},copy[1]));
    if(privateView)empty.append(link(privateView==='following'?'Explore boards':'Browse conversations',privateView==='following'?'/directory':'/home',{class:'button'}));
-   else if(api==='home'||api==='board'&&!data.board?.rejected)empty.append(button('Write the first post',()=>openWallet({type:'post',subboard:api==='board'?parameters.id:'0'}),{class:'button primary'}));
+   else if(api==='home'&&!cursor||api==='board'&&!data.board?.rejected)empty.append(button('Write the first post',()=>openWallet({type:'post',subboard:api==='board'?parameters.id:'0'}),{class:'button primary'}));
    container.append(empty);
   }
   contentHost.append(container);
   if(expectedRoot)contentHost.append(el('p',{},link('Read the conversation from the beginning','/thread/'+expectedRoot)));
-  let observer,inFlight=false,stopped=false;
+  let observer,inFlight=false,stopped=false,autoPaused=api==='home'&&!data.posts.length;
   const stop=()=>{stopped=true;observer?.disconnect();};
   signal.addEventListener('abort',stop,{once:true});
   const more=button('Load more',()=>void loadMore(true),{class:'button load-more'});
   async function loadMore(explicit=false){
-   if(inFlight||stopped||signal.aborted||current!==sequence||!cursor)return;
+   if(inFlight||stopped||signal.aborted||current!==sequence||!cursor||autoPaused&&!explicit)return;
    const ownedFocus=explicit&&document.activeElement===more;
    const focusResult=node=>{if(ownedFocus&&(document.activeElement===document.body||document.activeElement===more)){node.tabIndex=-1;node.focus({preventScroll:true});}};
    inFlight=true;more.disabled=true;more.setAttribute('aria-busy','true');observer?.unobserve(more);
    try{
     const page=await read(api,{...parameters,cursor},signal,{revision:data.revision});
     if(signal.aborted||current!==sequence||stopped)return;
-    const added=append(page);cursor=page.nextCursor;pages++;loadedPages=pages;loadedThreadEnd=api==='thread'&&!cursor;
+    const added=append(page);autoPaused=api==='home'&&!added.length;cursor=page.nextCursor;pages++;loadedPages=pages;loadedThreadEnd=api==='thread'&&!cursor;
     if(api==='directory'&&container.querySelector('.empty'))container.querySelector('.empty p').textContent=cursor?'No matches in this page. Continue searching.':'No subboards match this search.';
     if(!cursor){stop();more.remove();}else more.disabled=false;
     if(added.length)focusResult(added[0]);
@@ -388,7 +402,7 @@ async function render({live=false,publicationRevision}={}){
     stop();more.remove();const failed=el('p',{role:'alert'},'The conversation changed or could not load. ',button('Refresh',()=>render()));contentHost.append(failed);focusResult(failed);
    }finally{
     inFlight=false;more.removeAttribute('aria-busy');
-    if(!stopped&&!signal.aborted&&current===sequence&&cursor)observer?.observe(more);
+    if(!stopped&&!autoPaused&&!signal.aborted&&current===sequence&&cursor)observer?.observe(more);
    }
   }
   if(cursor)contentHost.append(more);
@@ -402,7 +416,7 @@ async function render({live=false,publicationRevision}={}){
   focusRoute(route,positions.get(route),current===1);
   // One request owner serves both automatic and keyboard paging. Re-observation
   // after each page fills short viewports, but never creates parallel requests.
-  if(api!=='directory'&&cursor&&typeof IntersectionObserver==='function'){
+  if(api!=='directory'&&!autoPaused&&cursor&&typeof IntersectionObserver==='function'){
    observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.target===more&&entry.isIntersecting))void loadMore();},{rootMargin:'300px 0px',threshold:0});
    observer.observe(more);
   }

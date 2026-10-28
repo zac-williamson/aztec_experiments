@@ -157,6 +157,15 @@ export function createRollingProjection({isValidatedEvent,maxEvents=50000,homeSu
    check(offset<=entries.length);const items=entries.slice(offset,offset+limit),next=offset+items.length;
    return {postIds,items,nextCursor:next<entries.length?`${revision}:${next}`:null,revision};
   },
+  candidates(pool,options){
+   check(['recent','engaged','explore'].includes(pool));
+   const ids=[...state.order];
+   if(pool==='recent')ids.reverse();
+   else ids.sort((a,b)=>{const x=state.posts.get(a),y=state.posts.get(b);
+    if(pool==='engaged')for(const key of ['likes','timestamp']){const l=BigInt(x[key]),r=BigInt(y[key]);if(l!==r)return l>r?-1:1;}
+    return BigInt(a)<BigInt(b)?-1:BigInt(a)>BigInt(b)?1:0;});
+   return {...select(ids,options),pool};
+  },
   feed:options=>select([...state.order].reverse(),options),
   boardFeed(id,{limit=50,cursor=null}={}){
    check(id==='0'||state.boards.has(id));

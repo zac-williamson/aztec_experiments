@@ -373,3 +373,5 @@ PR9 completed: completion_evidence_review approved renderer/expander, publisher 
 27 October final funding acceptance: thread_application investigates and drafts a bounded refill of the existing direct USDC/FeeJuice test pool; root executes and verifies through the actual UI. ETH topup already accepted. No contract or route changes.
 
 27 October post-claim display fix: thread_application drafted transient-read handling and regression; thread_composer_review approved after retry count moved to actual read admission and oversized aggregate rejection. Root integrates, runs195composer checks and publishes onlywallet-panel through existing reviewed UI publisher. posting_credit_ui prepared exactone-file packet from fresh read-only host inspection; no SDK rebuild.
+
+28 October Harry feedback: root sole integrator and browser-feed writer; thread_application isolated ranking/candidate patch; thread_composer_review isolated wallet/payment/account-menu patch; posting_credit_ui Phantom/MetaMask investigation and connector patch. Images and moderation-information scope dropped. Performance campaign remains paused. No new contracts.

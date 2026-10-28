@@ -456,3 +456,10 @@ test('Bok HTTP accepts only paired public snapshot height/hash and preserves exa
  assert.equal(seen.length,1);
  assert.equal((await f.get('/api/feed?blockNumber=42&blockHash='+hash)).status,400);
 });
+
+
+test('public candidates accept only fixed pools and bounded pages, never local preferences',async t=>{
+ const f=await fixture(t);
+ for(const pool of ['recent','engaged','explore']){assert.equal((await f.get('/api/candidates?pool='+pool+'&limit=100')).status,200);assert.deepEqual(f.state.calls.at(-1),{view:'candidates',params:{pool,limit:100}});}
+ for(const suffix of ['','?pool=other','?pool=recent&limit=101','?pool=recent&seen=10','?pool=recent&topics=private','?pool=recent&owner=secret','?pool=recent&pool=explore'])assert.equal((await f.get('/api/candidates'+suffix)).status,400);
+});

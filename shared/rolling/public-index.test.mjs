@@ -877,3 +877,19 @@ test('public like tag HTTP accepts only post selection and bounded pagination',a
  const response=await fetch(base+'/api/likes?posts=10&limit=1');assert.equal(response.status,200);const value=await response.json();assert.deepEqual(value.items,[{post:'10',tag:'77'}]);assert.deepEqual(value.postIds,['10']);assert.equal(value.nextCursor,null);assert.equal(value.scope.boardAddress,scope.boardAddress);
  for(const query of ['posts=10&owner=77','posts=10&tag=77','posts=10&slot=77','posts=10&account=77','posts=10&posts=20','posts=0','posts=10&limit=101'])assert.equal((await fetch(base+'/api/likes?'+query)).status,400,query);
 });
+
+
+test('candidate pools bind lane, page size and publication, retaining public metadata without node reads',async t=>{
+ const f=await persistentFixture(t);f.put(4,[await f.post(20,4)]);f.setHead(4);const {index}=await f.open();await f.drain(index);
+ const before=f.calls.length;
+ for(const pool of ['recent','engaged','explore']){
+  const first=index.query('candidates',{pool,limit:1});assert.equal(first.pool,pool);assert.equal(first.posts.length,1);assert(first.nextCursor);assert(first.names&&first.boards);
+  const second=index.query('candidates',{pool,limit:1,cursor:first.nextCursor});assert.notEqual(second.posts[0].id,first.posts[0].id);assert.equal(second.nextCursor,null);assert.equal(first.revision,second.revision);
+  assert.throws(()=>index.query('candidates',{pool:pool==='recent'?'engaged':'recent',limit:1,cursor:first.nextCursor}),{code:'ROLLING_PUBLIC_CURSOR_STALE'});
+  assert.throws(()=>index.query('candidates',{pool,limit:2,cursor:first.nextCursor}),{code:'ROLLING_PUBLIC_CURSOR_STALE'});
+ }
+ assert.equal(f.calls.length,before);
+ for(const key of ['owner','reads','topics','names','seen'])assert.throws(()=>index.query('candidates',{pool:'recent',[key]:'private'}));
+ const first=index.query('candidates',{pool:'recent',limit:1});f.put(5,[await f.post(30,5)]);f.setHead(5);await index.step();await f.drain(index);
+ assert.throws(()=>index.query('candidates',{pool:'recent',limit:1,cursor:first.nextCursor}),{code:'ROLLING_PUBLIC_CURSOR_STALE'});
+});

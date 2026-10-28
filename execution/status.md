@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — Published core/Bok051a530c, UI1e83d0df, prover63e4c1d3. Portal activated16seconds after checkpoint without epochproof. Actual freshsignup, name+avatar, atomic2postthread(sameAztectx), Like/reload, nestedreplies, ETH andUSDCpostingcredit accepted. USDCpool replenished; postclaim transientdisplayfailure fixed,195composerchecks andindependentreviewpassed, secondUSDCpurchasecompleteduninterrupted. Sourcepushedall3branches;9servicesactive. Performancepaused. ActualMetaMaskextension/currentBokE2Enotrerun; privatepaidtipsunpublished. Reportdocs/COMPOSER_RELEASE_20261027.md.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 28October Harryfeedback implementation: rootintegrates browserfeed/rankingandpublication; thread_application drafts ranking/localindexedcandidatechanges; thread_composer_review drafts wallet/payment/accountmenuUX; posting_credit_ui investigatesPhantomandMetaMaskalerts. Scopeitems1–7only; imagesandmoderationinformationdropped. Preservebrand/currentcontracts; performancecampaignpaused. Actualaffectedchecksandpublicationrequired.
 
 ## Ready internal work
 

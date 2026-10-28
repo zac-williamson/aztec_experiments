@@ -466,3 +466,17 @@ test('SQLite public like tags charge bounded identifier rows before materializat
  const db=f.own(new DatabaseSync(f.store.filename));db.prepare("UPDATE projection SET k=? WHERE kind='likes'").run('x'.repeat(65536));
  const reopened=f.open();assert.throws(()=>reopened.readPublicPage({expectedControl:f.control,view:'likes',params:{posts:'10'}}),{code:'ROLLING_PUBLIC_STORAGE_CAPACITY'});
 });
+
+
+test('all-board candidate lanes cover every row with bounded indexed pagination',async t=>{
+ const f=await queryFixture(t),board=await f.board('unlisted'),name=await f.name();
+ for(const [id,stamp]of [['40','3'],['10','1'],['30','2'],['20','4'],['50','5']])await f.post(id,{board,name,timestamp:stamp});
+ await f.add([['LikeChanged',{post:'10',tag:'77',active:true,count:'1'}]]);
+ const expected={recent:['50','20','30','10','40'],engaged:['10','50','20','40','30'],explore:['10','20','30','40','50']};
+ for(const pool of Object.keys(expected)){
+  const seen=[];let after=null;
+  do{const page=f.read('candidates',{pool,limit:2},after);assert.equal(page.value.pool,pool);seen.push(...page.value.posts.map(p=>p.id));assert(page.work.candidateRows<=9);assert(page.work.materializedBytes<=8*1024*1024);assert(page.value.boards[board]);assert(page.value.names[name]);after=page.nextAfter;}while(after);
+  assert.deepEqual(seen,expected[pool]);assert.equal(new Set(seen).size,5);
+ }
+ assert.throws(()=>f.read('candidates',{pool:'private'}));assert.throws(()=>f.read('candidates',{pool:'recent',reads:'private'}));
+});

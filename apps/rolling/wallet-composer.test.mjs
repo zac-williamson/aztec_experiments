@@ -142,7 +142,7 @@ function signInFixture(t,{restored=false,restoreGate=null,sessionGate=null,statu
   async createSession(){calls.sessions++;if(sessionGate)await sessionGate.promise;return session;}
  };
  const panel=mountRollingWalletPanel({loadRuntime:async()=>{calls.load++;return runtime;}});panel.attachIdentityControls(identity);
- return {document,panel,calls,identity,statusStarted:statusStarted.promise,replaceAccount(){account={};configured.onChange({});}};
+ return {document,panel,runtime,calls,identity,statusStarted:statusStarted.promise,replaceAccount(){account={};configured.onChange({});}};
 }
 
 test('wallet chooser has icons and no password, files, passkey or backup path; one click preserves a reply',{timeout:3000},async t=>{
@@ -1388,4 +1388,36 @@ test('successful posting-credit claim survives unavailable display read and refr
  refreshed.resolve({availableCredit:'539000000000000000000'});
  await f.document.until(()=>identity.querySelector('[data-posting-credit]')?.textContent==='539');
  assert.equal(payments,1);assert.equal(claims,1);assert.equal(reads,2);assert.equal(f.core().status,1);
+});
+
+
+test('signed-out connection offers official installation links when no wallet is detected',{timeout:3000},async t=>{
+ const f=signInFixture(t);f.runtime.fundingWallets=()=>[];await f.panel.initialize();f.panel.open({});
+ const install=await f.document.until(()=>f.document.querySelector('.wallet-install'));
+ assert.match(install.textContent,/Get a wallet to connect/);
+ const links=install.querySelectorAll('a');assert.deepEqual(links.map(a=>a.getAttribute('href')),['https://metamask.io/download/','https://phantom.com/download']);
+ assert(links.every(a=>a.getAttribute('rel')==='noopener noreferrer'));assert.equal(f.calls.signIn,0);
+});
+
+test('account overview exposes names and balances without opening settings or a composer',{timeout:3000},async t=>{
+ const f=await fixture(t,{defaults:{},balanceRead:async()=>({available:true,availableCredit:'1000000'})});
+ f.session.application.readBalances=async()=>assert.fail('Opening account does not fetch balances');f.panel.close();f.panel.open({});
+ const menu=f.document.querySelector('.wallet-account-menu');assert(menu);
+ assert.deepEqual(menu.querySelectorAll('button').map(b=>b.textContent),['Your names','Follows and bookmarks','Balance and withdrawals']);
+ assert.equal(f.document.querySelector('textarea'),null);
+ assert(!f.document.querySelectorAll('button').find(b=>b.textContent==='Write a post').className.includes('primary'));
+ assert.match(f.document.querySelector('.wallet-credit-context').textContent,/mentioning @bok/);
+ assert(f.document.querySelectorAll('button').some(b=>b.textContent==='Sign out'));
+});
+
+for(const asset of ['ETH','USDC'])test('signup shows total before a collapsed cost breakdown for '+asset,{timeout:3000},async t=>{
+ const f=await fixture(t,{fee:'collateral-pending',depositIds:[]});let payments=0;
+ f.session.funding={usdcAvailable:true,async prepareStarter({asset}){return asset==='USDC'?{kind:'rolling-aggregate-usdc-v1',privateFeeCap:'100',slippageBps:100,breakdown:{collateral:{amount:'100',maxUsdc:'1000000'},fee:{maxUsdc:'2000000',amount:'200'},bokAmount:'0',relayFeeUsdc:'100000',maximumUsdc:'3100000'}}:{kind:'rolling-aggregate-eth-v1',usdEstimate:'3.10',privateFeeCap:'100',slippageBps:100,breakdown:{collateralWei:'100',fee:{maxEth:'20',amount:'200'},bok:{maxEth:'0',amount:'0'},gasBudgetWei:'10',maximumTotalWei:'130'}};},async confirm(){payments++;}};
+ f.document.querySelectorAll('button').find(b=>b.textContent==='Set up posting').fire('click');
+ await f.document.until(()=>f.document.querySelector('.wallet-payment-total'));
+ if(asset==='USDC'){const select=f.document.querySelector('select[aria-label="Pay with"]');select.value='USDC';select.fire('change');await f.document.until(()=>f.document.querySelector('.wallet-payment-total')?.textContent.includes('3.1 USDC'));}
+ const total=f.document.querySelector('.wallet-payment-total'),details=f.document.querySelector('.wallet-cost-breakdown');
+ assert.match(total.textContent,/≈ \$3.10 USD/);assert.match(total.textContent,/Includes your deposit, posting credit and payment fees/);
+ assert.equal(!!details.open,false);assert.equal(details.querySelector('summary').textContent,'Cost breakdown');assert.match(details.textContent,/Posting credit/);
+ assert(total.parentNode.childNodes.indexOf(total)<details.parentNode.childNodes.indexOf(details));assert.equal(payments,0);
 });

@@ -2,7 +2,7 @@ import http from 'node:http';
 import {createSavedItemsStore,authorizeSavedItems,SAVED_ITEMS_MAX_BYTES} from '../shared/rolling/saved-items-store.mjs';
 import {normalizeHomeSubboards,normalizeLikePosts} from '../shared/rolling/public-projection.mjs';
 import {pathToFileURL} from 'node:url';
-const routes={likes:['posts','limit','cursor'],'bok-accounting':['limit','cursor','blockNumber','blockHash'],status:[],following:['boards','names','limit','cursor'],bookmarks:['ids','limit','cursor'],home:['limit','cursor'],feed:['limit','cursor'],board:['id','limit','cursor'],directory:['query','limit','cursor'],thread:['root','limit','cursor'],profile:['nameId','limit','cursor'],post:['id']};
+const routes={candidates:['pool','limit','cursor'],likes:['posts','limit','cursor'],'bok-accounting':['limit','cursor','blockNumber','blockHash'],status:[],following:['boards','names','limit','cursor'],bookmarks:['ids','limit','cursor'],home:['limit','cursor'],feed:['limit','cursor'],board:['id','limit','cursor'],directory:['query','limit','cursor'],thread:['root','limit','cursor'],profile:['nameId','limit','cursor'],post:['id']};
 const field=v=>typeof v==='string'&&/^(0|[1-9][0-9]{0,76})$/.test(v);
 const headers={'Content-Type':'application/json; charset=utf-8','X-Content-Type-Options':'nosniff','Cache-Control':'no-store',
   'Content-Security-Policy':"default-src 'none'; frame-ancestors 'none'; base-uri 'none'",'Referrer-Policy':'no-referrer'};
@@ -133,7 +133,7 @@ export async function startRollingPublicServer({index,host='127.0.0.1',port=0,st
       if(!allowed)return reply(404,{schemaVersion:1,error:'not-found'});
       let publicationRevision;
       const params={};for(const [key,value] of url.searchParams){
-        if(key==='revision'&&['home','feed','board','directory','thread','profile','post','following','bookmarks','likes'].includes(view)){
+        if(key==='revision'&&['candidates','home','feed','board','directory','thread','profile','post','following','bookmarks','likes'].includes(view)){
           if(publicationRevision!==undefined||!value.length||value.length>200||!/^[!-~]+$/.test(value))return reply(400,{schemaVersion:1,error:'invalid-request'});
           publicationRevision=value;continue;
         }
@@ -146,6 +146,7 @@ export async function startRollingPublicServer({index,host='127.0.0.1',port=0,st
       }
       if(params.cursor!==undefined&&(params.cursor.length>(['board','likes'].includes(view)?200:120)||!/^[-0-9a-f:]+$/.test(params.cursor)))return reply(400,{schemaVersion:1,error:'invalid-request'});
       if(params.query!==undefined&&(params.query.length>120||params.query.includes('\0')))return reply(400,{schemaVersion:1,error:'invalid-request'});
+      if(view==='candidates'&&!['recent','engaged','explore'].includes(params.pool))return reply(400,{schemaVersion:1,error:'invalid-request'});
       if(view==='likes'){try{params.posts=normalizeLikePosts(params.posts).join(',');}catch{return reply(400,{schemaVersion:1,error:'invalid-request'});}}
       if(view==='following'||view==='bookmarks'){
         const keys=view==='following'?['boards','names']:['ids'];let count=0;
