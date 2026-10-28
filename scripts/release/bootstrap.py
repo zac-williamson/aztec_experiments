@@ -70,6 +70,8 @@ def link(p,target):
 def prepare(folder,m,p):
  require(os.geteuid()==0,'Root host preparation required')
  require({'bootstrap.py','rolling-staging.service','rolling-release-prune.service','rolling-release-prune.timer'}<=set(m.get('support',{})),'Host support files are not fingerprinted')
+ for file in [folder,folder/'manifest.json',folder/'application-source.tar.gz',folder/'operator-source.tar.gz',*[folder/name for name in m['support']]]:
+  stat=file.lstat();require(not file.is_symlink() and stat.st_uid==0 and not stat.st_mode&0o022,'Host payload must be root-owned and not writable by other users')
  require(p.get('applicationRevision')==m['applicationRevision'],'Baseline source revision differs')
  root=p.get('baselineRuntime');require(isinstance(root,str) and re.fullmatch(r'/opt/rolling-app/releases/[A-Za-z0-9_.-]+',root),'Final deployed runtime path is required')
  require(command(['systemctl','show','rolling-application.service','--property=WorkingDirectory','--value'])==root,'Active application runtime changed')

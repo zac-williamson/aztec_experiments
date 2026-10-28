@@ -44,7 +44,8 @@ export async function prepareCandidate(source,cfg){
  assertCompatibleChanges(changedFiles(source,baseline.revision,revision));
  const finalDestination=path.join(cfg.releaseDirectory,revision);
  if(await reuseCandidate(finalDestination,{revision,baseline:baseline.revision,compatibility:baseline.compatibility}))return finalDestination;
- const disk=await fs.statfs(cfg.releaseDirectory);if(disk.bavail*disk.bsize<3*1024**3)throw failure('RELEASE_DISK_RESERVE');
+ const disk=await fs.statfs(cfg.releaseDirectory),estimatedBytes=Object.values(baseline.files).reduce((sum,file)=>sum+file.bytes,0);
+ if(disk.bavail*disk.bsize<3*1024**3+estimatedBytes)throw failure('RELEASE_DISK_RESERVE');
  const destination=path.join(cfg.releaseDirectory,'.preparing-'+revision+'-'+randomUUID());await fs.mkdir(destination,{mode:0o755});
  const tracked=execFileSync('git',['ls-files','-z'],{cwd:source,encoding:'utf8'}).split('\0').filter(Boolean);
  try{
