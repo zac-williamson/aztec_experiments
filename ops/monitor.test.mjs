@@ -4,7 +4,7 @@ import {buildReliability,nextAlertState,SERVICES} from './monitor.mjs';
 import {externalMonitorTemplate} from './external-stack.mjs';
 const now=Date.parse('2026-10-28T12:00:00Z'),at=new Date(now).toISOString();
 const host=role=>({schemaVersion:1,role,observedAt:at,services:Object.fromEntries(SERVICES[role].map(name=>[name,{active:true,running:true,restarts:0}])),metrics:{cpuPercent:20,memoryPercent:30,diskPercent:40},health:Object.fromEntries((role==='core'?['prover','query','moderator','funding']:['bok']).map(name=>[name,{status:'healthy'}]))});
-const good=()=>({now,hosts:{core:host('core'),bok:host('bok')},external:{schemaVersion:1,observedAt:at,website:{ok:true,latencyMs:10},prover:{ok:true,latencyMs:20}},spending:{observedAt:at,limitUsd:50,forecastUsd:5,incurredUsd:0},backup:{lastSuccessAt:at,lastVerifiedRestoreAt:at}});
+const good=()=>({now,hosts:{core:host('core'),bok:host('bok')},external:{schemaVersion:1,observedAt:at,website:{ok:true,latencyMs:10},prover:{ok:true,latencyMs:20},feed:{ok:true,latencyMs:30}},spending:{observedAt:at,limitUsd:50,forecastUsd:5,incurredUsd:0},backup:{lastSuccessAt:at,lastVerifiedRestoreAt:at}});
 test('healthy state needs current observations across all dependencies',()=>{
  assert.equal(buildReliability(good()).status,'healthy');
  const result=buildReliability({now});assert.equal(result.status,'unknown');assert(result.checks.every(x=>x.status==='unknown'));
@@ -54,7 +54,7 @@ test('notification limit delays undelivered changes without losing them',()=>{
 test('external monitoring has bounded schedule and no restart/deploy capabilities',()=>{
  const value=externalMonitorTemplate('def handler(event, context): pass'),r=value.Resources;
  assert.deepEqual(r.Schedule.Properties.EndDate,{Ref:'EndDate'});assert.equal(r.Probe.Properties.ReservedConcurrentExecutions,1);
- for(const name of ['WebsiteAlarm','ProverAlarm','HeartbeatAlarm']){assert.equal(r[name].Properties.TreatMissingData,'breaching');assert.equal(r[name].Properties.DatapointsToAlarm,2);}
+ for(const name of ['WebsiteAlarm','ProverAlarm','FeedAlarm','HeartbeatAlarm']){assert.equal(r[name].Properties.TreatMissingData,'breaching');assert.equal(r[name].Properties.DatapointsToAlarm,2);}
  const policies=JSON.stringify(r.ProbeRole.Properties.Policies);assert(!policies.includes('ec2:'));assert(!policies.includes('ssm:'));assert(policies.includes('cloudwatch:namespace'));
 });
 test('unsupported optional measurements and initial CPU sample stay unknown without alerts',()=>{
@@ -65,7 +65,7 @@ test('unsupported optional measurements and initial CPU sample stay unknown with
 });
 test('missing hosts alert once per host instead of every dependent measure',()=>{
  const checks=buildReliability({now}).checks;let result=nextAlertState({},checks,{now});result=nextAlertState(result.state,checks,{now});
- assert.deepEqual(result.notifications.map(x=>x.id),['core.observation','bok.observation','external.website','external.prover']);
+ assert.deepEqual(result.notifications.map(x=>x.id),['core.observation','bok.observation','external.website','external.prover','external.feed']);
 });
 test('configured unavailable optional health alerts, and five-minute probes do not stale between runs',()=>{
  const input=good();input.hosts.core.health.funding={status:'unknown',configured:true};input.external.observedAt=new Date(now-600000).toISOString();

@@ -34,4 +34,9 @@ class ObserverTests(unittest.TestCase):
  def test_moderation_projection_is_fixed_and_numeric(self):
   out=host.project_health('moderator',{'type':'billboard-moderation-health-v1','severity':'warning','lastSuccessfulIngestAgeMs':1234,'counts':{'unsignedPending':3,'private':'SECRET'},'alerts':[{'message':'SECRET'}]})
   self.assertEqual(out,{'status':'warning','ingestAgeSeconds':1.2,'queued':3})
+ def test_external_feed_requires_a_complete_application_response(self):
+  def probe(body):return external.check('https://app.example','feed',Opener(Response(json.dumps(body).encode())))
+  good={'schemaVersion':1,'complete':True,'scope':{'boardAddress':'public'},'posts':[{'text':'PRIVATE_SENTINEL'}]}
+  result=probe(good);self.assertTrue(result['ok']);self.assertNotIn('PRIVATE_SENTINEL',json.dumps(result))
+  self.assertFalse(probe({**good,'complete':False})['ok']);self.assertFalse(probe({'ready':True})['ok'])
 if __name__=='__main__':unittest.main()

@@ -21,7 +21,7 @@ unavailable configured source can alert. The initial CPU sample is quiet. Set
 
 `spending` input: `{observedAt,limitUsd,forecastUsd,incurredUsd}`. Forecasts older
 than48hours are unknown. `backup`: `{lastSuccessAt,lastVerifiedRestoreAt}`.
-`external`: `{schemaVersion:1,observedAt,website:{ok,latencyMs},prover:{ok,latencyMs}}`.
+`external`: `{schemaVersion:1,observedAt,website:{ok,latencyMs},prover:{ok,latencyMs},feed:{ok,latencyMs}}`.
 
 ```sh
 python3 ops/host-observer.py core --config /etc/rolling-ops/core-observer.json --state /var/lib/rolling-ops-observer/cpu.json
@@ -61,8 +61,8 @@ not themselves trigger new incidents. Monitoring never stops healthy services.
 ## External monitoring
 
 `node ops/external-stack.mjs` emits CloudFormation JSON: Lambda HTTPS homepage
-and real-proof/query checks outside the app hosts, SNS topic, five-minute
-schedule, and three CloudWatch alarms. Two failed/missing periods alarm; recovery
+and real-proof/query plus `/api/home?limit=1` checks outside the app hosts, SNS topic, five-minute
+schedule, and four CloudWatch alarms. Two failed/missing periods alarm; recovery
 notifies too. A missing heartbeat is breaching. Root supplies canonical `Origin`
 and authorized UTC `EndDate`, records costs, deploys, and connects the topic to
 `#rolling-chat-updates` using AWS Chatbot/Amazon Q after workspace authorization.
@@ -70,8 +70,8 @@ Explicitly test delivery. Lambda concurrency is one, timeout15s, retries zero.
 Its role can publish only the fixed CloudWatch namespace; it cannot change hosts.
 No Lambda runtime logs or response bodies are collected.
 
-Reserve USD5 for31days of this small probe as a conservative estimate (three
-custom metrics, three standard alarms, about8,928 short calls and notifications).
+Reserve USD5 for31days of this small probe as a conservative estimate (four
+custom metrics, four standard alarms, about8,928 short calls and notifications).
 Root must verify current region prices and reconcile against the total USD50
 incremental budget. This is not a hard AWS cap. EndDate stops invocations; alarm
 charges can continue. Delete the monitoring stack at the end of its authorized

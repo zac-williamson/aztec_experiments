@@ -12,12 +12,12 @@ const overall = checks => checks.reduce((v,c)=>rank[c.status]>rank[v]?c.status:v
 const metricKeys = ['cpuPercent','memoryPercent','diskPercent','loadAverage1'];
 const countKeys = ['active','queued','retainedJobs','completed','failed','oldestJobAgeSeconds','oldestActiveAgeSeconds','lastWorkerMs','lastQueueWaitMs','ingestAgeSeconds','headLagBlocks','pendingPayments','feeBalance','minimumFeeBalance','providerSpendUsd'];
 const action = id => id.startsWith('backup') ? 'Inspect backup job and verify a fresh restore.' : id==='spending' ? 'Review the forecast and stop new optional paid work before the allowance is exhausted.' : id.startsWith('external') ? 'Check the public site and current release; use release rollback if needed.' : 'Inspect the affected service through the private operator session.';
-const checkIds=new Set(['external.website','external.prover','spending','backup.freshness','backup.restore']);
+const checkIds=new Set(['external.website','external.prover','external.feed','spending','backup.freshness','backup.restore']);
 for(const role of ['core','bok']) {
   for(const name of ['observation',...SERVICES[role],'cpuPercent','memoryPercent','diskPercent'])checkIds.add(`${role}.${name}`);
   for(const name of role==='core'?['prover','query','moderator','funding']:['bok'])for(const suffix of ['health','queueAge','activeAge','ingestion','liquidity'])checkIds.add(`${role}.${name}.${suffix}`);
 }
-const labels={'external.website':'Public website','external.prover':'Public proof service',spending:'Additional spending forecast','backup.freshness':'Latest backup','backup.restore':'Verified restore'};
+const labels={'external.website':'Public website','external.prover':'Public proof service','external.feed':'Public conversation feed',spending:'Additional spending forecast','backup.freshness':'Latest backup','backup.restore':'Verified restore'};
 const label = id => labels[id]??id.replace(/^core\./,'Core · ').replace(/^bok\./,'Bok · ').replaceAll('.',' · ').replaceAll('-',' ').replace('cpuPercent','CPU').replace('memoryPercent','Memory').replace('diskPercent','Disk');
 
 export function sanitizeHost(input,role,{now=Date.now(),maxAgeMs=180000}={}) {
@@ -58,7 +58,7 @@ export function buildReliability({hosts={},external,spending,backup,now=Date.now
     }
   }
   const extFresh=external?.schemaVersion===1&&fresh(external.observedAt,now,externalMaxAgeMs);
-  for(const name of ['website','prover'])add(`external.${name}`,extFresh&&typeof external[name]?.ok==='boolean'?(external[name].ok?'healthy':'critical'):'unknown',extFresh?numeric(external?.[name]?.latencyMs):null,'ms');
+  for(const name of ['website','prover','feed'])add(`external.${name}`,extFresh&&typeof external[name]?.ok==='boolean'?(external[name].ok?'healthy':'critical'):'unknown',extFresh?numeric(external?.[name]?.latencyMs):null,'ms');
   const spendFresh=spending&&fresh(spending.observedAt,now,48*3600000),limit=numeric(spending?.limitUsd),forecast=numeric(spending?.forecastUsd),incurred=numeric(spending?.incurredUsd);
   result.spending={observedAt:timestamp(spending?.observedAt),limitUsd:limit,forecastUsd:spendFresh?forecast:null,incurredUsd:spendFresh?incurred:null};
   add('spending',!spendFresh||limit===null||forecast===null?'unknown':forecast>=limit?'critical':forecast>=limit*.8?'warning':'healthy',spendFresh?forecast:null,'USD',limit!==null&&timestamp(spending?.observedAt)!==null);
