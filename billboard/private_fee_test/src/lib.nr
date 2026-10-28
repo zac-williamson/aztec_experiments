@@ -2,7 +2,7 @@
 // these tests do not claim to prove an L1 bridge or a real fee-paying transaction.
 use private_fee_contract::PrivateFPC;
 use aztec::{
-    protocol::{address::AztecAddress, constants::FEE_JUICE_ADDRESS, traits::Deserialize,
+    protocol::{address::AztecAddress, constants::FEE_JUICE_ADDRESS, traits::{Deserialize, FromField},
         abis::{gas::Gas, gas_fees::GasFees, gas_settings::GasSettings}},
     test::helpers::test_environment::{TestEnvironment, CallPrivateOptions},
 };
