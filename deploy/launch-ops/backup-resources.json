@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "region": "us-east-1",
+  "bucket": "rolling-launch-backups-052665140763-20261028",
+  "reservationUsd": 3,
+  "windowDays": 31,
+  "reviewBy": "2026-11-28",
+  "status": "provisioned-not-installed",
+  "parameters": {
+    "core": "arn:aws:ssm:us-east-1:052665140763:parameter/rolling/operations/backup-key/core",
+    "bok": "arn:aws:ssm:us-east-1:052665140763:parameter/rolling/operations/backup-key/bok"
+  },
+  "kmsKeyArn": "arn:aws:kms:us-east-1:052665140763:key/9eba315a-c623-4f8a-ad51-534bed1889ab",
+  "kmsAlias": "alias/rolling-launch-backups",
+  "bucketArn": "arn:aws:s3:::rolling-launch-backups-052665140763-20261028",
+  "verifiedAt": "2026-10-28T11:46:06.780957+00:00",
+  "publicAccessBlocked": true,
+  "retentionDays": 7,
+  "versioning": false,
+  "hostChanges": false,
+  "instanceRolePolicyChanges": false,
+  "sharedInstanceRole": true,
+  "tlsRequired": true,
+  "objectOwnership": "BucketOwnerEnforced",
+  "storageEncryption": "AES256",
+  "parameterTypesVerified": "SecureString",
+  "verificationScope": "Metadata only; no key value read or archive uploaded; no host/instance-role changes",
+  "cleanup": "Review after31days; stop future backups before deleting resources; retain KMS/SSM keys until all retained archives expire. Ongoing key charges require renewal or cleanup."
+}

@@ -1,0 +1,38 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject"
+      ],
+      "Resource": "arn:aws:s3:::rolling-launch-backups-052665140763-20261028/rolling-ops/bok/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetLifecycleConfiguration",
+        "s3:GetBucketPublicAccessBlock",
+        "s3:GetBucketVersioning"
+      ],
+      "Resource": "arn:aws:s3:::rolling-launch-backups-052665140763-20261028"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ssm:GetParameter",
+      "Resource": "arn:aws:ssm:us-east-1:052665140763:parameter/rolling/operations/backup-key/bok"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "kms:Decrypt",
+      "Resource": "arn:aws:kms:us-east-1:052665140763:key/9eba315a-c623-4f8a-ad51-534bed1889ab",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "ssm.us-east-1.amazonaws.com",
+          "kms:EncryptionContext:PARAMETER_ARN": "arn:aws:ssm:us-east-1:052665140763:parameter/rolling/operations/backup-key/bok"
+        }
+      }
+    }
+  ]
+}
