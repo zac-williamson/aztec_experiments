@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {sha256} from './release/bundle.mjs';
-import {assertBaselineTestIsolation,retainBaselineTestInputs} from './release/prepare.mjs';
+import {assertBaselineTestIsolation,retainBaselineTestInputs,testInputsToRetain} from './release/prepare.mjs';
 
 // The full pinned build installs the locked TOML parser before these tests.
 // Keep the untrusted PR focused lane dependency-free.
@@ -22,7 +22,7 @@ async function testInputFixture(t){
  for(const name of ['billboard/target/rolling_contract-RollingBoard.json','apps/src/billboard/private_fee_artifact.json','plugins/adapter_artifact.json','experiments/private-bok/target/private_bok-PrivateBok.json'])files[name]=JSON.stringify({file_map:{0:{path:'billboard/production/src/main.nr',source:'original production source'}}});
  for(const [name,bytes]of Object.entries(files)){await fs.mkdir(path.dirname(path.join(root,name)),{recursive:true});await fs.writeFile(path.join(root,name),bytes);}
  await fs.mkdir(path.dirname(path.join(candidate,input)),{recursive:true});await fs.writeFile(path.join(candidate,input),'updated candidate test input');
- return {root,candidate,input,manifest:{files:Object.fromEntries(Object.keys(files).map(name=>[name,{}]))},write:async(name,bytes)=>fs.writeFile(path.join(root,name),bytes)};
+ return {root,candidate,input,manifest:{files:Object.fromEntries(Object.entries(files).map(([name,bytes])=>[name,{sha256:sha256(bytes)}]))},write:async(name,bytes)=>fs.writeFile(path.join(root,name),bytes)};
 }
 test('the single non-runtime test input is copied from baseline without rewriting provenance',async t=>{
  const f=await testInputFixture(t),before=await fs.readFile(path.join(f.root,'.build/contracts-manifest.json'));
@@ -41,4 +41,16 @@ for(const defect of ['direct dependency','transitive dependency','alias dependen
  if(defect==='SDK input')await f.write('.build/sdk/sdk-manifest.json',JSON.stringify({inputs:{[f.input]:'hash'}}));
  if(defect==='changed original input')await f.write(f.input,'no longer the original compiled input');
  await assert.rejects(assertBaselineTestIsolation(f.root,f.manifest),{code:'RELEASE_TEST_INPUT_IS_NOT_ISOLATED'});
+});
+test('later releases still retain the baseline test bytes when the source revision already includes the test fix',async t=>{
+ const f=await testInputFixture(t);f.manifest.revision='2'.repeat(40);
+ assert.deepEqual(await testInputsToRetain(f.candidate,f.manifest),[f.input]);
+ await retainBaselineTestInputs(f.root,f.candidate,f.manifest,[f.input]);
+ assert.deepEqual(await testInputsToRetain(f.candidate,f.manifest),[]);
+});
+test('retained test source must remain a regular candidate file',async t=>{
+ const f=await testInputFixture(t);await fs.unlink(path.join(f.candidate,f.input));
+ await assert.rejects(testInputsToRetain(f.candidate,f.manifest),{code:'ENOENT'});
+ await fs.symlink(path.join(f.root,f.input),path.join(f.candidate,f.input));
+ await assert.rejects(testInputsToRetain(f.candidate,f.manifest),{code:'RELEASE_SYMLINK'});
 });

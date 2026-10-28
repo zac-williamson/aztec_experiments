@@ -86,13 +86,23 @@ export async function retainBaselineTestInputs(root,destination,manifest,names){
   await regular(destination,name);await fs.copyFile(await regular(root,name),path.join(destination,name));
  }
 }
+export async function testInputsToRetain(source,manifest){
+ const retained=[];
+ for(const name of baselineTestInputs){
+  const expected=manifest.files[name]?.sha256;if(!/^[a-f0-9]{64}$/.test(expected??''))throw failure('RELEASE_TEST_INPUT_IS_NOT_ISOLATED');
+  if(sha256(await fs.readFile(await regular(source,name)))!==expected)retained.push(name);
+ }
+ return retained;
+}
 export async function prepareCandidate(source,cfg){
  const revision=execFileSync('git',['rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();
  if(execFileSync('git',['status','--porcelain','--untracked-files=no'],{cwd:source,encoding:'utf8'}).trim())throw failure('RELEASE_DIRTY_SOURCE');
  const baselineRoot=await fs.realpath(cfg.liveLink),baseline=(await verifyBundle(baselineRoot)).manifest;
  const changes=changedFiles(source,baseline.revision,revision);assertCompatibleChanges(changes);
- const retainedTests=baselineTestInputs.filter(name=>changes.includes(name));
- if(retainedTests.length){await assertBaselineTestIsolation(baselineRoot,baseline);for(const name of retainedTests)await regular(source,name);}
+ // Compare bytes, not just Git changes: later baselines can already carry the
+ // newer source revision while retaining this original sealed test input.
+ const retainedTests=await testInputsToRetain(source,baseline);
+ if(retainedTests.length)await assertBaselineTestIsolation(baselineRoot,baseline);
  const finalDestination=path.join(cfg.releaseDirectory,revision);
  if(await reuseCandidate(finalDestination,{revision,baseline:baseline.revision,compatibility:baseline.compatibility}))return finalDestination;
  const disk=await fs.statfs(cfg.releaseDirectory),estimatedBytes=Object.values(baseline.files).reduce((sum,file)=>sum+file.bytes,0);
