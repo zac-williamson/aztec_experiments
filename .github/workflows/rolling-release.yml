@@ -1,0 +1,83 @@
+name: Rolling application release
+
+on:
+  pull_request:
+    paths:
+      - 'apps/rolling/**'
+      - 'shared/rolling/**'
+      - 'ops/**'
+      - 'scripts/release/**'
+      - '.github/workflows/rolling-release.yml'
+  workflow_run:
+    workflows: ['Pinned build and baseline checks']
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: rolling-release-${{ github.event_name == 'pull_request' && github.ref || 'deployment' }}
+  cancel-in-progress: false
+
+jobs:
+  focused-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.21.0'
+      - name: Release gate and current application components
+        run: node scripts/release/checks.mjs
+
+  release:
+    # PR code never reaches the privileged runner. workflow_run is admitted only
+    # after the existing build passed for a push to this repository's master.
+    if: >-
+      github.repository == 'zac-williamson/aztec_experiments' &&
+      ((github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'master' &&
+        github.event.workflow_run.head_repository.full_name == github.repository) ||
+       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'))
+    needs: focused-checks
+    environment: rolling-testnet-release
+    runs-on: [self-hosted, linux, x64, rolling-release]
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          clean: true
+      - name: Reject a superseded candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/master)"
+      - name: Require successful full baseline checks for this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: /usr/local/bin/rolling-release-check-build "$GITHUB_WORKSPACE"
+      - name: Prepare immutable candidate using pinned installed runtime
+        id: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate=$(/usr/local/bin/rolling-release-prepare "$GITHUB_WORKSPACE")
+          test -n "$candidate"
+          printf 'path=%s\n' "$candidate" >> "$GITHUB_OUTPUT"
+      - name: Stage, exercise real testnet journeys, promote and verify
+        shell: bash
+        env:
+          ROLLING_CANDIDATE: ${{ steps.candidate.outputs.path }}
+        run: /usr/local/bin/rolling-release-activate "$ROLLING_CANDIDATE"

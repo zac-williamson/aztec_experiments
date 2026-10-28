@@ -1,0 +1,146 @@
+// Real-testnet acceptance only. UI actions use the production wallet/runtime;
+// the injected EIP-1193 provider owns fresh, disposable Sepolia-only keys.
+import fs from 'node:fs/promises';
+import {randomUUID} from 'node:crypto';
+import {failure} from './bundle.mjs';
+import {runtimeIdentity} from './compatibility.mjs';
+import {openChainEvidence} from './evidence.mjs';
+export function validateJourneyConfig(value){
+ const allowed=['stagingOrigin','liveOrigin','ethereumRpc','testFunderKey','ethPerAccountWei','usdcPerAccount','timeoutMs','testOnly'];
+ if(!value||Object.keys(value).sort().join()!==allowed.sort().join()||value.testOnly!==true)throw failure('RELEASE_FIXTURE_CONFIG');
+ for(const key of ['stagingOrigin','liveOrigin']){const u=new URL(value[key]);if(u.origin!==value[key]||u.protocol!=='https:'&&!['localhost','127.0.0.1'].includes(u.hostname))throw failure('RELEASE_FIXTURE_CONFIG');}
+ if(value.stagingOrigin===value.liveOrigin||!/^0x[0-9a-fA-F]{64}$/.test(value.testFunderKey)||!/^\d+$/.test(value.ethPerAccountWei)||BigInt(value.ethPerAccountWei)>10n**16n||BigInt(value.ethPerAccountWei)<=0n||!/^\d+$/.test(value.usdcPerAccount)||BigInt(value.usdcPerAccount)>10000000n||BigInt(value.usdcPerAccount)<=0n||!Number.isInteger(value.timeoutMs)||value.timeoutMs<1000||value.timeoutMs>540000)throw failure('RELEASE_FIXTURE_CONFIG');
+ const rpc=new URL(value.ethereumRpc);if(rpc.protocol!=='https:'&&!(rpc.protocol==='http:'&&rpc.hostname==='127.0.0.1'))throw failure('RELEASE_FIXTURE_CONFIG');
+ return value;
+}
+export async function readJourneyConfig(file){const s=await fs.lstat(file);if(!s.isFile()||s.isSymbolicLink()||(s.mode&0o077)!==0||s.size>16384)throw failure('RELEASE_FIXTURE_PERMISSIONS');return validateJourneyConfig(JSON.parse(await fs.readFile(file,'utf8')));}
+export function installTestProvider(){
+ const listeners=new Map(),provider={isMetaMask:true,isConnected:()=>true,
+  request:async request=>{const answer=await globalThis.__rollingReleaseWallet(request);if(answer.error)throw Object.assign(new Error('Test wallet request failed'),{code:answer.code});return answer.result;},
+  on:(event,fn)=>{if(!listeners.has(event))listeners.set(event,new Set());listeners.get(event).add(fn);return provider;},
+  removeListener:(event,fn)=>{listeners.get(event)?.delete(fn);return provider;}};
+ Object.defineProperty(window,'ethereum',{value:provider,configurable:false});
+ const announce=()=>window.dispatchEvent(new CustomEvent('eip6963:announceProvider',{detail:{info:{uuid:'6f6d2480-cc33-4bb6-98ea-0602ab0d8860',name:'CI test wallet',icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>',rdns:'chat.rolling.ci'},provider}}));
+ window.addEventListener('eip6963:requestProvider',announce);announce();
+}
+const readMethods=new Set(['eth_chainId','eth_blockNumber','eth_getBalance','eth_getCode','eth_call','eth_estimateGas','eth_gasPrice','eth_maxPriorityFeePerGas','eth_feeHistory','eth_getTransactionCount','eth_getTransactionReceipt','eth_getBlockByNumber','eth_getTransactionByHash']);
+export async function createTestWalletBridge({wallet,provider,allowedTargets,capWei,getBytes}){
+ let spent=0n;
+ return async({method,params=[]})=>{
+  if(!Array.isArray(params)||typeof method!=='string')throw failure('RELEASE_WALLET_REQUEST');
+  if(['eth_accounts','eth_requestAccounts'].includes(method))return [wallet.address];
+  if(method==='wallet_switchEthereumChain'){if(BigInt(params[0]?.chainId??0)!==11155111n)throw failure('RELEASE_NETWORK');return null;}
+  if(method==='wallet_requestPermissions')return [{parentCapability:'eth_accounts'}];
+  if(method==='personal_sign'){
+   const [message,address]=params;if(address?.toLowerCase()!==wallet.address.toLowerCase()||typeof message!=='string'||message.length>16384)throw failure('RELEASE_WALLET_REQUEST');return wallet.signMessage(getBytes(message));
+  }
+  if(method==='eth_signTypedData_v4'){
+   if(params[0]?.toLowerCase()!==wallet.address.toLowerCase())throw failure('RELEASE_WALLET_REQUEST');const typed=JSON.parse(params[1]);
+   if(BigInt(typed.domain?.chainId??0)!==11155111n||!allowedTargets.has(typed.domain?.verifyingContract?.toLowerCase()))throw failure('RELEASE_NETWORK');
+   const types={...typed.types};delete types.EIP712Domain;return wallet.signTypedData(typed.domain,types,typed.message);
+  }
+  if(method==='eth_sendTransaction'){
+   const tx={...params[0]};if(tx.from?.toLowerCase()!==wallet.address.toLowerCase()||!allowedTargets.has(tx.to?.toLowerCase())||tx.chainId!==undefined&&BigInt(tx.chainId)!==11155111n)throw failure('RELEASE_WALLET_REQUEST');
+   delete tx.from;if(tx.gas!==undefined){tx.gasLimit=tx.gas;delete tx.gas;}tx.chainId=11155111;
+   const populated=tx.gasLimit===undefined||tx.maxFeePerGas===undefined&&tx.gasPrice===undefined?await wallet.populateTransaction(tx):tx;
+   const cost=BigInt(populated.value??0)+BigInt(populated.gasLimit)*BigInt(populated.maxFeePerGas??populated.gasPrice);if(spent+cost>capWei)throw failure('RELEASE_FIXTURE_SPEND_LIMIT');spent+=cost;
+   return (await wallet.sendTransaction(populated)).hash;
+  }
+  if(readMethods.has(method))return provider.send(method,params);
+  throw failure('RELEASE_WALLET_METHOD');
+ };
+}
+export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin,expectedCompatibility,publicFile}={}){
+ const cfg=await readJourneyConfig(file);if(expectedOrigin!==undefined&&cfg.stagingOrigin!==expectedOrigin)throw failure('RELEASE_FIXTURE_CONFIG');const {chromium}=await import('playwright'),{JsonRpcProvider,Wallet,Contract,getBytes}=await import('ethers');
+ const provider=new JsonRpcProvider(cfg.ethereumRpc);if((await provider.getNetwork()).chainId!==11155111n)throw failure('RELEASE_NETWORK');
+ const runtimeResponse=await fetch(cfg.stagingOrigin+'/wallet/runtime.json',{signal:AbortSignal.timeout(15000)});if(!runtimeResponse.ok)throw failure('RELEASE_RUNTIME');
+ const runtime=await runtimeResponse.json(),config=runtime.config;
+ if(runtime.proofsEnabled!==true||config?.network?.chainId!=='11155111'||runtime.remoteProver?.proofsEnabled!==true)throw failure('RELEASE_REAL_PROOFS_REQUIRED');
+ const runtimeFingerprint=JSON.stringify({board:config.board,privateFee:config.privateFee,bok:config.bok,network:config.network});
+ if(expectedCompatibility&&(expectedCompatibility.chainId!==config.network.chainId||expectedCompatibility.board!==config.board.contractAddress||expectedCompatibility.rollup!==config.network.rollupAddress||expectedCompatibility.rollupVersion!==config.network.rollupVersion||expectedCompatibility.runtimeSha256!==runtimeIdentity(runtime)))throw failure('RELEASE_RUNTIME_CHANGED');
+ const funding=config.aggregateFunding;if(!funding?.bokToken||!funding?.router||!config.bok)throw failure('RELEASE_FIXTURE_CONFIG');
+ const allowedTargets=new Set(['router','bokToken','feeToken','collateralPortal','feePortal','bokPortal'].map(k=>funding[k]?.toLowerCase()).filter(Boolean));
+ const funder=new Wallet(cfg.testFunderKey,provider),token=new Contract(funding.bokToken,['function transfer(address,uint256) returns(bool)'],funder);
+ const result={passed:false,proofs:'real',chainId:'11155111',completed:[],proofResponses:0,elapsedMs:0};
+ let browser;const started=Date.now();let expired=false;const timer=setTimeout(()=>{expired=true;void browser?.close();},cfg.timeoutMs);timer.unref();
+ const remaining=()=>Math.max(1,cfg.timeoutMs-(Date.now()-started));
+ const record=async name=>{result.completed.push(name);await onStage(name);};
+ try{
+  if(!publicFile||!expectedCompatibility)throw failure('RELEASE_FIXTURE_CONFIG');
+  const evidence=await openChainEvidence(publicFile,expectedCompatibility,remaining);
+  browser=await chromium.launch({headless:true});
+  for(const asset of ['ETH','USDC']){
+   const wallet=Wallet.createRandom().connect(provider);
+   const paid=await funder.sendTransaction({to:wallet.address,value:BigInt(cfg.ethPerAccountWei)});if((await paid.wait(1,remaining()))?.status!==1)throw failure('RELEASE_FIXTURE_FUNDING');
+   if(asset==='USDC'){const transfer=await token.transfer(wallet.address,BigInt(cfg.usdcPerAccount));if((await transfer.wait(1,remaining()))?.status!==1)throw failure('RELEASE_FIXTURE_FUNDING');}
+   const context=await browser.newContext({serviceWorkers:'block'});context.setDefaultTimeout(Math.min(90000,remaining()));
+   try{
+    const bridge=await createTestWalletBridge({wallet,provider,allowedTargets,capWei:BigInt(cfg.ethPerAccountWei),getBytes});
+    await context.exposeBinding('__rollingReleaseWallet',async({frame},request)=>{
+     if(new URL(frame.url()).origin!==cfg.stagingOrigin)return {error:true,code:4100};
+     try{return {result:await bridge(request)};}catch{return {error:true,code:4001};}
+    });
+    await context.addInitScript(installTestProvider);
+    const page=await context.newPage();let pageErrors=0,proofs=0;const submissions=[];
+    page.on('request',r=>{if(r.method()==='POST'&&r.url()===runtime.trustedQuery.url)submissions.push(evidence.submission(r).catch(()=>null));});
+    const hashesSince=async start=>{const values=await Promise.all(submissions.slice(start));if(values.some(v=>v===null))throw failure('RELEASE_SUBMISSION_INVALID');return values.flat();};
+    page.on('pageerror',()=>pageErrors++);
+    page.on('response',r=>{if(r.request().method()==='POST'&&r.url().startsWith(runtime.remoteProver.url)&&r.ok())proofs++;});
+    await page.goto(cfg.stagingOrigin+'/#/new-account',{waitUntil:'domcontentloaded'});
+    const connect=page.getByRole('button',{name:'Connect wallet',exact:true});if(await connect.count())await connect.first().click();
+    await page.getByRole('button',{name:/CI test wallet/}).click();
+    await page.getByRole('button',{name:'Confirm payment',exact:true}).waitFor({timeout:remaining()});
+    await page.getByLabel('Pay with',{exact:true}).selectOption(asset);
+    await page.getByRole('button',{name:'Confirm payment',exact:true}).click();
+    await page.getByText(/Your posting balance is (ready|set up)/).waitFor({timeout:remaining()});
+    const signupHashes=await hashesSince(0);if(!signupHashes.length)throw failure('RELEASE_INCLUSION');
+    for(const hash of signupHashes)await evidence.require([hash],()=>true,remaining);
+    await record('signup-'+asset);
+    const close=page.getByRole('button',{name:'Close',exact:true});if(await close.count())await close.first().click();
+    if(asset==='USDC'){result.proofResponses+=proofs;if(!proofs||pageErrors)throw failure('RELEASE_BROWSER_ERRORS');continue;}
+    const tag='Release check '+randomUUID();
+    async function compose(message,{buyBokCredit=false}={}){
+     const start=submissions.length;
+     await page.getByRole('button',{name:'Write a post',exact:true}).first().click();
+     await page.getByLabel('Message',{exact:true}).fill(message);
+     if(buyBokCredit){
+      await page.getByRole('button',{name:'Add Bok credit',exact:true}).click();
+      await page.getByLabel('Amount (USD)',{exact:true}).fill('1');
+      await page.getByLabel('Pay with',{exact:true}).selectOption('ETH');
+      await page.getByRole('button',{name:'Pay',exact:true}).click({timeout:remaining()});
+      await page.getByText(/Bok credit added\./).waitFor({timeout:remaining()});
+     }
+     await page.locator('[data-action-review]:visible').click();
+     const card=page.locator('article.post').filter({hasText:message}).first();await card.waitFor({timeout:remaining()});
+     const receipt=await card.evaluate(el=>({hash:el.dataset.txHash,block:el.dataset.blockNumber,blockHash:el.dataset.blockHash,id:el.id}));
+     if(!/^0x[0-9a-f]{64}$/.test(receipt.hash??'')||!/^0x[0-9a-f]{64}$/.test(receipt.blockHash??'')||!(Number(receipt.block)>0))throw failure('RELEASE_INCLUSION');
+     const hashes=await hashesSince(start);if(!hashes.includes(receipt.hash))throw failure('RELEASE_INCLUSION');
+     const events=await evidence.require([receipt.hash],events=>events.some(e=>e.type==='PostPublished'&&e.payload.id===receipt.id.slice(5)&&e.payload.record.parent==='0'&&e.payload.record.root===e.payload.id&&evidence.text(e.payload)===message),remaining);
+     return {card,receipt,events};
+    }
+    const {card,receipt}=await compose(tag);await record('post');
+    const replyStart=submissions.length;
+    await card.getByRole('button',{name:'Reply',exact:true}).click();await page.getByLabel('Message',{exact:true}).fill(tag+' reply');await page.locator('[data-action-review]:visible').click();
+    await page.getByText(tag+' reply',{exact:true}).waitFor({timeout:remaining()});
+    await evidence.require(await hashesSince(replyStart),events=>events.some(e=>e.type==='PostPublished'&&e.payload.record.parent===receipt.id.slice(5)&&e.payload.record.root===receipt.id.slice(5)&&evidence.text(e.payload)===tag+' reply'),remaining);await record('reply');
+    const likeStart=submissions.length,like=card.locator('[data-like-post]');await like.click();await page.waitForFunction(id=>document.querySelector('#'+id+' [data-like-post]')?.getAttribute('aria-pressed')==='true',receipt.id,{timeout:remaining()});
+    await evidence.require(await hashesSince(likeStart),events=>events.some(e=>e.type==='LikeChanged'&&e.payload.post===receipt.id.slice(5)&&e.payload.active===true&&BigInt(e.payload.count)>0n),remaining);await record('like');
+    await page.reload({waitUntil:'domcontentloaded'});await page.getByText(tag,{exact:true}).waitFor({timeout:remaining()});await record('reload');
+    const reconnect=page.getByRole('button',{name:'Connect wallet',exact:true});
+    if(await reconnect.count()){await reconnect.first().click();await page.getByRole('button',{name:/CI test wallet/}).click();await page.getByRole('button',{name:'Your account',exact:true}).waitFor({timeout:remaining()});const dismiss=page.getByRole('button',{name:'Close',exact:true});if(await dismiss.count())await dismiss.first().click();}
+    // Starter intentionally excludes Bok credit. Exercise the actual purchase
+    // and require a new bot reply to this unique request before allowing release.
+    const bok=await compose(tag+' @bok reply with the word ready only',{buyBokCredit:true});await page.goto(cfg.stagingOrigin+'/#/thread/'+bok.receipt.id.slice(5),{waitUntil:'domcontentloaded'});
+    const invocation=bok.events.find(e=>e.type==='PluginInvoked'&&e.payload.post_id===bok.receipt.id.slice(5)&&e.payload.plugin_id===BigInt(config.bok.pluginId).toString());if(!invocation)throw failure('RELEASE_INCLUSION');
+    const bot=page.locator('article.bot-post').first();await bot.waitFor({timeout:remaining()});const botHash=await bot.getAttribute('data-tx-hash');
+    await evidence.require([botHash],events=>events.some(e=>e.type==='PluginReplyPublished'&&e.payload.request_id===invocation.payload.request_id&&e.payload.plugin_id===invocation.payload.plugin_id&&e.payload.parent_id===invocation.payload.post_id&&e.payload.target===invocation.payload.target&&events.some(p=>p.type==='PostPublished'&&p.payload.id===e.payload.post_id&&p.payload.record.kind==='4'&&p.payload.record.parent===invocation.payload.post_id&&p.payload.record.root===invocation.payload.post_id)),remaining);await record('bok');
+    result.proofResponses+=proofs;if(!proofs||pageErrors)throw failure('RELEASE_BROWSER_ERRORS');
+   }finally{await context.close();}
+  }
+  await evidence.recheck();
+  const after=await(await fetch(cfg.stagingOrigin+'/wallet/runtime.json',{signal:AbortSignal.timeout(15000)})).json();
+  if(JSON.stringify({board:after.config?.board,privateFee:after.config?.privateFee,bok:after.config?.bok,network:after.config?.network})!==runtimeFingerprint||after.proofsEnabled!==true)throw failure('RELEASE_RUNTIME_CHANGED');
+  result.passed=!expired;return result;
+ }catch(e){throw Object.assign(failure(e.code?.startsWith('RELEASE_')?e.code:expired?'RELEASE_JOURNEY_TIMEOUT':'RELEASE_JOURNEY_FAILED'),{completed:result.completed});}
+ finally{clearTimeout(timer);await browser?.close();provider.destroy();result.elapsedMs=Date.now()-started;}
+}
