@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "uiCommit": "24f707f659d8f5b6bbb83614dfbf4a28767885c9",
+  "applicationCommit": "86be52150de16ad6fe628000404e44e3592705bb",
+  "board": "0x2d6210a94af00fadeb5c69c20ed9fce3e20a8feca7d2b190354307ef0d235bee",
+  "status": "passed",
+  "startedAt": "2026-10-28T14:31:07.501Z",
+  "finishedAt": "2026-10-28T14:32:50.282Z",
+  "browser": "headless Chromium with owned EIP6963 adapter; not MetaMask extension",
+  "stages": [
+    {
+      "stage": "restore-paid-profile",
+      "at": "2026-10-28T14:31:08.146Z"
+    },
+    {
+      "stage": "open-existing-account",
+      "at": "2026-10-28T14:31:15.532Z"
+    },
+    {
+      "stage": "verify-unsigned-saved-action",
+      "at": "2026-10-28T14:31:15.626Z"
+    },
+    {
+      "stage": "review-saved-unsigned-action",
+      "at": "2026-10-28T14:31:17.302Z"
+    },
+    {
+      "stage": "first-post",
+      "at": "2026-10-28T14:31:27.307Z"
+    },
+    {
+      "stage": "self-tip-1",
+      "at": "2026-10-28T14:31:44.004Z"
+    },
+    {
+      "stage": "self-tip-2",
+      "at": "2026-10-28T14:32:04.887Z"
+    },
+    {
+      "stage": "second-post",
+      "at": "2026-10-28T14:32:28.672Z"
+    },
+    {
+      "stage": "complete",
+      "at": "2026-10-28T14:32:50.275Z"
+    }
+  ],
+  "firstPost": {
+    "postId": "13736684218354639950476397858955633702854943214016628920091230602954895898836",
+    "txHash": "0x2df477ea40f8cf26a37c24ed8880c62d9e8841177389ee715bb59590595e8024",
+    "content": "Paid tips smoke 1793196584165"
+  },
+  "secondPost": {
+    "txHash": "0x0d0ac959435a188b00abba3b6625967f4f2af3a92962aa33a201f539d52a66f3"
+  },
+  "receipts": [
+    {
+      "txHash": "0x2df477ea40f8cf26a37c24ed8880c62d9e8841177389ee715bb59590595e8024",
+      "status": "proposed",
+      "blockNumber": 9466,
+      "transactionFee": "3507011811121800000",
+      "stage": "first-post"
+    },
+    {
+      "txHash": "0x2dbc771bc33b07c3eb749d5f74c778725122ebca4b210fb24b750eca8deb54d8",
+      "status": "proposed",
+      "blockNumber": 9467,
+      "transactionFee": "2131835341093600000",
+      "stage": "self-tip-1"
+    },
+    {
+      "txHash": "0x1c2acaa8679c62b3d3a0b5bed1be7fb942a7fa196cc57fad9c814a74379344e8",
+      "status": "proposed",
+      "blockNumber": 9468,
+      "transactionFee": "2131835341093600000",
+      "stage": "self-tip-2"
+    },
+    {
+      "txHash": "0x0d0ac959435a188b00abba3b6625967f4f2af3a92962aa33a201f539d52a66f3",
+      "status": "proposed",
+      "blockNumber": 9469,
+      "transactionFee": "3578468072554800000",
+      "stage": "second-post"
+    }
+  ],
+  "likeCount": 2,
+  "tipAmountFEE": "20",
+  "selfTipConservation": true,
+  "totalTipFeesBaseUnits": "4263670682187200000",
+  "ethereumSends": 0,
+  "boundaries": [
+    "Actual real-proof browser test used self-tips; separate native development checks cover distinct author receipt and tip-only/mixed-note spending.",
+    "This browser run does not establish which input notes funded the second post.",
+    "Performance goal remains paused; this is functional acceptance.",
+    "Fresh signup used UI83f3; post/tips/post used UI24f with unchanged contracts and the same funded account."
+  ]
+}
