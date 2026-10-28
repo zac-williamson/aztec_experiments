@@ -81,15 +81,21 @@ No real testnet journey or live promotion is inferred from preparation and smoke
 checks. The full build was not green at this checkpoint. Exact candidate build,
 browser journey and live-byte checks still need successful evidence before
 enabling automatic release; live service adoption remains pending.
-There is one source-test exception: `billboard/private_fee_test/src/lib.nr`.
-GitHub's full build compiles and tests the updated candidate file. The application
-package retains the original, unexecuted test input from its sealed contract
+There are two exact source-test exceptions: `billboard/private_fee_test/src/lib.nr`
+and `billboard/rolling_contract/src/posting_tests.nr`. GitHub's full build compiles
+and tests the updated candidate files. The application package retains the
+original, unexecuted test inputs from its sealed contract
 baseline, together with the existing contract and SDK artifacts. The gate parses
-the sealed Nargo manifests, rejects any other crate's dependency on that test
-crate, and checks that no production artifact file map or SDK input includes it.
-The library manifest and every other `billboard/` path remain protected. This
+the sealed Nargo manifests and rejects any other crate's dependency on
+`private_fee_test`. For both inputs it verifies the original contract-manifest
+hash and rejects any production artifact file map or SDK input referring to the
+test crate or `posting_tests.nr` basename. The Board's test module declaration
+does not grant an exception to its main source or runtime posting implementation.
+All Nargo manifests and every other `billboard/` path remain protected. This
 does not rewrite a provenance hash or claim an unperformed contract build: the
-original manifests and the source input they actually fingerprint stay intact.
+original manifests and the source inputs they actually fingerprint stay intact.
+Later releases compare source bytes with the sealed input hashes even when Git's
+revision diff no longer includes either test change.
 The dependency-free focused lane checks the path guard; the full pinned build
 runs `scripts/test-release-test-isolation.mjs` with the locked TOML parser.
 

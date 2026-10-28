@@ -66,13 +66,16 @@ export async function assertBaselineTestIsolation(root,manifest){
    }
   }
  }
+ // Match the posting test basename conservatively: no production artifact or
+ // SDK may consume it through an absolute, relative or platform-specific path.
+ const testInputPath=name=>{const parts=name.split(/[\\/]/);return parts.includes('private_fee_test')||parts.includes('posting_tests.nr');};
  const runtimeArtifacts=['billboard/target/rolling_contract-RollingBoard.json','apps/src/billboard/private_fee_artifact.json','plugins/adapter_artifact.json','experiments/private-bok/target/private_bok-PrivateBok.json'];
  for(const name of runtimeArtifacts){
   const artifact=JSON.parse(await read(name)),entries=Object.values(artifact.file_map??{});
-  if(!entries.length||entries.some(e=>typeof e.path!=='string'||e.path.split(/[\\/]/).includes('private_fee_test')))reject();
+  if(!entries.length||entries.some(e=>typeof e.path!=='string'||testInputPath(e.path)))reject();
  }
  const sdk=JSON.parse(await read('.build/sdk/sdk-manifest.json'));
- if(!sdk.inputs||Object.keys(sdk.inputs).some(n=>n.split('/').includes('private_fee_test')))reject();
+ if(!sdk.inputs||Object.keys(sdk.inputs).some(testInputPath))reject();
  const contracts=JSON.parse(await read('.build/contracts-manifest.json'));
  for(const name of baselineTestInputs)if(contracts.inputs?.[name]!==sha256(await read(name)))reject();
 }

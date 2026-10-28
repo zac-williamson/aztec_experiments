@@ -86,8 +86,8 @@ test('HTTP verification rejects wrong bytes and missing assets rather than a gre
  await assert.rejects(checkPublicAssets(origin,m),{code:'RELEASE_ASSET_BYTES'});wrong=false;assert.equal((await checkPublicAssets(origin,m)).assetCount,1);
 });
 test('contract, dependency and prover changes require a different deployment path',()=>{
- for(const name of ['billboard/rolling_contract/src/main.nr','billboard/private_fee_contract/src/main.nr','billboard/private_fee_test/Nargo.toml','billboard/private_fee_test/src/other.nr','billboard/owner_delivery_test/src/lib.nr','billboard/Nargo.toml','billboard/portal/src/Router.sol','package-lock.json','prover/application-policy.mjs'])assert.throws(()=>assertCompatibleChanges([name]),{code:'RELEASE_REQUIRES_CONTRACT_OR_RUNTIME_DEPLOYMENT'});
- assert.doesNotThrow(()=>assertCompatibleChanges(['apps/rolling/wallet-panel.mjs','scripts/rolling-public-server.mjs','billboard/private_fee_test/src/lib.nr']));
+ for(const name of ['billboard/rolling_contract/src/main.nr','billboard/rolling_contract/src/posting.nr','billboard/rolling_contract/src/another_tests.nr','billboard/rolling_contract/Nargo.toml','billboard/private_fee_contract/src/main.nr','billboard/private_fee_test/Nargo.toml','billboard/private_fee_test/src/other.nr','billboard/owner_delivery_test/src/lib.nr','billboard/Nargo.toml','billboard/portal/src/Router.sol','package-lock.json','prover/application-policy.mjs'])assert.throws(()=>assertCompatibleChanges([name]),{code:'RELEASE_REQUIRES_CONTRACT_OR_RUNTIME_DEPLOYMENT'});
+ assert.doesNotThrow(()=>assertCompatibleChanges(['apps/rolling/wallet-panel.mjs','scripts/rolling-public-server.mjs','billboard/private_fee_test/src/lib.nr','billboard/rolling_contract/src/posting_tests.nr']));
 });
 test('test fixture cannot use same origin, mainnet-like arbitrary cap or public file fields',()=>{
  const cfg={stagingOrigin:'https://stage.example',liveOrigin:'https://live.example',ethereumRpc:'https://rpc.example',testFunderKey:'0x'+'1'.repeat(64),ethPerAccountWei:'1000000000000000',usdcPerAccount:'2000000',timeoutMs:540000,testOnly:true};assert.equal(validateJourneyConfig(cfg),cfg);
