@@ -56,7 +56,7 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
  const runtimeResponse=await fetch(cfg.stagingOrigin+'/wallet/runtime.json',{signal:AbortSignal.timeout(15000)});if(!runtimeResponse.ok)throw failure('RELEASE_RUNTIME');
  const runtime=await runtimeResponse.json(),config=runtime.config;
  if(runtime.proofsEnabled!==true||config?.network?.chainId!=='11155111'||runtime.remoteProver?.proofsEnabled!==true)throw failure('RELEASE_REAL_PROOFS_REQUIRED');
- const runtimeFingerprint=JSON.stringify({board:config.board,privateFee:config.privateFee,bok:config.bok,network:config.network});
+ const runtimeFingerprint=runtimeIdentity(runtime);
  if(expectedCompatibility&&(expectedCompatibility.chainId!==config.network.chainId||expectedCompatibility.board!==config.board.contractAddress||expectedCompatibility.rollup!==config.network.rollupAddress||expectedCompatibility.rollupVersion!==config.network.rollupVersion||expectedCompatibility.runtimeSha256!==runtimeIdentity(runtime)))throw failure('RELEASE_RUNTIME_CHANGED');
  const funding=config.aggregateFunding;if(!funding?.bokToken||!funding?.router||!config.bok)throw failure('RELEASE_FIXTURE_CONFIG');
  const allowedTargets=new Set(['router','bokToken','feeToken','collateralPortal','feePortal','bokPortal'].map(k=>funding[k]?.toLowerCase()).filter(Boolean));
@@ -139,7 +139,7 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
   }
   await evidence.recheck();
   const after=await(await fetch(cfg.stagingOrigin+'/wallet/runtime.json',{signal:AbortSignal.timeout(15000)})).json();
-  if(JSON.stringify({board:after.config?.board,privateFee:after.config?.privateFee,bok:after.config?.bok,network:after.config?.network})!==runtimeFingerprint||after.proofsEnabled!==true)throw failure('RELEASE_RUNTIME_CHANGED');
+  if(runtimeIdentity(after)!==runtimeFingerprint)throw failure('RELEASE_RUNTIME_CHANGED');
   result.passed=!expired;return result;
  }catch(e){throw Object.assign(failure(e.code?.startsWith('RELEASE_')?e.code:expired?'RELEASE_JOURNEY_TIMEOUT':'RELEASE_JOURNEY_FAILED'),{completed:result.completed});}
  finally{clearTimeout(timer);await browser?.close();provider.destroy();result.elapsedMs=Date.now()-started;}

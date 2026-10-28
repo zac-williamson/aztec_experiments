@@ -57,16 +57,16 @@ host, node and prover to stay within the launch budget.
   The installer checks dependency ownership and the Node version.
 - Run the application under a separate non-root service account. Create
   `/opt/rolling-releases`, `/opt/rolling-stage/current` and
-  `/opt/rolling-app/current` (the last two are symlinks). Only the release user
+  `/opt/rolling-release-live/current` (the last two are symlinks). Only the release user
   writes the release directory and symlink parent directories. Application
   services write their separate cache/state directories, never release files.
 - `rolling-staging.service` runs:
 
       WorkingDirectory=/opt/rolling-stage/current
-      ExecStart=/opt/node/bin/node apps/rolling/start.mjs /etc/rolling-stage/public.json /etc/rolling-stage/wallet.json /etc/rolling-stage/relay.json
+      ExecStart=/opt/rolling-ops/runtime/node apps/rolling/start.mjs /etc/rolling-stage/public.json /etc/rolling-stage/wallet.json /etc/rolling-stage/relay.json
 
   The live unit is exactly `rolling-application.service`, uses
-  `/opt/rolling-app/current`, and the existing live config files. Give
+  `/opt/rolling-release-live/current`, and the existing live config files. Give
   `rolling-release` passwordless sudo for only these two exact commands:
   `/usr/bin/systemctl restart rolling-staging.service` and
   `/usr/bin/systemctl restart rolling-application.service`.
@@ -108,12 +108,12 @@ Create `/etc/rolling-release/config.json`, mode `0600`, owned by the release use
   "stagingOrigin": "https://YOUR-STAGING-DISTRIBUTION.cloudfront.net",
   "liveOrigin": "https://rolling.chat",
   "stagingLink": "/opt/rolling-stage/current",
-  "liveLink": "/opt/rolling-app/current",
+  "liveLink": "/opt/rolling-release-live/current",
   "releaseDirectory": "/opt/rolling-releases",
-  "stateFile": "/var/lib/rolling-ops/release-state.json",
+  "stateFile": "/var/lib/rolling-release-state/state.json",
   "walletFile": "/etc/rolling-release/test-wallet.json",
-  "publicFile": "/etc/rolling-stage/public.json",
-  "nodeBinary": "/opt/node/bin/node",
+  "publicFile": "/etc/rolling-release/public-verifier.json",
+  "nodeBinary": "/opt/rolling-ops/runtime/node",
   "stagingService": "rolling-staging.service",
   "liveService": "rolling-application.service"
 }
@@ -209,3 +209,28 @@ tests. These are local tests with injected adapters, not testnet acceptance.
 The browser journey and host installation require the first actual staging run
 after the active contract release finishes. No testnet success is claimed from
 a green unit suite or a generated manifest.
+
+## Concrete bootstrap payload
+
+`bootstrap.py` verifies a fingerprinted application-source archive and operator
+archive, compares the exact declared source with the final deployed runtime, and
+prepares a stopped stage service and operator installation. Its default mode is
+a payload preview; `--apply` requires final live config hashes and an explicit
+dedicated stage relay address. It never switches a live unit, changes Caddy,
+starts a service, registers a runner or reads a shared signer.
+
+Use a dedicated stage relay signer and separate state. `seal-current.mjs` accepts
+an optional fifth argument naming the stage wallet config. It pins the stage
+runtime separately, admitting only the relay address and endpoint-host differences
+from live. All contract identities, code hashes and funding/gas policy stay bound.
+The runner reads `/etc/rolling-release/public-verifier.json`, a non-secret copy of
+node URL, scope and immutable verifier artifact paths; all service configs are
+explicitly inaccessible inside the runner service.
+
+The state parent is `/var/lib/rolling-release-state`, owned
+`rolling-release:rolling-ops` with mode2750 so mode0640 output is readable by the
+dashboard without giving the runner access to analytics storage. A 3GiB reserve
+blocks new candidate builds. The optional root prune timer only removes sealed
+releases predating the last successful promotion, under the deployment lock, and
+keeps actual live/stage targets and the previous successful release. Fresh
+candidates and partial preparations are retained for explicit inspection.

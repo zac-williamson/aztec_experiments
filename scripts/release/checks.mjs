@@ -5,3 +5,4 @@ import fs from 'node:fs';
 const tests=['scripts/release/release.test.mjs','apps/rolling/feed-ranking.test.mjs','apps/rolling/home-reader.test.mjs'];
 for(const file of tests)if(!fs.existsSync(file))throw Error('Missing required check: '+file);
 execFileSync(process.execPath,['--test',...tests],{stdio:'inherit',timeout:300000});
+execFileSync('python3',['scripts/release/bootstrap.test.py'],{stdio:'inherit',timeout:30000});

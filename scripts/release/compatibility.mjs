@@ -7,3 +7,10 @@ export function runtimeIdentity(runtime){
  const sort=v=>Array.isArray(v)?v.map(sort):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,sort(v[k])])):v;
  return sha256(JSON.stringify(sort({board:c.board,privateFee:c.privateFee,bok:c.bok,aggregateFunding:c.aggregateFunding,network:{chainId:n.chainId,rollupAddress:n.rollupAddress,rollupVersion:n.rollupVersion}})));
 }
+export function stageRuntimeIdentity(live,stage){
+ const copy=structuredClone(stage),address=copy?.config?.aggregateFunding?.usdcRelayAddress;
+ if(!/^0x[0-9a-f]{40}$/.test(address??'')||BigInt(address)===0n)throw failure('RELEASE_STAGE_RELAY');
+ copy.config.aggregateFunding.usdcRelayAddress=live.config?.aggregateFunding?.usdcRelayAddress;
+ if(runtimeIdentity(copy)!==runtimeIdentity(live))throw failure('RELEASE_STAGE_CONTRACT_CHANGED');
+ return runtimeIdentity(stage);
+}

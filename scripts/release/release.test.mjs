@@ -8,9 +8,10 @@ import {sealBundle,verifyBundle,checkPublicAssets,assertCompatibleChanges} from 
 import {releaseCandidate,rollbackRelease,replaceLink} from './pipeline.mjs';
 import {validateJourneyConfig,createTestWalletBridge} from './journey.mjs';
 import {reuseCandidate} from './prepare.mjs';
-import {runtimeIdentity} from './compatibility.mjs';
+import {runtimeIdentity,stageRuntimeIdentity} from './compatibility.mjs';
 import {checkRuntime} from './smoke.mjs';
 import {runnerDropin} from './harden-runner.mjs';
+import {pruneReleases} from './prune.mjs';
 
 const oldRevision='1'.repeat(40),revision='2'.repeat(40);
 const successful={passed:true,proofs:'real',chainId:'11155111',completed:['signup-ETH','signup-USDC','post','reply','like','reload','bok']};
@@ -109,4 +110,21 @@ test('runner sandbox blocks metadata and confines writes; injected unit paths ar
  const cfg={releaseDirectory:'/opt/rolling-releases',stagingLink:'/opt/rolling-stage/current',liveLink:'/opt/rolling-app/current',stateFile:'/var/lib/rolling-ops/release-state.json',nodeBinary:'/opt/node/bin/node'};
  const unit=runnerDropin(cfg,'/var/lib/rolling-runner');assert.match(unit,/User=rolling-release/);assert.match(unit,/IPAddressDeny=169\.254\.169\.254\/32/);assert.match(unit,/IPAddressDeny=fd00:ec2::254\/128/);assert.match(unit,/ProtectSystem=strict/);assert.match(unit,/AWS_SHARED_CREDENTIALS_FILE=\/dev\/null/);assert.match(unit,/runner-preflight\.mjs/);assert(!unit.includes('ReadWritePaths=\/etc'));
  assert.throws(()=>runnerDropin({...cfg,nodeBinary:'/bin/node\nUser=root'},'/var/lib/rolling-runner'),{code:'RELEASE_CONFIG'});
+});
+test('separate stage signer is pinned while every other contract field remains identical',()=>{
+ const live={proofsEnabled:true,remoteProver:{proofsEnabled:true},config:{network:{chainId:'11155111',rollupAddress:'rollup',rollupVersion:'6'},board:{contractAddress:'board'},privateFee:{contractAddress:'fee'},bok:{contractAddress:'bok'},aggregateFunding:{router:'router',usdcRelayAddress:'0x'+'1'.repeat(40)}}};
+ const stage=structuredClone(live);stage.config.aggregateFunding.usdcRelayAddress='0x'+'2'.repeat(40);assert.equal(stageRuntimeIdentity(live,stage),runtimeIdentity(stage));assert.notEqual(runtimeIdentity(live),runtimeIdentity(stage));
+ stage.config.aggregateFunding.router='other';assert.throws(()=>stageRuntimeIdentity(live,stage),{code:'RELEASE_STAGE_CONTRACT_CHANGED'});
+});
+test('smoke checks actual hash-pinned wallet URLs and catches a stale edge cache',async t=>{
+ const f=await setup(t),manifest=(await verifyBundle(f.candidate)).manifest;manifest.publicFiles['/wallet/runtime.mjs']='index.html';let stale=true,observed=false;
+ const server=http.createServer((req,res)=>{const pinned=req.url==='/wallet/runtime.mjs?sha256='+manifest.files['index.html'].sha256;if(pinned)observed=true;res.writeHead(200);res.end(pinned&&stale?'stale':'candidate');});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>server.close());const origin='http://127.0.0.1:'+server.address().port;
+ await assert.rejects(checkPublicAssets(origin,manifest),{code:'RELEASE_ASSET_BYTES'});assert(observed);stale=false;await checkPublicAssets(origin,manifest);
+});
+test('retention preserves live, stage, rollback and a newly prepared candidate',async t=>{
+ const directory=await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(),'rolling-retention-')));t.after(()=>fs.rm(directory,{recursive:true,force:true}));
+ for(const digit of ['1','2','3','4']){const dir=path.join(directory,digit.repeat(40));await fs.mkdir(dir);const file=path.join(dir,'release.json');await fs.writeFile(file,JSON.stringify({schemaVersion:1,revision:digit.repeat(40)}));if(digit!=='4')await fs.utimes(file,new Date(1),new Date(1));}
+ const liveLink=path.join(directory,'live'),stageLink=path.join(directory,'stage'),stateFile=path.join(directory,'state.json');await fs.symlink(path.join(directory,'2'.repeat(40)),liveLink);await fs.symlink(path.join(directory,'2'.repeat(40)),stageLink);await fs.writeFile(stateFile,JSON.stringify({status:'live',revision:'2'.repeat(40),previousRevision:'1'.repeat(40),updatedAt:new Date(Date.now()-500).toISOString()}));
+ const options={directory,liveLink,stageLink,stateFile};await fs.writeFile(stateFile+'.lock','');assert.equal((await pruneReleases(options)).reason,'release-active');await fs.rm(stateFile+'.lock');assert.equal((await pruneReleases(options)).removed,1);
+ for(const digit of ['1','2','4'])assert((await fs.stat(path.join(directory,digit.repeat(40)))).isDirectory());await assert.rejects(fs.stat(path.join(directory,'3'.repeat(40))),{code:'ENOENT'});
 });

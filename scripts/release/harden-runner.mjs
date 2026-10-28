@@ -26,7 +26,7 @@ ProtectControlGroups=true
 RestrictSUIDSGID=true
 ReadWritePaths=${[...new Set(values.slice(0,-1))].join(' ')}
 ReadWritePaths=-/run/sudo
-InaccessiblePaths=-/var/lib/cloud -/var/lib/rolling-runner/.aws
+InaccessiblePaths=-/var/lib/cloud -/var/lib/private -/var/lib/rolling-stage -/var/lib/rolling-ops -/var/lib/rolling-runner/.aws -/etc/rolling-app -/etc/rolling-ops -/etc/rolling-node -/etc/rolling-query -/etc/board-prover -/etc/rolling-moderator -/etc/rolling-stage -/run/credentials -/run/rolling-application -/run/rolling-staging
 ExecStartPre=${cfg.nodeBinary} /usr/local/lib/rolling-release/scripts/release/runner-preflight.mjs
 `;
 }

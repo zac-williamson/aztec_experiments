@@ -11,8 +11,9 @@ export async function runOperator(command,configFile,candidate){
  const config=await readOperatorConfig(configFile);candidate=await fs.realpath(candidate);
  if(path.dirname(candidate)!==config.releaseDirectory)throw failure('RELEASE_CANDIDATE_PATH');
  const restart=unit=>async()=>{execFileSync('sudo',['-n','/usr/bin/systemctl','restart',unit],{stdio:'pipe',timeout:120000,maxBuffer:65536});};
- const common={candidate,stageLink:config.stagingLink,liveLink:config.liveLink,stageOrigin:config.stagingOrigin,liveOrigin:config.liveOrigin,stateFile:config.stateFile,restartStage:restart(config.stagingService),restartLive:restart(config.liveService),smoke:smokeApplication};
- if(command==='release'){const compatibility=(await verifyBundle(candidate)).manifest.compatibility;return releaseCandidate({...common,journey:()=>runTestnetJourney(config.walletFile,{expectedOrigin:config.stagingOrigin,expectedCompatibility:compatibility,publicFile:config.publicFile})});}
+ const forStage=compatibility=>({...compatibility,runtimeSha256:compatibility.stageRuntimeSha256??compatibility.runtimeSha256});
+ const common={candidate,stageLink:config.stagingLink,liveLink:config.liveLink,stageOrigin:config.stagingOrigin,liveOrigin:config.liveOrigin,stateFile:config.stateFile,restartStage:restart(config.stagingService),restartLive:restart(config.liveService),smoke:(origin,manifest)=>smokeApplication(origin,origin===config.stagingOrigin?{...manifest,compatibility:forStage(manifest.compatibility)}:manifest)};
+ if(command==='release'){const compatibility=forStage((await verifyBundle(candidate)).manifest.compatibility);return releaseCandidate({...common,journey:()=>runTestnetJourney(config.walletFile,{expectedOrigin:config.stagingOrigin,expectedCompatibility:compatibility,publicFile:config.publicFile})});}
  if(command==='rollback')return rollbackRelease({...common,target:candidate});
  throw failure('RELEASE_USAGE');
 }
