@@ -12,8 +12,8 @@ milliseconds. Unknown and stale inputs never become healthy. Only fixed fields,
 service names and numeric counters survive projection. Source messages, logs,
 identities, hostnames and request data are discarded.
 
-Host freshness is180seconds; the external five-minute probe has a separate
-660second freshness limit. Missing hosts alert once per host rather than once
+Host freshness is180seconds; external observations have a separate
+660second freshness limit. The installed collector runs every2minutes. Missing hosts alert once per host rather than once
 per missing dependency. Optional unconfigured health/metrics remain unknown
 without notifying. Configured health sources include `configured:true`, so an
 unavailable configured source can alert. The initial CPU sample is quiet. Set
@@ -60,23 +60,73 @@ not themselves trigger new incidents. Monitoring never stops healthy services.
 
 ## External monitoring
 
-`node ops/external-stack.mjs` emits CloudFormation JSON: Lambda HTTPS homepage
-and real-proof/query plus `/api/home?limit=1` checks outside the app hosts, SNS topic, five-minute
-schedule, and four CloudWatch alarms. Two failed/missing periods alarm; recovery
-notifies too. A missing heartbeat is breaching. Root supplies canonical `Origin`
-and authorized UTC `EndDate`, records costs, deploys, and connects the topic to
-`#rolling-chat-updates` using AWS Chatbot/Amazon Q after workspace authorization.
-Explicitly test delivery. Lambda concurrency is one, timeout15s, retries zero.
-Its role can publish only the fixed CloudWatch namespace; it cannot change hosts.
-No Lambda runtime logs or response bodies are collected.
+`node ops/external-stack.mjs` emits CloudFormation JSON: a Lambda outside the
+application hosts, a fixed parameterless SSM document, a private encrypted S3
+bucket, an SNS topic, two scoped IAM roles, a2minute schedule and six CloudWatch
+alarms. HTTPS homepage, real-proof/query and `/api/home?limit=1` checks exercise
+read-only functional endpoints. SSM invokes only the root-owned host observer on
+the two configured instances. Two failed/missing periods alarm; recovery notifies
+too. Capacity, waiting work, current ingestion and configured work-health thresholds
+feed each host's readiness alarm. Unsupported optional measures remain unknown.
 
-Reserve USD5 for31days of this small probe as a conservative estimate (four
-custom metrics, four standard alarms, about8,928 short calls and notifications).
-Root must verify current region prices and reconcile against the total USD50
-incremental budget. This is not a hard AWS cap. EndDate stops invocations; alarm
-charges can continue. Delete the monitoring stack at the end of its authorized
-period unless renewed; do not stop the application. Existing hosting has a
-separate ongoing allowance. See AWS CloudWatch/Lambda pricing and alarm docs.
+Root supplies canonical `Origin`, the exact core/Bok instance IDs and authorized
+UTC `EndDate`. Connect SNS to `#rolling-chat-updates` using Amazon Q/AWS Chatbot
+after workspace authorization, and verify delivery. Concurrency is one, timeout75s,
+retries zero. Lambda can publish only the fixed CloudWatch namespace, invoke this
+one SSM document on two hosts, read its invocation results, and write the single
+`snapshots/latest.json` object. The GetCommandInvocation API requires Resource`*`;
+code only uses the CommandId returned by its own SendCommand. It cannot modify
+host code, services, shared IAM roles or application configuration. No Lambda
+runtime logs or response bodies are collected. SSM stdout contains aggregates only.
+
+S3 blocks all public access, requires TLS/AES256 writes, disables ACLs, and expires
+unrefreshed snapshots after2days. No historical user activity is stored there.
+The `SnapshotReadPolicy` stack output grants only GetObject on the exact aggregate
+key. Root applies that small policy to the existing host role; the monitoring
+stack never changes the host role. A root timer imports and re-projects the file
+every30seconds, atomically retaining observation timestamps. Failed pulls leave
+the prior timestamp intact so the dashboard becomes stale. Local projections in
+`/var/lib/rolling-ops/spending.json` and `backup-status.json` are independently read
+and merged using closed fields; external pulls cannot erase them. The dashboard
+process has no access to EC2 instance metadata.
+
+Reserve USD10 for31days within the shared USD50 incremental budget. At the maximum
+75second runtime on every invocation:22,320 calls ×75s ×0.125GiB ×USD0.0000166667
+isUSD3.49; six metrics plus six standard alarms are approximatelyUSD2.40/month.
+AllowUSD0.50 for S3/API/SNS/schedule/transfer and the balance for tax/billing delay.
+Typical short observations cost less. Estimates ignore free tiers and use
+[AWS Lambda pricing](https://aws.amazon.com/lambda/pricing/) and
+[CloudWatch pricing](https://aws.amazon.com/cloudwatch/pricing/), checked28October2026.
+SSM Run Command on existing EC2 instances has no extra charge; hybrid-node pricing
+does not apply ([Systems Manager](https://aws.amazon.com/systems-manager/pricing/)).
+This is a forecast, not a hard cap. EndDate stops invocations; alarm charges can
+continue. Delete this dedicated stack at the end of its authorized period unless
+renewed; empty the single snapshot key first if necessary. Never stop the app.
+
+## Host installation
+
+`deploy/launch-ops/install-host.py` defaults to packet validation only. Apply only
+after independent review. The packet contains a40hex revision, role, allowlisted
+source files with base64 bytes and SHA256, root observer config, and for core the
+public Cognito configuration, pinned Node hash and approved Caddy hash. Include
+`apps/rolling/analytics-schema.mjs`, imported by the aggregate store, and
+`ops/community.mjs` alongside the core ops modules/public assets. Core data paths
+are fixed beneath `/var/lib/rolling-ops`.
+
+The installer stages root-owned source beneath `/opt/rolling-ops/releases/<revision>`
+and changes `/opt/rolling-ops/current`. Core receives a dedicated copy of the
+installed pinned Node runtime. Only `rolling-ops.service` is started/restarted,
+as an unprivileged user on loopback4320 with256MiB memory and25%CPU limits. Data
+is mode0700, server config is root-owned0640, observer config0600. The optional
+snapshot timer runs separately as root using existing boto3 and the exact read
+policy above. Its config contains bucket/region only.
+
+Caddy's sibling `/_ops` route is staged, validated and installed only if the original
+fingerprint still matches. SIGUSR1 reloads the existing Caddy2.11.7 process; the
+proxy is never restarted. If route readiness fails, the original bytes are restored
+only when the config still matches this installer's bytes. Before/after PIDs of all
+existing application services must match. Bok receives only the observer source
+and configuration. No app, prover, Bok worker, node or moderator is restarted.
 
 ## Encrypted operational backups
 

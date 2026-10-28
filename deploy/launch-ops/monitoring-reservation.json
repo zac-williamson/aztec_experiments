@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "status": "reviewed-reserved",
+  "recordedAt": "2026-10-28T11:09:15Z",
+  "incrementalTaskLimitUsd": 50,
+  "monitoringReservationUsd": 10,
+  "authorizedInitialDays": 31,
+  "plannedStack": "rolling-chat-launch-monitor",
+  "region": "us-east-1",
+  "resources": {
+    "lambda": 1,
+    "ssmDocument": 1,
+    "s3Bucket": 1,
+    "snsTopic": 1,
+    "iamRoles": 2,
+    "scheduler": 1,
+    "cloudwatchAlarms": 6,
+    "cloudwatchCustomMetrics": 6
+  },
+  "boundedWorstCaseForecastUsd": {
+    "lambda": 3.5,
+    "metricsAndAlarms": 2.4,
+    "requestsStorageTransferNotificationAllowance": 0.5,
+    "taxBillingAndTimingBuffer": 3.6
+  },
+  "limits": {
+    "scheduleMinutes": 2,
+    "lambdaTimeoutSeconds": 75,
+    "lambdaMemoryMiB": 128,
+    "concurrency": 1,
+    "retries": 0,
+    "snapshotKeys": 1
+  },
+  "cleanup": "Schedule EndDate stops invocations after31days. Reconcile/renew or delete dedicated stack; alarm charges continue until deletion. Do not stop existing application hosts.",
+  "actualBilledSpendUsd": null,
+  "createdResources": [],
+  "endDate": "2026-11-28T11:12:00Z"
+}

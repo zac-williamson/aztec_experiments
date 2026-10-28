@@ -55,7 +55,14 @@ test('external monitoring has bounded schedule and no restart/deploy capabilitie
  const value=externalMonitorTemplate('def handler(event, context): pass'),r=value.Resources;
  assert.deepEqual(r.Schedule.Properties.EndDate,{Ref:'EndDate'});assert.equal(r.Probe.Properties.ReservedConcurrentExecutions,1);
  for(const name of ['WebsiteAlarm','ProverAlarm','FeedAlarm','HeartbeatAlarm']){assert.equal(r[name].Properties.TreatMissingData,'breaching');assert.equal(r[name].Properties.DatapointsToAlarm,2);}
- const policies=JSON.stringify(r.ProbeRole.Properties.Policies);assert(!policies.includes('ec2:'));assert(!policies.includes('ssm:'));assert(policies.includes('cloudwatch:namespace'));
+ const statements=r.ProbeRole.Properties.Policies[0].PolicyDocument.Statement;
+ const send=statements.find(s=>s.Action==='ssm:SendCommand');assert.equal(send.Resource.length,3);assert(JSON.stringify(send.Resource).includes('${HostDocument}'));
+ assert.deepEqual(statements.map(s=>s.Action),['cloudwatch:PutMetricData','ssm:SendCommand','ssm:GetCommandInvocation','s3:PutObject']);
+ assert.equal(r.HostDocument.Properties.Content.parameters,undefined);assert.equal(r.HostDocument.Properties.Content.mainSteps[0].inputs.runCommand[1],'exec /usr/bin/python3 /opt/rolling-ops/current/ops/host-observer.py --config /etc/rolling-ops/observer.json --state /var/lib/rolling-ops/cpu.json');
+ assert.deepEqual(r.SnapshotBucket.Properties.PublicAccessBlockConfiguration,{BlockPublicAcls:true,BlockPublicPolicy:true,IgnorePublicAcls:true,RestrictPublicBuckets:true});
+ assert.equal(r.SnapshotBucket.Properties.LifecycleConfiguration.Rules[0].ExpirationInDays,2);
+ assert.equal(r.Schedule.Properties.ScheduleExpression,'rate(2 minutes)');
+ for(const name of ['CoreHostAlarm','BokHostAlarm'])assert.equal(r[name].Properties.TreatMissingData,'breaching');
 });
 test('unsupported optional measurements and initial CPU sample stay unknown without alerts',()=>{
  const input=good();delete input.hosts.core.metrics.cpuPercent;delete input.hosts.core.health.funding;delete input.spending;delete input.backup;

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Read-only aggregate Linux snapshot. No logs, process arguments, identities or keys."""
-import argparse, datetime, json, os, pathlib, subprocess, urllib.request, urllib.parse
+import argparse, datetime, json, os, pathlib, subprocess, tempfile, urllib.request, urllib.parse
 SERVICES = {
  'core': ('rolling-node','rolling-query','board-prover','board-prover-proxy','rolling-application','rolling-application-proxy','rolling-moderator'),
  'bok': ('rolling-bok-testnet','rolling-bok-artifact-proxy'),
@@ -97,7 +97,13 @@ def observe(role, config, state_path=None):
     if delta>0 and 0<=idle<=delta:out['metrics']['cpuPercent']=round(100*(1-idle/delta),2)
    except (OSError,ValueError,KeyError,TypeError):pass
    path.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
-   temporary=path.with_suffix('.tmp');temporary.write_text(json.dumps(current));os.chmod(temporary,0o600);temporary.replace(path)
+   fd,temporary=tempfile.mkstemp(prefix='.cpu-',dir=path.parent)
+   try:
+    os.fchmod(fd,0o600)
+    with os.fdopen(fd,'w') as output:json.dump(current,output)
+    os.replace(temporary,path)
+   finally:
+    if os.path.exists(temporary):os.unlink(temporary)
  except (OSError,ValueError,IndexError):pass
  sources=config.get('health',{})
  for name in ('prover','query','moderator','funding') if role=='core' else ('bok',):
@@ -110,6 +116,8 @@ def observe(role, config, state_path=None):
  return out
 
 if __name__=='__main__':
- parser=argparse.ArgumentParser();parser.add_argument('role',choices=SERVICES);parser.add_argument('--config');parser.add_argument('--state')
+ parser=argparse.ArgumentParser();parser.add_argument('role',nargs='?',choices=SERVICES);parser.add_argument('--config');parser.add_argument('--state')
  args=parser.parse_args();config=json.loads(pathlib.Path(args.config).read_text()) if args.config else {}
- print(json.dumps(observe(args.role,config,args.state),separators=(',',':')))
+ role=args.role or config.get('role')
+ if role not in SERVICES:raise SystemExit('An observer role is required')
+ print(json.dumps(observe(role,config,args.state),separators=(',',':')))
