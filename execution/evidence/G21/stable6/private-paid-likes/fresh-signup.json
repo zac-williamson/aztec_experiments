@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "uiCommit": "83f3cb7c54699914a5f57cf95f15c5fd2e8fbc06",
+  "applicationCommit": "86be52150de16ad6fe628000404e44e3592705bb",
+  "board": "0x2d6210a94af00fadeb5c69c20ed9fce3e20a8feca7d2b190354307ef0d235bee",
+  "browser": "headless Chromium with owned EIP6963 test adapter; not MetaMask extension",
+  "ethereumTransaction": "0xba432896d3749adf7671f5131f6558a044c0aa334958353278193ae2d6d641d1",
+  "ethereumSends": 1,
+  "claimReceipt": {
+    "txHash": "0x1837582f03732b236e688cc86da3f516319e7a4951ce39228b6bdc5ed3096a04",
+    "status": "proposed",
+    "blockNumber": 9448,
+    "transactionFee": "2079216582674600000",
+    "stage": "first-post"
+  },
+  "postingCreditAfterSignup": "246.2015345213254 posting credits",
+  "signupReady": true,
+  "postAcceptance": false,
+  "failureBoundary": "first post failed before any post proof job or signed transaction; original error not captured",
+  "stages": [
+    {
+      "stage": "signup-navigation",
+      "at": "2026-10-28T14:07:49.126Z"
+    },
+    {
+      "stage": "signup-open",
+      "at": "2026-10-28T14:07:51.181Z"
+    },
+    {
+      "stage": "signup-wallet-ready",
+      "at": "2026-10-28T14:08:11.808Z"
+    },
+    {
+      "stage": "signup-connect",
+      "at": "2026-10-28T14:08:11.822Z"
+    },
+    {
+      "stage": "signup-price",
+      "at": "2026-10-28T14:08:11.935Z"
+    },
+    {
+      "stage": "signup-payment",
+      "at": "2026-10-28T14:08:23.742Z"
+    },
+    {
+      "stage": "signup-ready",
+      "at": "2026-10-28T14:09:44.064Z"
+    },
+    {
+      "stage": "first-post",
+      "at": "2026-10-28T14:09:44.165Z"
+    }
+  ],
+  "quote": {
+    "asset": "ETH",
+    "total": "Total payable \u00b7 maximum\u2248 $71.49 USDUp to 0.03062908 ETHIncludes your deposit, posting credit and payment fees.",
+    "exactMaximum": "0.030629074175934946 ETH",
+    "allocations": [
+      {
+        "label": "Refundable deposit",
+        "amount": "0.001 ETH",
+        "explanation": "Held to discourage spam. Withdraw when your deposit is available."
+      },
+      {
+        "label": "Posting credit",
+        "amount": "0.02962908 ETH",
+        "explanation": "Pays network fees for posts, replies, tips and account updates."
+      },
+      {
+        "label": "Ethereum fee limit",
+        "amount": "0.00000001 ETH",
+        "explanation": "You pay the actual network fee, up to this limit."
+      }
+    ],
+    "details": [
+      "Deposit held: 0.001 ETH.",
+      "Posting credit: 248.280751104 FEE. Setup can use up to 124.140375552 of these credits.",
+      "Exchange price tolerance: 1%. Unused exchange funds are returned to the paying wallet."
+    ]
+  }
+}

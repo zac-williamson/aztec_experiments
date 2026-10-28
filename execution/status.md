@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: tips86be and static signup fix83f3 are live; publisher afd5 binds actual running/configured wallet files and all service PIDs stayed unchanged. Fresh signup passed: one Ethereum payment and native Aztec claim block9448, usable246.2015345213254FEE. First post failed before signing/prover submission; current unsigned intent is being diagnosed. Standalone ordinary-post witness old-class pin fixed with22 focused checks and independent review, but optional prefetch errors are swallowed so actual failure cause remains unconfirmed. Performance paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 28 October: fresh signup passed on live83f3 with one Ethereum payment and native claim block9448. First post stopped unsigned before proving. Source tracing found engine name-only [pay_fee,post] heuristic entering old class-qualified native sync; removed, two focused request/capsule tests passed and independently reviewed. Separate saved-review error BB_POST_FEE_PROFILE_MISMATCH captured and fixed with actual-artifact witness binding;22 checks passed. SDK/wallet rebuilt; combined static publication and paid-like acceptance next. Performance paused.
 
 ## Ready internal work
 
