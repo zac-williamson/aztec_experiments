@@ -1,0 +1,47 @@
+name: Legacy fee-juice prototype checks
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/src/fee-juice/**'
+      - 'apps/src/billboard/private_fee_artifact.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/test-private-fee-funding-engine.mjs'
+      - 'shared/private-fee*.mjs'
+      - 'shared/private-credit*.mjs'
+      - '.github/workflows/legacy-fee-juice.yml'
+  push:
+    paths:
+      - 'apps/src/fee-juice/**'
+      - 'apps/src/billboard/private_fee_artifact.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/test-private-fee-funding-engine.mjs'
+      - 'shared/private-fee*.mjs'
+      - 'shared/private-credit*.mjs'
+      - '.github/workflows/legacy-fee-juice.yml'
+
+permissions:
+  contents: read
+
+# Retired standalone demo, outside deployed Rolling routes. Failures remain
+# visible here; this workflow is not a deployment prerequisite or release trigger.
+jobs:
+  legacy-prototype:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24.21.0'
+      - name: Install locked dependencies
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run bootstrap:dependencies
+      - name: Standalone fee-juice prototype diagnostics
+        run: NODE_BACKEND=js node --test scripts/test-private-fee-funding-engine.mjs

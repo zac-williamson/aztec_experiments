@@ -36,6 +36,27 @@ installation, independently of the candidate. Contract changes use the separate
 qualified deployment process, then establish a new baseline; application rollback
 does not undo contracts, node state or external worker changes.
 
+## Current application checks and the legacy prototype
+
+The required `Pinned build and baseline checks` workflow includes the current
+private-credit reader/payment tests, account-status balance tests, deployment
+registration binding tests and the full Rolling application tests. The separate
+credential-free focused gate also checks deployment registration; SDK-dependent
+credit/account tests run after the normal full build has produced its artifacts.
+Full build, generated-byte reproducibility, artifact checks, contract tests and
+the actual staged testnet journey remain release prerequisites.
+
+`Legacy fee-juice prototype checks` keeps
+`scripts/test-private-fee-funding-engine.mjs` visible on manual runs and changes to
+the standalone prototype, its check, or the shared fee implementation. That test
+exercises `apps/src/fee-juice/engine.js`, which is outside the deployed Rolling
+routes. The prototype's `balance_of` call is incompatible with the current
+PrivateFPC artifact; its two balance checks fail and the separate job reports
+those failures normally, without
+`continue-on-error`. It does not trigger or authorize a Rolling release. The
+legacy test and prototype code remain intact; this split makes no claim that
+those prototype failures are repaired.
+
 ## One-time host setup
 
 Do this after the active contract release finishes. The integrating operator owns
