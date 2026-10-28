@@ -38,7 +38,7 @@ export function createOpsServer({config,analytics,auth=createOperatorAuth(config
    if(url.pathname==='/_ops/api/me')return json(res,200,{email:user.email,admin:user.admin,revision:config.revision||null});
    if(url.pathname==='/_ops/api/growth'){
     const end=new Date(now()).toISOString().slice(0,10),start=new Date(now()-(url.searchParams.get('days')==='30'?29:6)*86400000).toISOString().slice(0,10);
-    const stored=await readSnapshot(config.communityFile);const community=communitySummary(stored?.[url.searchParams.get('days')==='30'?'30':'7']);
+    const stored=await readSnapshot(config.communityFile);const community=communitySummary(stored?.[url.searchParams.get('days')==='30'?'30':'7'],now());
     return json(res,200,{...analytics.summary({from:start,to:end}),community});
    }
    if(url.pathname==='/_ops/api/reliability')return json(res,200,reliability?await reliability():buildReliability({...await readSnapshot(config.reliabilityInputsFile),now:now()}));
@@ -80,9 +80,10 @@ export function releaseSummary(state){
  return {status:releaseStates.has(state?.status)?state.status:'not_configured',current:revision(state?.current),previous:revision(state?.previous),candidate:revision(state?.candidate),stages:rows.filter(s=>stageNames.has(s?.name)&&releaseStates.has(s?.status)).map(s=>({name:s.name,status:s.status})),updatedAt:typeof state?.updatedAt==='string'&&Number.isFinite(Date.parse(state.updatedAt))?new Date(state.updatedAt).toISOString():null,workflow:'https://github.com/zac-williamson/aztec_experiments/actions/workflows/rolling-release.yml',message:state?'':'No release has run through this pipeline yet.'};
 }
 
-export function communitySummary(value){
+export function communitySummary(value,now=Date.now()){
  const fields=['humanPosts','bokPosts','humanReplies','bokReplies','newThreads','threadsWithReply','matureThreads','repliedWithin24h'];
- if(value?.status!=='ok')return {status:'unknown'};
+ const observed=typeof value?.observedAt==='string'?Date.parse(value.observedAt):NaN;
+ if(value?.status!=='ok'||!Number.isFinite(observed)||now-observed>15*60000||observed-now>30000)return {status:'unknown'};
  const out={status:'ok'};for(const key of fields)out[key]=Number.isSafeInteger(value[key])&&value[key]>=0?value[key]:null;
  out.replyWithin24hRate=typeof value.replyWithin24hRate==='number'&&value.replyWithin24hRate>=0&&value.replyWithin24hRate<=1?value.replyWithin24hRate:null;
  out.asOfUtcDay=typeof value.asOfUtcDay==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value.asOfUtcDay)?value.asOfUtcDay:null;

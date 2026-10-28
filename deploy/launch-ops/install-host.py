@@ -12,7 +12,7 @@ BASE=pathlib.Path('/opt/rolling-ops');CONFIG=pathlib.Path('/etc/rolling-ops');DA
 CADDY=pathlib.Path('/etc/rolling-app/Caddyfile')
 CORE=('rolling-node','rolling-query','board-prover','board-prover-proxy','rolling-application','rolling-application-proxy','rolling-moderator')
 BOK=('rolling-bok-testnet','rolling-bok-artifact-proxy')
-ALLOWED={'apps/rolling/analytics-schema.mjs'}|{'ops/'+name for name in ('server.mjs','auth.mjs','analytics.mjs','monitor.mjs','community.mjs','backup.mjs','host-observer.py','external-probe.py','pull-snapshot.py')}|{'ops/public/'+name for name in ('index.html','app.mjs','style.css','font.woff2','OFL.txt')}
+ALLOWED={'apps/rolling/analytics-schema.mjs'}|{'ops/'+name for name in ('server.mjs','auth.mjs','analytics.mjs','monitor.mjs','community.mjs','community-export.mjs','community-snapshot.py','backup.mjs','host-observer.py','external-probe.py','pull-snapshot.py')}|{'ops/public/'+name for name in ('index.html','app.mjs','style.css','font.woff2','OFL.txt')}
 MARKER_START='  # rolling-ops begin\n';MARKER_END='  # rolling-ops end\n'
 BLOCK=MARKER_START+'  @rolling_ops path /_ops /_ops/*\n  handle @rolling_ops {\n   reverse_proxy 127.0.0.1:4320\n  }\n'+MARKER_END
 
@@ -44,7 +44,7 @@ def validate_packet(packet):
   require(set(server)<={'port','revision','auth','database','communityFile','reliabilityInputsFile','releasesFile','accessUrl','campaigns'},'Unsupported server configuration')
   require(server.get('database')==str(DATA/'analytics.sqlite') and server.get('reliabilityInputsFile')==str(DATA/'reliability-inputs.json'),'Invalid data path')
   for key in ('communityFile','releasesFile'):
-   require(key not in server or server[key]==str(DATA/('community.json' if key=='communityFile' else 'releases.json')),'Invalid projection path')
+   require(key not in server or server[key]==(str(DATA/'community.json') if key=='communityFile' else '/var/lib/rolling-release-state/state.json'),'Invalid projection path')
   auth=server.get('auth',{});require(set(auth)=={'origin','issuer','clientId','loginDomain'},'Only public identity settings allowed')
   require(re.fullmatch(r'https://[a-zA-Z0-9.-]+',auth.get('origin','')) and re.fullmatch(r'https://cognito-idp\.[a-z0-9-]+\.amazonaws\.com/[\w-]+',auth.get('issuer','')) and re.fullmatch(r'https://[a-z0-9-]+\.auth\.[a-z0-9-]+\.amazoncognito\.com',auth.get('loginDomain','')) and re.fullmatch('[a-zA-Z0-9]+',auth.get('clientId','')),'Invalid identity settings')
   if 'snapshotConfig' in packet:
@@ -55,8 +55,8 @@ def validate_packet(packet):
 def caddy_patch(raw,expected):
  text=raw.decode('utf8')
  if MARKER_START in text or MARKER_END in text:
-  require(text.count(BLOCK)==1,'Unexpected existing operations route')
-  original=text.replace(BLOCK,'',1).encode();require(digest(original)==expected,'Proxy configuration changed')
+  require(text.count(BLOCK)==1 and text.count(MARKER_START)==1 and text.count(MARKER_END)==1,'Unexpected existing operations route')
+  # An update leaves the entire proxy untouched, including later application routes.
   return raw
  require(digest(raw)==expected,'Proxy configuration changed')
  anchor='\n route {\n';require(text.count(anchor)==1 and ':4319 {' in text,'Unexpected proxy structure')
@@ -148,6 +148,33 @@ LockPersonality=yes
 WantedBy=multi-user.target
 '''
   atomic(pathlib.Path('/etc/systemd/system/rolling-ops.service'),unit.encode())
+  if 'ops/community-snapshot.py' in files:
+   atomic(pathlib.Path('/etc/systemd/system/rolling-ops-community.service'),b'''[Unit]
+Description=Aggregate public conversation activity
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/rolling-ops/current/ops/community-snapshot.py
+User=root
+UMask=0077
+TimeoutStartSec=60
+MemoryMax=256M
+CPUQuota=10%
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX
+ReadWritePaths=/var/lib/rolling-ops
+''')
+   atomic(pathlib.Path('/etc/systemd/system/rolling-ops-community.timer'),b'''[Unit]
+Description=Refresh aggregate public conversation activity
+[Timer]
+OnBootSec=30
+OnUnitActiveSec=5min
+AccuracySec=10
+[Install]
+WantedBy=timers.target
+''')
   if packet.get('snapshotConfig'):
    atomic(CONFIG/'snapshot.json',json.dumps(packet['snapshotConfig']).encode(),0o600)
    atomic(pathlib.Path('/etc/systemd/system/rolling-ops-snapshot.service'),b'''[Unit]
@@ -191,6 +218,7 @@ WantedBy=timers.target
      raise ValueError('Proxy route failed readiness; prior configuration restored when unchanged')
     time.sleep(.25)
   if packet.get('snapshotConfig'):command(['systemctl','enable','--now','rolling-ops-snapshot.timer'])
+  if 'ops/community-snapshot.py' in files:command(['systemctl','enable','--now','rolling-ops-community.timer'])
  after=pids(CORE if role=='core' else BOK)
  require(before==after,'Existing service PID changed during installation; inspect concurrent activity')
  return {'schemaVersion':1,'role':role,'revision':packet['revision'],'existingServicePidsUnchanged':True,'filesInstalled':len(files),'opsReady':role=='core','proxyHash':digest(patched) if patched else None}
