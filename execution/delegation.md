@@ -382,3 +382,5 @@ PR9 completed: completion_evidence_review approved renderer/expander, publisher 
 
 ### 28 October —20-token paid likes + MetaMask classification
 Root integrates/publishes. thread_application adapts Noir in isolated rolling-tips-contracts-current; posting_credit_ui adapts client/projection in isolated rolling-tips-client-current. Both start635a33b3 and preserve current thread/name-avatar flows. thread_composer_review independently reviews authorization/conservation/prover policy. Root owns UI/policy/deployment/docs. Expensive builds/services serialized by root. MetaMask diagnostics use public scanner only; no foreground browser interactions. Performance campaign paused.
+
+28 October operations acceptance: analytics installed daily encrypted backups and verified downloaded off-host restores on both hosts; root integrated evidence. Monitoring independently approved privacy/auth/freshness and budget scope. CI owner prepares fixed GitHub OIDC trigger plus isolated release job; root owns cloud changes, stage/live adoption and signing coordination with the onboarding chat. No persistent self-hosted GitHub runner will be exposed to public PRs.

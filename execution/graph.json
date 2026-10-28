@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "objective": "Production-ready release package of Vitalik\u2019s anonymous message board for the explicitly approved compatible Aztec production target.",
+  "objective": "Production-ready release package of Vitalik’s anonymous message board for the explicitly approved compatible Aztec production target.",
   "baseline_commit": "1849967d15d96ab96234091f2fa47d8762a6c06a",
   "execution_state": "running",
   "terminal": "R04",
@@ -68,7 +68,7 @@
       "acceptance": [
         {
           "id": "P01-A01",
-          "description": "Every REQ01\u2013REQ12 has testable invariants, named observers or actors, failure behavior and planned test IDs."
+          "description": "Every REQ01–REQ12 has testable invariants, named observers or actors, failure behavior and planned test IDs."
         },
         {
           "id": "P01-A02",
@@ -202,7 +202,7 @@
       "acceptance": [
         {
           "id": "P03-A01",
-          "description": "Every B01\u2013B12 finding is linked to a reproducer or explicit evidence limitation and a downstream acceptance test."
+          "description": "Every B01–B12 finding is linked to a reproducer or explicit evidence limitation and a downstream acceptance test."
         },
         {
           "id": "P03-A02",
@@ -220,7 +220,7 @@
       "evidence": "evidence/P03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Accepted source-bound regression evidence:62Noir,155moderation,14shell/receipt,9portal,105build,29graph. B01\u2013B12 mapped, actual receipt/history failures retained for W03/C04; no production readiness claimed.",
+      "checkpoint": "Accepted source-bound regression evidence:62Noir,155moderation,14shell/receipt,9portal,105build,29graph. B01–B12 mapped, actual receipt/history failures retained for W03/C04; no production readiness claimed.",
       "priority": 3
     },
     {
@@ -268,7 +268,7 @@
         "Assess and implement migration from the reproducible 5.0.0 baseline to the currently supported compatible V5 release (official 5.1 contract requirements and 5.2 interoperability). Re-pin compiler/prover/SDK and transitive source locks, inspect note selectors and canonical protocol contracts, regenerate artifacts and rerun affected build and baseline checks before freezing interfaces.",
         "Design deposit identity, post identity/public ordering, note ancestry, screening hints and cross-chain message domains together.",
         "Specify fee adapter, receipt/journal states, public feed events and moderation job schema before consumers diverge.",
-        "Write compatibility/migration decisions and executable interface fixtures. Cluster edits to the shared Noir contract into the sequential C01\u2013C06 chain."
+        "Write compatibility/migration decisions and executable interface fixtures. Cluster edits to the shared Noir contract into the sequential C01–C06 chain."
       ],
       "acceptance": [
         {
@@ -328,7 +328,7 @@
         "Authenticate claims against the configured nonzero portal using the supported private/historical storage mechanism and enforce completed wiring.",
         "Implement the agreed deposit identity and message domain separation in L1 and L2; preserve single-active-deposit and nullifier guarantees.",
         "Add adversarial tests before integrating changed ABIs.",
-        "Adopt the single V1 note layout and make the minimum coherent constructor, selector, query and carry-forward changes across existing operations; record still-pending C02\u2013C05 semantics without introducing a second legacy path.",
+        "Adopt the single V1 note layout and make the minimum coherent constructor, selector, query and carry-forward changes across existing operations; record still-pending C02–C05 semantics without introducing a second legacy path.",
         "Correct the P04 logical-note storage assumption against the actual eight-field V5 note limit. Preserve all eleven logical values using canonical typed subfield packing; qualify actual creation, constrained delivery, selection and nullification, not packing alone.",
         "Use the specified ceiling cooldown and checked initial eligibility for newly claimed rights; C05 retains full penalty, burst, boundary and finite-exit qualification.",
         "Update only the affected ABI consumers and generated artifacts together, including deploy/claim/receipt/exit arguments. Record the exact configuration ABI and storage choice before implementation; broader wallet recovery and UI remain downstream.",
@@ -626,7 +626,7 @@
         },
         {
           "id": "C06-A04",
-          "description": "Minimums, recipient addresses and initialization are validated; forced ETH is not treated as someone\u2019s deposit; lost-secret limitations are stated."
+          "description": "Minimums, recipient addresses and initialization are validated; forced ETH is not treated as someone’s deposit; lost-secret limitations are stated."
         }
       ],
       "evidence": "evidence/C06.json",
@@ -1307,7 +1307,7 @@
       "evidence": "evidence/M03.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Actual isolated9B model332/332 complete;1FP/159,1FN/160,p958334.334ms,qualityPass/latencyPass true, overallpassfalse missingflagcapacity/endtoend. Independentdbd5review, encryptedS3checkpointa439b9c preserved. Oldmoderatorportal/node mismatch remains; syntheticAIlabels notindependenthumangold and twostageRollingpolicy latency unqualified. Current6b intendedmodel onehumanpost actualviolation\u2192canonicalremoval598/tombstone600; singlecase, overallcapacity/qualification remainsopen.",
+      "checkpoint": "Actual isolated9B model332/332 complete;1FP/159,1FN/160,p958334.334ms,qualityPass/latencyPass true, overallpassfalse missingflagcapacity/endtoend. Independentdbd5review, encryptedS3checkpointa439b9c preserved. Oldmoderatorportal/node mismatch remains; syntheticAIlabels notindependenthumangold and twostageRollingpolicy latency unqualified. Current6b intendedmodel onehumanpost actualviolation→canonicalremoval598/tombstone600; singlecase, overallcapacity/qualification remainsopen.",
       "priority": 17,
       "execution_lane": "deployed-model-evaluation",
       "next_action": "Continue offline/model qualification independently; live ingestion requires verified matching old history or a separately scoped current-network deployment, funding and real-proof prerequisites. See evidence/M03/stale-ingestion-network-mismatch-20261015.json; no old financial replay.",
@@ -2134,7 +2134,7 @@
       "actions": [
         "Check fresh official Aztec security/release guidance and read-only chain/node configuration; distinguish package versions from onchain rollup versions.",
         "Resolve the baseline V5 notice with explicit applicable current guidance; online RPC availability alone is not clearance.",
-        "If V5 is unsuitable, prepare a supported-target migration assessment and obtain the user\u2019s choice before retargeting."
+        "If V5 is unsuitable, prepare a supported-target migration assessment and obtain the user’s choice before retargeting."
       ],
       "acceptance": [
         {
@@ -2260,7 +2260,7 @@
       "acceptance": [
         {
           "id": "R04-A01",
-          "description": "All graph ancestors are done with valid evidence and all REQ01\u2013REQ12 have final acceptance coverage."
+          "description": "All graph ancestors are done with valid evidence and all REQ01–REQ12 have final acceptance coverage."
         },
         {
           "id": "R04-A02",
@@ -2735,7 +2735,7 @@
             "rc3-native-crs-1c7-runtime-review.json",
             "rc3-compiler-diagnostics-730-independent-review.json"
           ],
-          "acceptance": "NormalNargo\u2192nativeaztec_process transpile/allprivateVKs\u2192Forgeportal andartifactsourceclosure; preserve7rawsnapshots andpriorownedoutputs. Explicitpinnedversions/environment, 540s4GiBperbuilder, stopfirstfailure;260diagnosticsremainhold.",
+          "acceptance": "NormalNargo→nativeaztec_process transpile/allprivateVKs→Forgeportal andartifactsourceclosure; preserve7rawsnapshots andpriorownedoutputs. Explicitpinnedversions/environment, 540s4GiBperbuilder, stopfirstfailure;260diagnosticsremainhold.",
           "verification": "Firstbasebuildonly afterversionpreflight; exactgenerateddiffscope/embeddedsource/dependencychecks+independentreview. SubsequentRolling/avatar/PrivateBok separatelysequenced; no SDK/catalog/remotequalification.",
           "source_revision": "9f9df3ffc085e2451d814c37605313efca9d2fee",
           "writer_released": true
@@ -8066,7 +8066,7 @@
           "next_action": "Inspect pinned simulator/time/third actor path independently; retain exact failure and repair diagnosed cause, no bypass."
         },
         {
-          "hypothesis": "Unproven uncertain checkpoints17\u201320 pruned after24hwarp beyond lastsettled14; official local retention preserves exactreservation before time advance. Bothindependentagents confirm installedsource and existingfixtureprecedent; previous exactrevert unavailable.",
+          "hypothesis": "Unproven uncertain checkpoints17–20 pruned after24hwarp beyond lastsettled14; official local retention preserves exactreservation before time advance. Bothindependentagents confirm installedsource and existingfixtureprecedent; previous exactrevert unavailable.",
           "attempts": 1,
           "max_attempts": 2,
           "next_action": "Run independentlyreviewed2a3b181 fixture, assert canonicalreservation/fullrequest unchanged, real expiry/reconcile/refund/withdraw; retain failurecategory."
@@ -8132,7 +8132,7 @@
           "next_action": "Diagnose retained checkpoint-empty vs pendingtx using installed proposal-job timing/selection; no blind retry. Independent review assigned."
         },
         {
-          "hypothesis": "Actual10emptycheckpoints/pending1 and init\u2192empty; installedproposaljob returns empty before txselection if selectNextSubslot false. Exact SDK decision anddeadline observation will establish whether this is timeheadroom ratherthan txrejection. Independently confirmedsourcebranch; no timingchange yet.",
+          "hypothesis": "Actual10emptycheckpoints/pending1 and init→empty; installedproposaljob returns empty before txselection if selectNextSubslot false. Exact SDK decision anddeadline observation will establish whether this is timeheadroom ratherthan txrejection. Independently confirmedsourcebranch; no timingchange yet.",
           "attempts": 1,
           "max_attempts": 1,
           "next_action": "Observe one1307296 timingdiagnostic45sinner120stotal, recordactualoutcome beforetimingdecision. No Bokfunding."
@@ -8494,7 +8494,7 @@
             "shared/trusted-private-node.mjs",
             "shared/trusted-private-node.test.mjs"
           ],
-          "acceptance": "RC23/24 actual trustedclient\u2192HTTPserver\u2192upstream composition with REAL inspector, official SDK schemas; local HTTP fixtures clearly development only. Fixednetwork/proofmode/tips/worldstate/lag rejection; no private forwarding before public readiness pass, ordinary unavailable/null optional responses preserved. No live services/heavy or credentials. Composition exposed repeated parsing of SDK-decoded typedaddresses: preserve SDK validation, explicitly validate undefined because pinnedSDK returns null asundefined without schema; no fabricated absence or suppression. Align response bounds end-to-end32MiB, bounded tests over16MiB/over32MiB+aggregatebatch.",
+          "acceptance": "RC23/24 actual trustedclient→HTTPserver→upstream composition with REAL inspector, official SDK schemas; local HTTP fixtures clearly development only. Fixednetwork/proofmode/tips/worldstate/lag rejection; no private forwarding before public readiness pass, ordinary unavailable/null optional responses preserved. No live services/heavy or credentials. Composition exposed repeated parsing of SDK-decoded typedaddresses: preserve SDK validation, explicitly validate undefined because pinnedSDK returns null asundefined without schema; no fabricated absence or suppression. Align response bounds end-to-end32MiB, bounded tests over16MiB/over32MiB+aggregatebatch.",
           "dependencies": [
             "approvedclientbb7+server1abc atae594",
             "reviewer requested composition coverage"
@@ -9174,7 +9174,7 @@
       "evidence": "evidence/G16.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "Published c9c850df app, native prover, moderator and Bok preserving contracts/state. Focused tests and independent reviews pass. Hosted fresh real MetaMask ETH payment\u2192three bridges\u2192real-proof private claim\u2192first public Home post passed, two real proofs completed, zero failures. All six original posts preserved. Moderator healthy after canonical replay. Final evidence evidence/G16.json. No unrelated campaign resumed.",
+      "checkpoint": "Published c9c850df app, native prover, moderator and Bok preserving contracts/state. Focused tests and independent reviews pass. Hosted fresh real MetaMask ETH payment→three bridges→real-proof private claim→first public Home post passed, two real proofs completed, zero failures. All six original posts preserved. Moderator healthy after canonical replay. Final evidence evidence/G16.json. No unrelated campaign resumed.",
       "execution_lane": "UX",
       "owner": "ux-20261020",
       "branch": "codex/rolling-chat-draft3",
@@ -9846,21 +9846,21 @@
     "request": "28 October owner: implement first-party anonymous analytics, private Growth/Reliability/Releases dashboard, operational monitoring and alerts, gated testnet CI/deployment, and minimal operating safeguards. No persistent user profiles. Incremental budget USD50 total.",
     "status": "active",
     "execution_lane": "root integration/dashboard/deployment; isolated analytics, monitoring and CI owners",
-    "checkpoint": "Isolated from active onboarding/tipping release at635a33b3. AWS SSO and GitHub access verified; no resources created. No secrets copied.",
-    "next_action": "Agree event/privacy and service contracts; integrate focused implementations, independent review, deploy separate ops service and test release gates without interfering with active app release."
+    "checkpoint": "28 October: invite-only dashboard published with Cognito password/TOTP; both host observers, independent scheduled HTTPS/SSM checks, daily aggregate community export and both encrypted off-host backup/restore drills verified. Privacy/auth/monitor review approved. Slack AWS connection configured; private-channel app invitation/delivery pending. $25 first31-day planning forecast against $50 incremental allowance, billed charges unknown. Application analytics/help/capacity source integrated locally, not yet published; CI staging bootstrap awaits other chat86be real-UI acceptance and signer clearance. Existing full GitHub build fails committed generated-consumer drift; failure retained, investigation active.",
+    "next_action": "Finish narrowly scoped testnet release gate and review; reconcile generated-source build failure; coordinate86be baseline/signers, provision dedicated staging fixture, execute real journey and promotion/rollback checks. Verify Slack native alarm/recovery delivery after app joins private channel. Then publish integrated application analytics and hand over actual statuses."
   },
   "completed_operating_requests": [
     {
       "request": "Ordinary post click-to-visible after Aztec inclusion at most15seconds; complete fee preparation strictly less than1second; private witness construction at most1.25seconds. Inspect prover CPU/server timing and affordable spot capacity within existing1500USD/month hosting budget. Browser-to-prover request submission and acceptance strictly less than1second (owner added24October). Entire pre-proof application preparation (account sync, rules, arguments, paymentmetadata) strictly less than1second. Owner now requires owner-only state discovery with durable records recoverable in another browser and AES encryption entirely unconstrained; no local-only choice or old-state migration. Owner explicitly forbids additional private notes for discovery; preserve the existing application note count.",
       "status": "complete",
       "execution_lane": "Parallel: preparation/readiness/predecessor/rules; native private execution/logs/witness/kernel/publicvalidation; upload/proverstartup/resultdelivery. Root integrates, publishes, verifies and investigates Aztec inclusion/feed latency.",
-      "checkpoint": "25 October: published74c2142c; two current-release real-proof posts228/600characters visible after actualinclusion in11.095/11.894s. Full private\u2192kernel wall1243/1218ms, prep836/814ms, fee ready fromclick769/755ms, encode+upload848/810ms. All measured targets pass, independent review approved. Both automatically checkpointed. Earlier27\u201328s results retained; acceptance is observed cases, not a network-wide guarantee. All services active, sourcepushed, owned transfer/draft cleanup complete.",
+      "checkpoint": "25 October: published74c2142c; two current-release real-proof posts228/600characters visible after actualinclusion in11.095/11.894s. Full private→kernel wall1243/1218ms, prep836/814ms, fee ready fromclick769/755ms, encode+upload848/810ms. All measured targets pass, independent review approved. Both automatically checkpointed. Earlier27–28s results retained; acceptance is observed cases, not a network-wide guarantee. All services active, sourcepushed, owned transfer/draft cleanup complete.",
       "next_action": "Current measured performance request complete. Preserve evidence and known external-network variance; do not resume historical campaigns without owner scope."
     },
     {
       "request": "Owner25October: apply all proven posting optimizations across ALL other application transaction flows; new goal at least50% end-to-end reduction for every flow against currentpublished74c baseline. Cover Ethereum/Aztec user and operator paths, preservevalidation and genuine usable completion.",
       "status": "paused",
-      "checkpoint": "Browser restored; e291 real warm funded opening2.255125s/1.914850s, name20.912730s, bio18.548505s, Like visible14.691035s, ETH\u2192usableBok55.345905s. Name/bio/Bok exceed50% observed reduction with recorded fixture/dwell caveats; Like misses. Freshsignup2s notverified: testETHbelow0.001minimumdeposit; fixture refill underway. No appsourcechanges."
+      "checkpoint": "Browser restored; e291 real warm funded opening2.255125s/1.914850s, name20.912730s, bio18.548505s, Like visible14.691035s, ETH→usableBok55.345905s. Name/bio/Bok exceed50% observed reduction with recorded fixture/dwell caveats; Like misses. Freshsignup2s notverified: testETHbelow0.001minimumdeposit; fixture refill underway. No appsourcechanges."
     }
   ]
 }
