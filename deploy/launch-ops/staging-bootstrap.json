@@ -35,5 +35,96 @@
   "commandId": "6fe2b9e8-d9e5-4a08-bc44-d02eb264ab70",
   "instance": "i-0a9b5b9ba55815cda",
   "sourceRevision": "021fd7a6b574367be57c7c97b38d76f1d8daa473",
-  "activationEnabled": false
+  "activationEnabled": false,
+  "preparedBaselineProof": {
+    "sourceRevision": "021fd7a6b574367be57c7c97b38d76f1d8daa473",
+    "gateSourceCommit": "fb93abba085b42c882c407a83469157ebb1fd57e",
+    "baselineArchiveSha256": "d5a52909ffab6403b7da752227c0ed69bcbc9b26f5b264d1326bf3d362c84c4a",
+    "proofSha256": "168b1688f4ea86bc312142d7c050602d6a87a5c286a5733ed239892716dc2455",
+    "bootstrapManifestSha256": "7576824927c543aa20ce3065f4eca84ab9e22db8e9958ec0c97837154fd477b5",
+    "files": 1666,
+    "verifiedInputReferences": 2397,
+    "nestedSolidityInputFiles": 92,
+    "proofDeploymentVerified": false,
+    "scope": "Source/generated-input consistency and stopped-stage preparation; not a passed staging journey or live promotion.",
+    "transferCommandId": "5904635f-e348-4ec1-9802-6d4c246bf78e",
+    "temporaryObjectAccessRemoved": true
+  },
+  "candidatePreparation": {
+    "verifiedAt": "2026-10-28T16:13:44.042818+00:00",
+    "commandId": "03a1ec92-227c-47f7-a991-d128817455d0",
+    "status": "Success",
+    "revision": "570f783fedb897cea77932609e1b17a6a907a7ac",
+    "directory": "/opt/rolling-releases/570f783fedb897cea77932609e1b17a6a907a7ac",
+    "prepared": true,
+    "activated": false,
+    "releaseJobIsolationUsed": true,
+    "freeBytesAfterPreparation": 4298309632
+  },
+  "credentialInstallation": {
+    "verifiedAt": "2026-10-28T16:13:44.042818+00:00",
+    "commandId": "7ff1942b-c4f5-4daf-8492-50dfd6c4e681",
+    "status": "Success",
+    "transport": "Two temporary SSM SecureStrings with an exact-parameter read grant; no secret values in source, evidence or output.",
+    "files": [
+      {
+        "path": "/etc/rolling-stage/relay-signer.json",
+        "owner": "root",
+        "mode": "0600"
+      },
+      {
+        "path": "/etc/rolling-release/test-wallet.json",
+        "owner": "rolling-release",
+        "mode": "0600"
+      }
+    ],
+    "temporaryParameterPrefix": "/rolling/operations/install-20261028/",
+    "temporaryParametersRemaining": 0,
+    "temporaryRolePolicy": "RollingReleaseSecretTransfer20261028",
+    "temporaryRolePolicyRemaining": false,
+    "cleanupVerification": "Read-only DescribeParameters name filter and ListRolePolicies exact-name filter both returned empty."
+  },
+  "stageReadinessAttempts": [
+    {
+      "verifiedAt": "2026-10-28T16:13:44.042818+00:00",
+      "commandId": "86943317-bc26-42e4-8cd7-5703e83a106f",
+      "status": "Failed",
+      "responseCode": 1,
+      "stageReadyVerified": false,
+      "note": "This attempt did not establish stage readiness. Candidate preparation and prover-origin health do not substitute for a successful browser journey."
+    },
+    {
+      "verifiedAt": "2026-10-28T16:16:24.780801+00:00",
+      "commandId": "421e7e55-ace7-4a55-8b91-d61b701f1a79",
+      "status": "Success",
+      "revision": "570f783fedb897cea77932609e1b17a6a907a7ac",
+      "stageReadyVerified": true,
+      "stagePid": 642898,
+      "caddySha256": "cdf9017f11d07bf0e43e796a93408a14df560467b97d3701c0dc758bb150f193",
+      "caddyReload": "SIGUSR1",
+      "unchangedPids": {
+        "rolling-application": 604361,
+        "rolling-application-proxy": 427800,
+        "board-prover": 641596,
+        "board-prover-proxy": 739
+      },
+      "livePointer": "/opt/rolling-releases/021fd7a6b574367be57c7c97b38d76f1d8daa473",
+      "releaseEnabled": false
+    }
+  ],
+  "stageCredentialRuntimeFix": {
+    "commandId": "8bd1ea89-8e03-4669-96b5-ec0de0283f04",
+    "status": "Success",
+    "unitSha256": "18f8a80606cdb654c2db3612e88beea9ad7b1dee59f39df31b387738cc82d3f4",
+    "relayConfigSha256": "ebbb0a900fb64e60b6ae474e15b7594ba07866967c87a4fbbe5a99584dd343b5",
+    "runtimeCredentialPath": "/run/rolling-staging/relay-signer.json",
+    "runtimeCredentialMode": "0600",
+    "rootCredentialSourceRetained": true,
+    "removedNeverUsedStageState": [
+      "/var/lib/rolling-stage/relay",
+      "/var/lib/rolling-stage/relay-diagnostic"
+    ],
+    "liveServicesChanged": false
+  },
+  "currentPhase": "stage-smoke-verified-release-disabled"
 }

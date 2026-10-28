@@ -32,6 +32,40 @@
     "livePidsUnchanged": true,
     "freeBytes": 7326793728
   },
-  "stageServiceStarted": false,
-  "releaseEnabled": false
+  "stageServiceStarted": true,
+  "releaseEnabled": false,
+  "releaseJobPreflight": {
+    "verifiedAt": "2026-10-28T16:13:44.042818+00:00",
+    "commandId": "d36fc9c4-a2fa-4a9f-9e44-0660c3dc57ef",
+    "status": "Success",
+    "nodeVersion": "24.21.0",
+    "chromiumVersion": "153.0.8010.12",
+    "sameJobIsolation": true,
+    "imdsReachable": false,
+    "serviceDataReadable": false,
+    "checkedServiceData": [
+      "/etc/rolling-app/public.json",
+      "/etc/rolling-stage/wallet.json",
+      "/etc/rolling-ops/server.json",
+      "/var/lib/cloud"
+    ],
+    "liveApplicationPidUnchanged": true,
+    "stageStateAtCheck": "inactive",
+    "releaseEnabled": false,
+    "temporaryUnitCleaned": true,
+    "releaseJobStarted": false,
+    "permissionPreparation": {
+      "traverseOnlyAclPaths": [
+        "/opt/rolling-app",
+        "/opt/rolling-app/releases"
+      ],
+      "entries": [
+        "user:rolling-release:--x",
+        "user:rolling-staging:--x"
+      ],
+      "publicBrowserRuntimeReadable": true,
+      "scope": "Operator-reported permission preparation, followed by the actual isolated browser/read-denial check. No application-group membership or private service configuration access granted."
+    }
+  },
+  "stageServiceStartedVerifiedAt": "2026-10-28T16:16:24.780801+00:00"
 }

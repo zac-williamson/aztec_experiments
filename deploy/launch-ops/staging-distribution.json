@@ -1,7 +1,52 @@
 {
   "id": "E1Z561LRMM7RLW",
   "domain": "d1jab0kmgvw5tv.cloudfront.net",
-  "status": "InProgress",
+  "status": "Deployed",
   "sourceOrigin": "E3BMCK3MOVYK1K/rolling-application",
-  "originPath": "/_stage"
+  "originPath": "/_stage",
+  "enabled": true,
+  "configurationVerifiedAt": "2026-10-28T16:13:44.042818+00:00",
+  "proverOriginAccess": {
+    "commandId": "fa929d67-8401-4a53-95e8-039d9652adc8",
+    "status": "Success",
+    "verifiedAt": "2026-10-28T16:13:44.042818+00:00",
+    "origins": [
+      "https://d30njln0kead8n.cloudfront.net",
+      "https://d1jab0kmgvw5tv.cloudfront.net"
+    ],
+    "configPath": "/etc/board-prover/config.json",
+    "owner": "root:board-prover",
+    "mode": "0640",
+    "beforeConfigSha256": "6317ecf4fd48610818835fa827cd7e917f9e3a74bc694c9cf8ac5f4c698d9ab4",
+    "afterConfigSha256": "3f5f3dd2d9b1d586c9d2f69188acc84f0c59ae2cd425c94305ccdb50783c0c19",
+    "beforePid": 604038,
+    "afterPid": 641596,
+    "idleBefore": {
+      "jobs": 0,
+      "running": false
+    },
+    "readyAfter": true,
+    "queryReadyAfter": true,
+    "bothOriginsHealthAccepted": true,
+    "operatorQueryChanged": false,
+    "scope": "One coordinated idle prover restart to append the exact stage origin. This is health/readiness evidence, not proof submission or stage-app acceptance."
+  },
+  "publicSmoke": {
+    "verifiedAt": "2026-10-28T16:16:24.780801+00:00",
+    "commandId": "78714e75-69e1-49a1-97ce-33b248405b34",
+    "status": "Success",
+    "revision": "570f783fedb897cea77932609e1b17a6a907a7ac",
+    "assetCount": 118,
+    "exactPublicAssetBytesVerified": true,
+    "proverReady": true,
+    "queryReady": true,
+    "headers": {
+      "cross-origin-opener-policy": "same-origin",
+      "cross-origin-embedder-policy": "require-corp",
+      "referrer-policy": "no-referrer",
+      "contentSecurityPolicyPresent": true
+    },
+    "realJourneyRun": false,
+    "automaticReleaseEnabled": false
+  }
 }

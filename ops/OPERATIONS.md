@@ -3,6 +3,23 @@
 These modules observe services; they never restart them, repeat payments, submit
 proofs or invoke models. Root deploys them beside the authenticated dashboard.
 
+## Dashboard operators
+
+Open the dedicated Cognito user pool `us-east-1_0pjXFzeXS` in **us-east-1** using
+an AWS operator account with user-management permission. Create an invited user
+with their own email address, verify that address belongs to the intended person,
+and add them to the `operators` group. Use `administrators` only for the dashboard
+administrator role; that group does not grant AWS console permissions. Public
+self-signup stays disabled. Each person completes their invitation and
+required authenticator setup, then signs in at the site's `/_ops/` page. The
+application requires a verified email and one of those two groups.
+
+To remove access, disable the Cognito user and remove their group membership.
+Existing dashboard sessions expire within one hour; for immediate revocation,
+restart only `rolling-ops.service` to clear its in-memory sessions. Operator
+identities belong only to dashboard access and are not linked to anonymous board
+analytics. Pool/client details are in `deploy/launch-ops/identity.json`.
+
 ## Interfaces
 
 `buildReliability({hosts:{core,bok},external,spending,backup,now})` returns

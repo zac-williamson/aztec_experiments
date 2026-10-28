@@ -57,6 +57,31 @@ those failures normally, without
 legacy test and prototype code remain intact; this split makes no claim that
 those prototype failures are repaired.
 
+## Installed preparation, 28 October 2026
+
+The stopped-stage baseline and public input proof are recorded in
+`deploy/launch-ops/staging-bootstrap.json`. The fixed release job was installed
+but remains disabled. Its actual service isolation passed the credential/IMDS
+checks and launched Chromium 153.0.8010.12 while private service files stayed
+unreadable; `staging-browser.json` records the command and limited dependency
+traversal permissions. Dedicated stage/CI credential files were installed through
+two temporary SecureStrings; both parameters and their temporary read grant were
+removed and their absence checked.
+
+Candidate `570f783f` was prepared under the same isolated job configuration.
+Its first staging start failed; the corrected stage unit copies the systemd
+credential into a private stage-owned runtime file while retaining the root-only
+source. Only never-used partial stage relay state was cleared. The subsequent
+start and Caddy reload passed with existing live service PIDs unchanged. The
+public smoke check verified all **118 candidate assets**, the stage reader and
+prover/query readiness; the exact live and stage prover origins both pass health
+checks. `staging-distribution.json` records that evidence.
+
+No real testnet journey or live promotion is inferred from preparation and smoke
+checks. The full build was not green at this checkpoint. Exact candidate build,
+browser journey and live-byte checks still need successful evidence before
+enabling automatic release; live service adoption remains pending.
+
 ## One-time host setup
 
 Do this after the active contract release finishes. The integrating operator owns
@@ -109,7 +134,9 @@ host, node and prover to stay within the launch budget.
   funding relay database and test credentials. It may share the current testnet
   contracts, node and prover. Its wallet config must have `proofsEnabled: true`.
   Use a separate CloudFront distribution whose origin path is `/_stage`, with
-  Caddy stripping that prefix and proxying all app paths to `8091`.
+  Caddy stripping that prefix and proxying app paths to `8091`. Route
+  `/_stage/prover/*` first: strip only `/_stage` and forward to the existing prover
+  proxy on `172.31.32.101:8080`, which removes its own `/prover` prefix.
   Live app paths must resolve through the live application release pointer too.
   Serving static files from a separate old UI directory will correctly fail the
   byte check. Keep `/wallet/*`, `/crs/*`, `/api/*` and the actual backend available
