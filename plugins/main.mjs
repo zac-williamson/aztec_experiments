@@ -16,6 +16,7 @@ import {EmbeddedWallet} from '@aztec-labs/wallets/embedded';
 import {Fr} from '@aztec-labs/foundation/curves/bn254';
 import {GrumpkinScalar} from '@aztec-labs/foundation/curves/grumpkin';
 import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
+import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
 import {validateDescriptor} from './protocol.mjs';
 import {aztecBoardPort,rollingBoardPort} from './aztec.mjs';
 import {aztecEscrowPort} from './escrow.mjs';
@@ -317,6 +318,11 @@ export async function runRollingHostedService({config,env=process.env,onError=()
   const account=await wallet.createSchnorrInitializerlessAccount(actor.secret,actor.salt,actor.signingKey,'public Bok operator');
   assert.equal(String(account.address),config.operatorAddress);assert(await getFeeJuiceBalance(account.address,node)>0n);
   const [boardRaw,bokRaw]=loadRollingArtifacts(),boardArtifact=loadContractArtifact(boardRaw),artifact=loadContractArtifact(bokRaw);
+  // Reply publication now privately derives the operator's per-post key in
+  // RollingBoard, so its pinned class must be available to the native PXE.
+  const tipBoard=await node.getContract(AztecAddress.fromStringUnsafe(scope.boardAddress),'latest');
+  assert.equal(String(tipBoard?.currentContractClassId),String((await getContractClassFromArtifact(boardArtifact)).id));
+  await wallet.registerContract(tipBoard,boardArtifact);
   const indexScope={chainId:scope.chainId,rollupVersion:scope.rollupVersion,rollupAddress:scope.rollupAddress,boardAddress:scope.boardAddress,classId:String((await getContractClassFromArtifact(boardArtifact)).id)};
   const storage=createRollingPublicSqliteStore(path.join(config.stateDirectory,'public-index'),{scope:indexScope,serviceOwned:true});
   // Native executed proposals let paid work overlap L1 checkpointing. Each paid

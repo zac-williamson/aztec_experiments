@@ -8,3 +8,4 @@ compiler_version = ">=1.0.0"
 aztec = { path = "../../.build/owner-delivery/aztec-nr/aztec" }
 private_bok = { path = "../../experiments/private-bok/escrow" }
 owner_delivery = { path = "../owner_delivery" }
+private_credit = { path = "../private_credit" }

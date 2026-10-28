@@ -1,245 +1,171 @@
-use aztec::macros::{aztec, AztecConfig};
-use owner_delivery::delivery::sync_owner_state;
+use aztec::macros::aztec;
 mod gas;
 
-/// Private Fee Payment Contract
-///
-/// Ownerless private-balance FPC with public teardown for private refunds.
-/// Users bridge FeeJuice from L1 via FeeJuicePortal to this contract address,
-/// then call `mint` to convert the bridge claim into private FJ balance.
-/// The FJ balance can then be used to sponsor transactions via `pay_fee`.
-#[aztec(AztecConfig::new().custom_sync_state(sync_owner_state))]
+/// Backed private FEE credits. Every live note is directly spendable in setup.
+/// Delivery consists only of public completion metadata; no encrypted payloads.
+#[aztec]
 pub contract PrivateFPC {
-    use owner_delivery::delivery::{deliver_optional_note, deliver_message};
     use aztec::{
-        hash::{
-            compute_l1_to_l2_message_hash, compute_l1_to_l2_message_nullifier, compute_secret_hash,
-        },
-        macros::{functions::{allow_phase_change, external, internal, only_self}, storage::storage},
+        context::PrivateContext,
+        hash::{compute_l1_to_l2_message_hash, compute_l1_to_l2_message_nullifier, compute_secret_hash},
+        keys::getters::{get_public_keys, get_nhk_app},
+        macros::functions::{allow_phase_change, external, internal, only_self},
         nullifier::utils::compute_nullifier_existence_request,
-        protocol::{
-            address::{AztecAddress, EthAddress},
-            constants::FEE_JUICE_ADDRESS,
-            hash::{poseidon2_hash_with_separator, sha256_to_field},
-            traits::ToField,
-        },
-        state_vars::{Owned, StateVariable},
+        protocol::{address::{AztecAddress, EthAddress}, constants::FEE_JUICE_ADDRESS,
+            hash::{poseidon2_hash_with_separator, sha256_to_field}, point::EmbeddedCurvePoint,
+            traits::ToField},
     };
-    use balance_set::BalanceSet;
-    use uint_note::{UintNote, PartialUintNote};
+    use private_credit::{CreditInputs, INPUT_CAPSULE_SLOT, OUTPUT_TAG, TIP_TAG, PAID_LIKE_VALUE,
+        consume, self_secret, self_blinding, spending_key, commitment, note_hash, create_tip};
     use crate::gas::get_max_gas_cost;
-
-    // gas-optimized max notes for initial transfer call
-    global INITIAL_TRANSFER_CALL_MAX_NOTES: u32 = 2;
-    // max notes for recursive transfer call if initial max notes are exceeded
-    global RECURSIVE_TRANSFER_CALL_MAX_NOTES: u32 = 8;
-
-    /// Domain separator for bridge secret derivation.
-    /// Avoids collisions with other poseidon2 usages.
-    /// Value: poseidon2_hash_bytes("az_dom_sep__fpc_bridge_secret") as u32
     global DOM_SEP__FPC_BRIDGE_SECRET: u32 = 3952304070;
 
-    /// @param balances The private note-based balances mapping accounts to their internal FPC balance
-    #[storage]
-    struct Storage<Context> {
-        balances: Owned<BalanceSet<Context>, Context>,
+    struct Credit {}
+    impl Credit {
+    fn root(context: &mut PrivateContext) -> Field {
+        context.request_nhk_app(get_public_keys(context.maybe_msg_sender().unwrap()).npk_m_hash)
+    }
+    fn inputs(context: &mut PrivateContext) -> CreditInputs {
+        // Safety: Capsules are witnesses, never authority: consume constrains every
+        // preimage, membership read and nullifier, and all sums are checked u128.
+        unsafe { aztec::oracle::capsules::load::<CreditInputs>(context.this_address(),
+            INPUT_CAPSULE_SLOT, context.maybe_msg_sender().unwrap()).expect(f"Fee inputs required") }
+    }
+    fn reserve(context: &mut PrivateContext, reservation: u128) {
+        assert(reservation > 0, "Fee reservation must be positive");
+        assert(reservation >= get_max_gas_cost(context), "Fee reservation below transaction maximum");
+    }
+    fn output_commitment(context: &mut PrivateContext, role: u8) -> (Field, u32) {
+        let index = context.get_side_effect_counter();
+        // protocol_nullifier is a native transaction input, unique even across
+        // abandoned simulations. The role/index separate all outputs in a tx.
+        let reference = context.finish().protocol_nullifier;
+        let secret = self_secret(Credit::root(context), context.chain_id(), context.version(),
+            context.this_address(), reference, role, index);
+        (commitment(spending_key(secret), self_blinding(secret)), index)
+    }
+    fn output(context: &mut PrivateContext, value: u128, role: u8, completion: u128) {
+        if value > 0 {
+            let (partial, index) = Credit::output_commitment(context, role);
+            context.push_note_hash(note_hash(partial, value));
+            // Shared constant tag; no owner, source post, input commitment or
+            // encrypted note delivery. Change exposes only the debit, never
+            // its value; the wallet reconstructs value from its spent inputs.
+            context.emit_private_log_unsafe(OUTPUT_TAG,
+                BoundedVec::from_array([1, role as Field, index as Field, partial, completion as Field, 1]));
+        }
+    }
+    fn refund(context: &mut PrivateContext) -> (Field, u32) {
+        let (partial, index) = Credit::output_commitment(context, 2);
+        context.push_nullifier_unsafe(poseidon2_hash_with_separator([partial], 0x52435256));
+        (partial, index)
     }
 
-    /// Reserves the maximum fee; teardown returns the unused credit privately.
+    }
+
     #[external("private")]
     #[allow_phase_change]
     fn pay_fee(reservation: u128) {
-        let sender = self.msg_sender();
-        let max_gas_cost = self.internal._deduct_fee_reservation(sender, reservation);
-        let (refund_note, message) = UintNote::partial_with_message(sender, self.context, self.address);
-        deliver_message(self.context, BoundedVec::from_array(message));
-        self.set_as_teardown(PrivateFPC::at(self.address)._complete_refund(refund_note, max_gas_cost));
-
-        // Set the FPC as the fee payer of the tx.
+        Credit::reserve(self.context, reservation);
+        let selected = Credit::inputs(self.context);
+        let total = consume(self.context, selected);
+        assert(total >= reservation, "Balance too low");
+        Credit::output(self.context, total - reservation, 1, reservation);
+        let (partial, index) = Credit::refund(self.context);
+        self.set_as_teardown(PrivateFPC::at(self.address)._complete_refund(partial, index, reservation, 0));
         self.context.set_as_fee_payer();
-        // End the setup phase.
         self.context.end_setup();
     }
 
-    /// @notice Mints internal FJ balance and pays fee in one transaction (cold-start flow).
-    ///
-    /// Combines the bridge claim proof with fee payment: proves the L1->L2 bridge claim,
-    /// credits (amount - max_gas_cost) to the claimer, and sets the FPC as fee payer.
-    ///
-    /// Prerequisites (must execute in the same tx, before this call):
-    ///   - FeeJuice.claim(this_fpc_address, amount, secret, leaf_index) emits the FeeJuice
-    ///     nullifier that this function asserts via assert_nullifier_exists.
-    ///
-    /// Security: same as mint -- the reconstructed FeeJuice nullifier is bound to
-    /// msg_sender; the FPC-scoped nullifier prevents double-spending.
-    ///
-    /// @param amount     The exact amount bridged (must match the L1 deposit exactly).
-    /// @param salt       The random value chosen by the claimer at deposit time.
-    /// @param leaf_index The L1 message leaf index from the deposit transaction.
+    /// One transaction: 20 FEE debit, author note, paid-like record and actual gas.
+    /// This is the payment payload of an otherwise empty application batch.
+    #[external("private")]
+    #[allow_phase_change]
+    fn pay_like_and_fee(board: AztecAddress, post: Field, key: EmbeddedCurvePoint,
+        ephemeral: Field, reservation: u128) {
+        Credit::reserve(self.context, reservation);
+        assert((board.to_field() != 0) & (post != 0), "Tip destination required");
+        let selected = Credit::inputs(self.context);
+        let total = consume(self.context, selected);
+        let debit = reservation + PAID_LIKE_VALUE;
+        assert(total >= debit, "Balance too low");
+        Credit::output(self.context, total - debit, 1, debit);
+        let (refund_partial, index) = Credit::refund(self.context);
+        self.set_as_teardown(PrivateFPC::at(self.address)._complete_refund(refund_partial, index, reservation, PAID_LIKE_VALUE));
+        self.context.set_as_fee_payer();
+        self.context.end_setup();
+        // Tip principal and Board accounting are revertible together. Teardown
+        // returns the principal if this phase fails; setup still pays actual gas.
+        let (public_ephemeral, partial) = create_tip(key, ephemeral, self.address);
+        self.context.push_note_hash(note_hash(partial, PAID_LIKE_VALUE));
+        let tag = poseidon2_hash_with_separator([Credit::root(self.context), self.context.chain_id(),
+            self.context.version(), board.to_field(), post], 0x52434c31);
+        self.enqueue_self._record_paid_like(board, post, key, public_ephemeral, partial, tag, refund_partial);
+    }
+
+    #[external("public")]
+    #[only_self]
+    fn _record_paid_like(board: AztecAddress, post: Field, key: EmbeddedCurvePoint,
+        ephemeral: EmbeddedCurvePoint, partial: Field, tag: Field, refund_partial: Field) {
+        let selector = comptime { aztec::protocol::abis::function_selector::FunctionSelector::from_signature(
+            "record_paid_like(Field,(Field,Field),Field)") };
+        let _ = self.context.call_public_function(board, selector, [post, key.x, key.y, tag],
+            aztec::context::gas::GasOpts::default());
+        self.context.push_nullifier_unsafe(poseidon2_hash_with_separator([refund_partial], 0x5243544f));
+        self.context.emit_public_log_unsafe(TIP_TAG,
+            [1, board.to_field(), post, key.x, key.y, ephemeral.x, ephemeral.y, partial, PAID_LIKE_VALUE as Field, 1]);
+    }
+
+    #[external("public")]
+    #[only_self]
+    fn _complete_refund(partial: Field, index: u32, max_fee: u128, principal: u128) {
+        assert(self.context.nullifier_exists_unsafe(
+            poseidon2_hash_with_separator([partial], 0x52435256), self.address), "Invalid refund commitment");
+        let fee_field = self.context.transaction_fee();
+        let actual = fee_field as u128;
+        assert(actual as Field == fee_field, "Fee exceeds u128");
+        assert(actual <= max_fee, "Fee exceeds reservation");
+        assert((principal == 0) | (principal == PAID_LIKE_VALUE), "Invalid tip principal");
+        let paid = self.context.nullifier_exists_unsafe(
+            poseidon2_hash_with_separator([partial], 0x5243544f), self.address);
+        let value = max_fee - actual + if paid { 0 } else { principal };
+        if value > 0 { self.context.push_note_hash(note_hash(partial, value)); }
+        // Every consuming transaction has the shared completion tag, even when
+        // change/refund are both zero. Discovery observes spent native nullifiers
+        // from its transaction effect without creating a zero-value credit note.
+        self.context.emit_public_log_unsafe(OUTPUT_TAG, [1, 2, index as Field, partial, value as Field, 1]);
+    }
+
+    #[internal("private")]
+    fn _claim(amount: u128, salt: Field, leaf_index: Field) {
+        let nullifier = compute_feejuice_claim_nullifier(self.address, amount, salt,
+            self.msg_sender(), leaf_index, self.context.chain_id(), self.context.version());
+        self.context.assert_nullifier_exists(compute_nullifier_existence_request(nullifier, FEE_JUICE_ADDRESS));
+        self.context.push_nullifier_unsafe(nullifier);
+    }
+    #[external("private")]
+    fn mint(amount: u128, salt: Field, leaf_index: Field) {
+        assert(amount > 0, "Zero bridge credit");
+        self.internal._claim(amount, salt, leaf_index);
+        Credit::output(self.context, amount, 3, amount);
+    }
     #[external("private")]
     #[allow_phase_change]
     fn mint_and_pay_fee(amount: u128, salt: Field, leaf_index: Field, reservation: u128) {
-        let claimer = self.msg_sender();
-
-        let feejuice_nullifier = compute_feejuice_claim_nullifier(
-            self.address,
-            amount,
-            salt,
-            claimer,
-            leaf_index,
-            self.context.chain_id(),
-            self.context.version(),
-        );
-
-        self.context.assert_nullifier_exists(compute_nullifier_existence_request(
-            feejuice_nullifier,
-            FEE_JUICE_ADDRESS,
-        ));
-
-        // FPC-scoped nullifier prevents double-spending this bridge credit.
-        self.context.push_nullifier_unsafe(feejuice_nullifier);
-
-        // Credit (amount - max_gas_cost) to claimer. The fee is implicitly deducted
-        // since the full amount was bridged but only the remainder is credited.
-        assert(reservation > 0, "Fee reservation must be positive");
-        assert(reservation >= get_max_gas_cost(self.context), "Fee reservation below transaction maximum");
-        let max_gas_cost = reservation;
-        assert(amount >= max_gas_cost, "Amount too low to cover gas cost");
-        let created = self.storage.balances.at(claimer).add(amount - max_gas_cost).get_new_note();
-        deliver_optional_note(self.context, created);
-
-        let (refund_note, message) = UintNote::partial_with_message(claimer, self.context, self.address);
-        deliver_message(self.context, BoundedVec::from_array(message));
-        self.set_as_teardown(PrivateFPC::at(self.address)._complete_refund(refund_note, max_gas_cost));
+        Credit::reserve(self.context, reservation);
+        self.internal._claim(amount, salt, leaf_index);
+        assert(amount >= reservation, "Amount too low to cover gas cost");
+        Credit::output(self.context, amount - reservation, 3, amount - reservation);
+        let (partial, index) = Credit::refund(self.context);
+        self.set_as_teardown(PrivateFPC::at(self.address)._complete_refund(partial, index, reservation, 0));
         self.context.set_as_fee_payer();
         self.context.end_setup();
     }
 
-    /// Only a private fee entrypoint may schedule this completion. No user address is public.
-    #[external("public")]
-    #[only_self]
-    fn _complete_refund(refund_note: PartialUintNote, max_fee: u128) {
-        let fee_field = self.context.transaction_fee();
-        let actual_fee = fee_field as u128;
-        assert(actual_fee as Field == fee_field, "Fee exceeds u128");
-        assert(actual_fee <= max_fee, "Fee exceeds reservation");
-        let refund = max_fee - actual_fee;
-        // V5 partial-note completion cannot encode a zero-valued note.
-        if refund > 0 {
-            refund_note.complete(self.context, self.address, self.storage.balances.get_storage_slot(), refund);
-        }
-    }
-
-    /// @notice Mints internal FJ balance by proving a prior L1->L2 FeeJuice bridge claim.
-    ///
-    /// Prerequisites (must happen before or in the same tx as this call):
-    ///   1. On L1: FeeJuicePortal.depositToAztecPublic(
-    ///        _to        = this_fpc_address,
-    ///        _amount    = amount,
-    ///        _secretHash = compute_secret_hash([derive_bridge_secret(salt, claimer_aztec_address)])
-    ///      )
-    ///   2. On L2: FeeJuice.claim(
-    ///        to                 = this_fpc_address,
-    ///        amount             = amount,
-    ///        secret             = derive_bridge_secret(salt, claimer_aztec_address),
-    ///        message_leaf_index = leaf_index
-    ///      )  ->  FJ credited to FPC's public FeeJuice balance; FeeJuice nullifier emitted.
-    ///
-    /// Security:
-    ///   - Auth: the reconstructed nullifier binds the credit to msg_sender.
-    ///   - Bridge proof: kernel verifies FeeJuice nullifier exists (pending or settled).
-    ///   - Double-spend: FPC emits its own nullifier (siloed under FPC address), distinct from
-    ///     the FeeJuice-siloed one - preventing the same bridge from being minted twice.
-    ///
-    /// @param amount     The exact amount bridged (must match the L1 deposit exactly).
-    /// @param salt       A random value chosen by the claimer at deposit time.
-    /// @param leaf_index The L1 message leaf index from the deposit transaction.
-    #[external("private")]
-    fn mint(amount: u128, salt: Field, leaf_index: Field) {
-        let claimer = self.msg_sender();
-
-        // Reconstruct the nullifier FeeJuice.claim emitted when consuming the bridge message.
-        // derive_bridge_secret binds the credit to the authenticated caller address.
-        let feejuice_nullifier = compute_feejuice_claim_nullifier(
-            self.address,
-            amount,
-            salt,
-            claimer,
-            leaf_index,
-            self.context.chain_id(),
-            self.context.version(),
-        );
-
-        // Assert the FeeJuice nullifier exists entirely in private.
-        // The kernel circuit verifies this read request against the nullifier tree - no public call needed.
-        // compute_nullifier_existence_request handles pending (same-tx) vs settled nullifiers.
-        self.context.assert_nullifier_exists(compute_nullifier_existence_request(
-            feejuice_nullifier,
-            FEE_JUICE_ADDRESS,
-        ));
-
-        // Emit an FPC-scoped nullifier to prevent double-minting this bridge credit.
-        // Siloed as poseidon2([FPC_address, feejuice_nullifier]) - distinct from the
-        // FeeJuice-siloed version poseidon2([FeeJuice_address, feejuice_nullifier]).
-        self.context.push_nullifier_unsafe(feejuice_nullifier);
-
-        // Mint private internal balance to claimer.
-        let created = self.storage.balances.at(claimer).add(amount).get_new_note();
-        deliver_optional_note(self.context, created);
-    }
-
-    /// @notice Computes the max gas cost and deducts it from the account's balance.
-    /// @param account The address to deduct the gas cost from
-    /// @return The max gas cost that was deducted
-    #[internal("private")]
-    fn _deduct_fee_reservation(account: AztecAddress, reservation: u128) -> u128 {
-        assert(reservation > 0, "Fee reservation must be positive");
-        assert(reservation >= get_max_gas_cost(self.context), "Fee reservation below transaction maximum");
-        let max_gas_cost = reservation;
-
-        let change =
-            self.internal._subtract_balance(account, max_gas_cost, INITIAL_TRANSFER_CALL_MAX_NOTES);
-        let created = self.storage.balances.at(account).add(change).get_new_note();
-        deliver_optional_note(self.context, created);
-
-        max_gas_cost
-    }
-
-    /// @notice Subtracts balance from private balance.
-    /// @dev Recurses via `recurse_subtract_balance_internal` if `max_notes` is insufficient.
-    /// @param account   The address of the account to subtract the balance from
-    /// @param amount    The amount of tokens to subtract
-    /// @param max_notes The maximum number of notes to process in a single call
-    /// @return The change to return to the owner
-    #[internal("private")]
-    fn _subtract_balance(account: AztecAddress, amount: u128, max_notes: u32) -> u128 {
-        let subtracted = self.storage.balances.at(account).try_sub(amount, max_notes);
-        if subtracted >= amount {
-            subtracted - amount
-        } else {
-            assert(subtracted > 0, "Balance too low");
-
-            let remaining = amount - subtracted;
-            self.call_self.recurse_subtract_balance_internal(account, remaining)
-        }
-    }
-
-    /// @notice Recursively subtracts balance from private balance.
-    /// @param account The address of the account to subtract the balance from
-    /// @param amount  The amount to subtract
-    /// @return The change to return to the owner
-    #[external("private")]
-    #[only_self]
-    fn recurse_subtract_balance_internal(account: AztecAddress, amount: u128) -> u128 {
-        self.internal._subtract_balance(account, amount, RECURSIVE_TRANSFER_CALL_MAX_NOTES)
-    }
-
-    /// @notice Returns the private balance of an account
-    /// @param account The address to query
-    /// @return The private balance of the account
+    /// Local wallet-only key derivation. No transaction, log or public lookup.
     #[external("utility")]
-    unconstrained fn balance_of(account: AztecAddress) -> u128 {
-        self.storage.balances.at(account).balance_of()
+    unconstrained fn credit_root(owner: AztecAddress) -> pub Field {
+        get_nhk_app(get_public_keys(owner).npk_m_hash)
     }
 
     // --- Bridge mint helpers ---

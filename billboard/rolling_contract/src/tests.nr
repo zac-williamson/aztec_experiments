@@ -109,7 +109,7 @@ unconstrained fn setup() -> (TestEnvironment, AztecAddress, AztecAddress, AztecA
     let moderator = env.create_light_account();
     let alice = env.create_light_account();
     let bob = env.create_light_account();
-    let board = env.deploy("@rolling_contract/RollingBoard").with_public_initializer(moderator, RollingBoard::interface().init(text("No threats"), 10, 1, EthAddress::from_field(0x1111), 1, 10, 1000, 10, 3, 100, 10));
+    let board = env.deploy("@rolling_contract/RollingBoard").with_public_initializer(moderator, RollingBoard::interface().init(text("No threats"), 10, 1, EthAddress::from_field(0x1111), 1, 10, 1000, 10, 3, 100, 10, moderator));
     (env, board, moderator, alice, bob)
 }
 

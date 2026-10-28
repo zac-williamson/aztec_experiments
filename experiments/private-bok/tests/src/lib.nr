@@ -452,47 +452,55 @@ unconstrained fn direct_public_expiry_cannot_bypass_private_entry() {
 #[test(should_fail_with="Only operator")]
 unconstrained fn reply_only_operator() {
     let (env, a, user, op, _) = active();
-    env.call_public(user, PrivateBok::at(a).publish_reply(10, 77, [0; 32], 0, 1, 0));
+    env.call_private(user, PrivateBok::at(a).publish_reply(10, 77, [0; 32], 0, 1, 0));
+}
+
+// These fixtures use a light-account Board stub. Test the live public guards
+// directly; RollingBoard posting_tests covers the complete private reply path.
+#[test(should_fail_with="Function _publish_reply can only be called by the same contract")]
+unconstrained fn reply_public_continuation_requires_private_entry() {
+    let (env, a, user, _, _) = active();
+    env.call_public(user, PrivateBok::at(a)._publish_reply(10, 77, [0; 32], 0, 1, 0, 0, 0));
 }
 
 #[test(should_fail_with="Request not active")]
 unconstrained fn reply_unknown_request() {
     let (env, a, user, op, _) = active();
-    env.call_public(op, PrivateBok::at(a).publish_reply(11, 77, [0; 32], 0, 1, 0));
+    env.call_public(a, PrivateBok::at(a)._publish_reply(11, 77, [0; 32], 0, 1, 0, 0, 0));
 }
 
 #[test(should_fail_with="Reservation unresolved")]
 unconstrained fn reply_reservation_fenced() {
     let (env, a, user, op, _) = active();
-    env.call_public(op, PrivateBok::at(a).publish_reply(10, 77, [0; 32], 0, 1, 0));
+    env.call_public(a, PrivateBok::at(a)._publish_reply(10, 77, [0; 32], 0, 1, 0, 0, 0));
 }
 
 #[test(should_fail_with="Request expired")]
 unconstrained fn reply_at_deadline_rejected() {
     let (env, a, user, op, _) = active();
     let r = env.view_public(PrivateBok::at(a).request(10)); env.mine_block_at(r.deadline);
-    env.call_public(op, PrivateBok::at(a).publish_reply(10, 77, [0; 32], 0, 1, 0));
+    env.call_public(a, PrivateBok::at(a)._publish_reply(10, 77, [0; 32], 0, 1, 0, 0, 0));
 }
 
 #[test(should_fail_with="Request not active")]
 unconstrained fn reply_after_finish_rejected() {
     let (env, a, user, op, _) = active();
     env.call_public(op, PrivateBok::at(a).settle(10, 0, 0, 111)); env.call_public(op, PrivateBok::at(a).finish(10));
-    env.call_public(op, PrivateBok::at(a).publish_reply(10, 77, [0; 32], 0, 1, 0));
+    env.call_public(a, PrivateBok::at(a)._publish_reply(10, 77, [0; 32], 0, 1, 0, 0, 0));
 }
 
 #[test(should_fail_with="Request not active")]
 unconstrained fn reply_uncertain_request_rejected() {
     let (env, a, user, op, _) = active();
     env.call_public(op, PrivateBok::at(a).close_uncertain(10));
-    env.call_public(op, PrivateBok::at(a).publish_reply(10, 77, [0; 32], 0, 1, 0));
+    env.call_public(a, PrivateBok::at(a)._publish_reply(10, 77, [0; 32], 0, 1, 0, 0, 0));
 }
 
 #[test(should_fail_with="Request not active")]
 unconstrained fn waiting_authorization_cannot_publish_reply() {
     let (env, a, user, op, _) = funded();
     env.call_private(user, PrivateBok::at(a).authorize_request(10, 42, 600));
-    env.call_public(op, PrivateBok::at(a).publish_reply(10, 77, [0; 32], 0, 1, 0));
+    env.call_public(a, PrivateBok::at(a)._publish_reply(10, 77, [0; 32], 0, 1, 0, 0, 0));
 }
 
 

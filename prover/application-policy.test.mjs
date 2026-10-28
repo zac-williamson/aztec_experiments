@@ -7,12 +7,12 @@ import path from 'node:path';
 import {bindRollingCircuit, validateRollingPayload, validateRollingJob, rollingSelectors} from './application-policy.mjs';
 import {ARTIFACTS, COMMON_INPUTS, loadRollingArtifacts, permittedInput, sha} from './rolling-artifacts.mjs';
 import {pluginSelectors} from './plugin-policy.mjs';
-import {FunctionSelector, loadContractArtifact} from '@aztec-labs/stdlib/abi';
+import {FunctionSelector, FunctionType, loadContractArtifact} from '@aztec-labs/stdlib/abi';
 
 const metadata = {board: '1', chainId: '31337', rollupVersion: '1'};
 const selectors = {RollingBoard: {private: new Set([11n]), public: new Set([12n])},
   PrivateBok: {private: new Set([21n]), public: new Set([22n])},
-  fee: {fee: new Set([31n]), feeClaim: 32n, paddingHash: 99n}};
+  feeLike:33n,fee: {fee: new Set([31n]), feeClaim: 32n, paddingHash: 99n}};
 const options = {metadata, privateBokAddress: '2', privateFeeAddress: '3', selectors};
 const context = (address='2', sender='4') => ({tx_context: {chain_id:'31337',version:'1'},call_context:{contract_address:{inner:address},msg_sender:{inner:sender}}});
 const call = (target, id, isPublic=false) => ({target_address:{inner:String(target)},function_selector:{inner:String(id)},args_hash:'0',is_public:isPublic,hide_msg_sender:false,is_static:false});
@@ -39,7 +39,7 @@ test('all padding and fee/network conditions fail closed', () => {
   assert.deepEqual(validateRollingPayload(feeOnly,{...options,allowFeeClaim:true}),{applications:0,fees:1});
 });
 test('every private application circuit is address/network/function bound, including continuations', () => {
-  for(const [fn,address] of [['RollingBoard:post','1'],['RollingBoard:cancel_deposit','1'],['RollingBoard:set_like','1'],['PrivateBok:claim','2'],['PrivateFPC:pay_fee','3']]) {
+  for(const [fn,address] of [['RollingBoard:post','1'],['RollingBoard:cancel_deposit','1'],['PrivateBok:claim','2'],['PrivateFPC:pay_fee','3']]) {
     bindRollingCircuit(fn,{inputs:context(address)},options);
     assert.throws(()=>bindRollingCircuit(fn,{inputs:context('99')},options),/contract/);
     const input={inputs:context(address)};input.inputs.tx_context.version='2';assert.throws(()=>bindRollingCircuit(fn,input,options),/network/);
@@ -51,28 +51,26 @@ test('every private application circuit is address/network/function bound, inclu
   bindRollingCircuit('PrivateKernelInitArtifact',undefined,options);
 });
 
-test('fragmented private fee balance permits only bound self-recursion, never a direct payload call', async () => {
-  const fn='PrivateFPC:recurse_subtract_balance_internal';
-  bindRollingCircuit(fn,{inputs:context('3','3')},options);
-  assert.throws(()=>bindRollingCircuit(fn,{inputs:context('99','3')},options),/contract/);
-  assert.throws(()=>bindRollingCircuit(fn,{inputs:context('3','4')},options),/self-called/);
-  for(const field of ['chain_id','version']) {
-    const input={inputs:context('3','3')};input.inputs.tx_context[field]='999';
-    assert.throws(()=>bindRollingCircuit(fn,input,options),/network/);
-  }
-  assert.throws(()=>bindRollingCircuit(fn,{inputs:context('3','3')},{...options,privateFeeAddress:undefined}),/contract/);
-  const raw=JSON.parse(fs.readFileSync(new URL('../apps/src/billboard/private_fee_artifact.json',import.meta.url)));
-  const artifact=loadContractArtifact(raw), continuation=artifact.functions.find(f=>f.name==='recurse_subtract_balance_internal');
-  assert(continuation?.verificationKey,'Installed normal fee continuation must have a VK');
-  const selector=BigInt((await FunctionSelector.fromNameAndParameters(continuation)).toString());
-  const fee=await pluginSelectors();assert(!fee.fee.has(selector));
-  const actualOptions={...options,selectors:{...selectors,fee}}, input=payload();
-  input.app_payload.function_calls[2].function_selector.inner=String([...fee.fee][0]);
-  validateRollingPayload(input,actualOptions);
-  for(const isPublic of [false,true]) {
-    const direct=structuredClone(input);direct.app_payload.function_calls.push(call(3,selector,isPublic));
-    assert.throws(()=>validateRollingPayload(direct,actualOptions),/Unapproved/);
-  }
+test('paid like binds its Board and is exactly one signed payment operation', () => {
+ const paid={inputs:context('3'),board:{inner:'1'}};
+ bindRollingCircuit('PrivateFPC:pay_like_and_fee',paid,options);
+ assert.throws(()=>bindRollingCircuit('PrivateFPC:pay_like_and_fee',{...paid,board:{inner:'99'}},options),/Wrong paid-like board/);
+ const p=payload();p.app_payload.function_calls=[call(3,33)];
+ assert.deepEqual(validateRollingPayload(p,options),{applications:1,fees:1});
+ for(const extra of [call(3,33),call(3,31),call(1,11)]){
+  const duplicate=structuredClone(p);duplicate.app_payload.function_calls.push(extra);
+  assert.throws(()=>validateRollingPayload(duplicate,options),/single payment call/);
+ }
+ assert.throws(()=>validateRollingPayload(p,{...options,allowFeeClaim:true}),/single payment call/);
+ validateRollingJob([{functionName:'PrivateFPC:pay_like_and_fee'},{functionName:'SchnorrInitializerlessAccount:entrypoint'}],[paid,p],options);
+ assert.throws(()=>bindRollingCircuit('PrivateFPC:recurse_subtract_balance_internal',{inputs:context('3','3')},options),/Unapproved/);
+ assert.throws(()=>bindRollingCircuit('RollingBoard:set_like',{inputs:context('1')},options),/Unapproved/);
+});
+test('Bok tip-key derivation is nested and bound to configured Bok',()=>{
+ bindRollingCircuit('PrivateBok:publish_reply',{inputs:context('2')},options);
+ bindRollingCircuit('RollingBoard:derive_plugin_tip_key',{inputs:context('1','2')},options);
+ assert.throws(()=>bindRollingCircuit('RollingBoard:derive_plugin_tip_key',{inputs:context('1','4')},options),/configured Bok/);
+ assert.throws(()=>bindRollingCircuit('RollingBoard:derive_plugin_tip_key',{inputs:context('1','2')},{...options,privateBokAddress:undefined}),/disabled/);
 });
 
 function artifactFixture() {
@@ -155,10 +153,13 @@ test('actual private expiry is allowed but public expiry and direct callback are
 test('actual authenticated Bok reply entrypoint requires configured escrow and private fee, never direct board callback',async()=>{
  const raw=loadRollingArtifacts(),selected=await rollingSelectors(raw);
  const selector=async(contract,name)=>{const a=loadContractArtifact(raw.find(x=>x.name===contract));const fn=[...a.functions,...a.nonDispatchPublicFunctions].find(x=>x.name===name);assert(fn);return BigInt((await FunctionSelector.fromNameAndParameters(fn)).toString());};
- const reply=await selector('PrivateBok','publish_reply'),callback=await selector('RollingBoard','publish_plugin_reply');
- const fee=[...selected.fee.fee][0];const p=payload();p.app_payload.function_calls=[call(2,reply,true),call(3,fee)];
- assert.deepEqual(validateRollingPayload(p,{...options,selectors:selected}),{applications:1,fees:1});
- for(const bad of [[call(1,callback,true),call(3,fee)],[call(99,reply,true),call(3,fee)],[call(2,reply,true)]]){p.app_payload.function_calls=bad;assert.throws(()=>validateRollingPayload(p,{...options,selectors:selected}),/Unapproved|Private fee/);}
+ const bok=loadContractArtifact(raw.find(x=>x.name==='PrivateBok')),replyFn=bok.functions.find(fn=>fn.name==='publish_reply');
+ assert.equal(replyFn.functionType,FunctionType.PRIVATE);assert(replyFn.verificationKey);
+ const reply=await selector('PrivateBok','publish_reply'),callback=await selector('RollingBoard','publish_plugin_reply'),continuation=await selector('PrivateBok','_publish_reply');
+ const policy={...options,selectors:selected},fee=[...selected.fee.fee][0];const p=payload();p.app_payload.function_calls=[call(2,reply),call(3,fee)];
+ assert.deepEqual(validateRollingPayload(p,policy),{applications:1,fees:1});
+ bindRollingCircuit('PrivateBok:publish_reply',{inputs:context('2')},policy);
+ for(const bad of [[call(1,callback,true),call(3,fee)],[call(1,callback),call(3,fee)],[call(99,reply),call(3,fee)],[call(2,reply,true),call(3,fee)],[call(2,continuation,true),call(3,fee)],[call(2,continuation),call(3,fee)],[call(2,reply)]]){p.app_payload.function_calls=bad;assert.throws(()=>validateRollingPayload(p,policy),/Unapproved|Private fee/);}
 });
 
 
@@ -237,8 +238,17 @@ test('funded bridge claim uses actual SDK claim mint pay payload and remains sco
  const {encode}=await import('@aztec-labs/entrypoints/encoding');
  const raw=[JSON.parse(fs.readFileSync(new URL('../billboard/target/rolling_contract-RollingBoard.json',import.meta.url))),JSON.parse(fs.readFileSync(new URL('../experiments/private-bok/target/private_bok-PrivateBok.json',import.meta.url)))];
  const selected=await rollingSelectors(raw),feeAddress=AztecAddress.fromBigIntUnsafe(30n),policy={...options,privateFeeAddress:'30',selectors:selected};
- const payment=new PrivateClaimAndPayFeePaymentMethod(feeAddress,{amount:2n,secret:new Fr(7n),salt:new Fr(8n),leafIndex:new Fr(9n)},100n);
+ // Policy fixture only: a native capsule with sufficient selected credit,
+ // not a claim that this fabricated preimage has proven note membership.
+ const owner=AztecAddress.fromBigIntUnsafe(4n);
+ const {tipSpendingKey,INPUT_CAPSULE_SLOT}=await import('../shared/private-credit.mjs');
+ const secret=new Fr(10n),note={secret,key:await tipSpendingKey(secret),blinding:new Fr(11n),value:200n,nonce:new Fr(12n)};
+ const payment=new PrivateClaimAndPayFeePaymentMethod(feeAddress,{amount:2n,secret:new Fr(7n),salt:new Fr(8n),leafIndex:new Fr(9n)},100n,{owner,notes:[note]});
  const execution=await payment.getExecutionPayload();
+ assert.equal(execution.capsules.length,1);const [capsule]=execution.capsules;
+ assert.equal(String(capsule.contractAddress),String(feeAddress));assert.equal(String(capsule.scope),String(owner));
+ assert.equal(capsule.storageSlot.toBigInt(),INPUT_CAPSULE_SLOT);assert.equal(capsule.data[0].toBigInt(),1n);
+
  const {encodedFunctionCalls}=await encode(execution.calls);
  const signed={inputs:context('4'),app_payload:{function_calls:encodedFunctionCalls.map(x=>({target_address:{inner:x.target_address.toString()},function_selector:{inner:x.function_selector.toString()},args_hash:x.args_hash.toString(),is_public:x.is_public,hide_msg_sender:x.hide_msg_sender,is_static:x.is_static}))}};
  const names=['PrivateFPC:mint','PrivateFPC:pay_fee','SchnorrInitializerlessAccount:entrypoint'];

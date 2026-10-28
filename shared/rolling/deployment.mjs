@@ -262,13 +262,14 @@ async function verifyDeployment({sdk,node,ethers,config,boardArtifact,privateFee
    return sdk.sha256ToField({toBuffer:()=>encoded});
   });
   const fee=stage('fee-instance',async()=>{
-   const [canonicalFee,instance]=await together([
+   const [canonicalFee,instance,boundFee]=await together([
     ()=>sdk.derivePrivateFeeInstance(privateFeeArtifact),async()=>{
      const [anchor,client]=await together([()=>checkpoint,()=>ready]);
      return client.getContract(new sdk.AztecAddress(new sdk.Fr(BigInt(f.contractAddress))),anchor.reference);
     },
+    async()=>{const [anchor,client]=await together([()=>checkpoint,()=>ready]);return client.getPublicStorageAt(anchor.reference,address,new sdk.Fr(number(boardArtifact.storageLayout.private_fee.slot)));},
    ]);
-   check(same(canonicalFee.address,f.contractAddress));
+   check(same(canonicalFee.address,f.contractAddress)&&same(boundFee,canonicalFee.address));
    check(instance&&same(instance.address,canonicalFee.address)&&same(instance.currentContractClassId,canonicalFee.currentContractClassId)&&same(instance.originalContractClassId,canonicalFee.originalContractClassId)&&same(await sdk.computeContractAddressFromInstance(instance),canonicalFee.address));return {canonicalFee,instance};
   });
   const l1=stage('l1-context',async()=>{

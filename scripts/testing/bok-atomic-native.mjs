@@ -6,6 +6,7 @@ import fs from 'node:fs/promises';
 import {setupLocalNetwork,TEST_FEE_PADDING} from '@aztec-labs/aztec/testing';
 import {getInitialTestAccountsData} from '@aztec-labs/accounts/testing';
 import {EmbeddedWallet} from '@aztec-labs/wallets/embedded';
+import {withOwnerEnvelopeOracles} from '../../shared/owner-envelope.mjs';
 import {createFundedInitializerlessAccounts} from '@aztec-labs/wallets/testing';
 import {Contract,BatchCall} from '@aztec-labs/aztec.js/contracts';
 import {waitForTx} from '@aztec-labs/aztec.js/node';
@@ -14,7 +15,7 @@ import {EthAddress} from '@aztec-labs/foundation/eth-address';
 import {poseidon2HashWithSeparator} from '@aztec-labs/foundation/crypto/poseidon';
 import {sha256ToField} from '@aztec-labs/foundation/crypto/sha256';
 import {computeSecretHash} from '@aztec-labs/stdlib/hash';
-import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
+import {loadContractArtifact,FunctionSelector} from '@aztec-labs/stdlib/abi';
 import {TxStatus,TxExecutionResult} from '@aztec-labs/stdlib/tx';
 import {InboxAbi} from '@aztec-foundation/l1-artifacts/InboxAbi';
 import {createPublicClient,createWalletClient,http,parseEventLogs} from 'viem';
@@ -22,6 +23,8 @@ import {mnemonicToAccount} from 'viem/accounts';
 import {foundry} from 'viem/chains';
 import {invocationHash,invocationPreimage} from '../../shared/rolling/invocation.mjs';
 import {encodeV1} from '../../experiments/private-bok/wire.mjs';
+import {derivePrivateFeeInstance,createPrivateFeeDeployment} from '../../shared/private-fee-client.mjs';
+const paidLikes=process.env.NATIVE_PAID_LIKES==='1';
 const output=process.env.BOK_NATIVE_REPORT??'/tmp/bok-atomic-native.json';
 const report={passed:false,proofs:false,fixturePortal:'disposable EOA canonical Inbox messages; token custody not tested',transactions:[],checks:[]};
 const save=()=>fs.writeFile(output,JSON.stringify(report,(_,v)=>typeof v==='bigint'?String(v):v,2));
@@ -35,7 +38,16 @@ try{
  mark('boot'); const actors=(await getInitialTestAccountsData()).slice(0,2);
  network=await setupLocalNetwork({config:{realProofs:false,blockDurationMs:6000},fundedAddresses:actors.map(a=>a.address),initialAccountFeeJuice:new Fr(10n**24n)});
  const {node,l1RpcUrl}=network;
- wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:false}});wallet.setMinFeePadding(TEST_FEE_PADDING);
+ // Native6's server PXE factory ignores options.simulator and creates its own
+ // recorder, which enumerates callback keys and drops Proxy-only app oracles.
+ // Wrap its underlying circuit provider after that enumeration boundary; keep
+ // native recording and add app callbacks immediately before ACVM execution.
+ wallet=await EmbeddedWallet.create(node,{ephemeral:true,pxe:{proverEnabled:false}});
+ const recordingSimulator=wallet.pxe.simulator;
+ assert.equal(typeof recordingSimulator?.recorder?.wrapCallback,'function');
+ assert.equal(typeof recordingSimulator?.simulator?.executeUserCircuit,'function');
+ recordingSimulator.simulator=withOwnerEnvelopeOracles(recordingSimulator.simulator);
+ wallet.setMinFeePadding(TEST_FEE_PADDING);
  const [ownerManager,operatorManager]=await createFundedInitializerlessAccounts(wallet,actors),owner=ownerManager.address,operator=operatorManager.address;
  const info=await node.getNodeInfo(),chain=BigInt(info.l1ChainId),version=BigInt(info.rollupVersion);
  assert.equal(chain,31337n);assert.equal((await node.getConfig()).realProofs,false);
@@ -59,12 +71,11 @@ try{
   }
   await save();if(expectRevert)assert.notEqual(receipt.executionResult,TxExecutionResult.SUCCESS);else assert.equal(receipt.executionResult,TxExecutionResult.SUCCESS);return receipt;
  }
- const boardArtifact=await artifact('billboard/target/rolling_contract-RollingBoard.json'),bokArtifact=await artifact('experiments/private-bok/target/private_bok-PrivateBok.json');
- const deploy=Contract.deploy(wallet,boardArtifact,[[new Fr(65n<<240n),...Array(31).fill(Fr.ZERO)],1,chain,info.l1ContractAddresses.rollupAddress,Number(version),1n,1000000n,1,1,1,1],'init',{salt:Fr.random(),deployer:operator});
+ const feeRaw=JSON.parse(await fs.readFile(new URL('../../billboard/target/private_fee_contract-PrivateFPC.json',import.meta.url),'utf8'));
+ const feeInstance=await derivePrivateFeeInstance(feeRaw);await send(createPrivateFeeDeployment(wallet,feeRaw),operator,'deploy-fpc');
+ const boardArtifact=await artifact('billboard/target/rolling_contract-RollingBoard.json');
+ const deploy=Contract.deploy(wallet,boardArtifact,[[new Fr(65n<<240n),...Array(31).fill(Fr.ZERO)],1,chain,info.l1ContractAddresses.rollupAddress,Number(version),1n,1000000n,1,1,1,1,feeInstance.address],'init',{salt:Fr.random(),deployer:operator});
  const boardInstance=await deploy.getInstance();await send(deploy,operator,'deploy-board');const board=Contract.at(boardInstance.address,boardArtifact,wallet);
- const deployBok=Contract.deploy(wallet,bokArtifact,[board.address,operator,new Fr(chain),new Fr(version)],'init',{salt:Fr.random(),deployer:operator});
- const bokInstance=await deployBok.getInstance();await send(deployBok,operator,'deploy-bok');const bok=Contract.at(bokInstance.address,bokArtifact,wallet);
- await send(new BatchCall(wallet,[board.methods.update_portal(portal),bok.methods.set_portal(portal),board.methods.configure_plugin(new Fr(1),bok.address,true)]),operator,'configure');
  async function message(address,content,secret){
   const secretHash=await computeSecretHash(secret),hash=await l1Wallet.writeContract({address:inbox,abi:InboxAbi,functionName:'sendL2Message',args:[{actor:String(address),version},String(content),String(secretHash)]});
   const receipt=await l1.waitForTransactionReceipt({hash});assert.equal(receipt.status,'success');
@@ -77,6 +88,16 @@ try{
   }
   throw Error('Native blocks did not make canonical Inbox message usable');
  }
+ if(paidLikes){
+  const {runPrivatePaidLikeNative}=await import('./private-paid-like-native.mjs');
+  await runPrivatePaidLikeNative({node,wallet,owner,author:operator,ownerAccount:actors[0],info,l1Wallet,l1RpcUrl,
+   portal,board,boardArtifact,feeRaw,feeInstance,message,send,report,save,mark});
+ }else{
+ const bokArtifact=await artifact('experiments/private-bok/target/private_bok-PrivateBok.json');
+ const deployBok=Contract.deploy(wallet,bokArtifact,[board.address,operator,new Fr(chain),new Fr(version)],'init',{salt:Fr.random(),deployer:operator});
+ const bokInstance=await deployBok.getInstance();await send(deployBok,operator,'deploy-bok');const bok=Contract.at(bokInstance.address,bokArtifact,wallet);
+ await send(new BatchCall(wallet,[board.methods.update_portal(portal),bok.methods.set_portal(portal),board.methods.configure_plugin(new Fr(1),bok.address,true)]),operator,'configure');
+
  const salt=Fr.random(),secret=Fr.random(),amount=10000n,scope=[chain,field(portal),field(bok.address),version];
  const commitment=await poseidon2HashWithSeparator([...scope,field(owner),salt.toBigInt()],0x424b4301);
  const content=sha256ToField([encodeV1('PLUGIN_CREDIT_V1',[...scope,commitment.toBigInt(),amount])]);
@@ -103,7 +124,10 @@ try{
  await send(final(1),operator,'final-success',true);
  const closed=await state();assert.equal(closed.state,4n);assert.equal(closed.charged,120n);assert.equal(closed.refunded,480n);assert.equal(closed.available,0n);assert.equal(closed.reserved,0n);assert.equal(closed.secondary_done,true);assert.equal(await balance(),beforeBalance-120n);assert.equal(await count(),2n);report.checks.push('single final transaction settles120 publishes reply and refunds480');
  const finalRow=report.transactions.find(r=>r.label==='final-success');
- assert.deepEqual(finalRow.kernelCalls.map(c=>c.selector),finalRow.payloadSelectors);assert.equal(finalRow.nonRevertible,0);assert.equal(finalRow.revertible,3);report.checks.push('actual kernel forward execution order verified');
+ // SDK's callable ABI omits only-self continuations; verify the same explicit
+ // continuation signature enforced by the hosted Bok publication policy.
+ const publicReplySelector=String(await FunctionSelector.fromSignature('_publish_reply(Field,Field,[Field;32],u16,u32,u32,Field,Field)'));
+ assert.deepEqual(finalRow.kernelCalls.map(c=>c.selector),[finalRow.payloadSelectors[0],publicReplySelector,finalRow.payloadSelectors[2]]);assert.equal(finalRow.nonRevertible,0);assert.equal(finalRow.revertible,3);report.checks.push('actual kernel forward execution order verified');
  // Use a separate canonical deposit for rollback so this test does not depend
  // on the board's unrelated history-screening hint builder.
  const secondSecret=Fr.random();mark('rollback-deposit-message');
@@ -116,6 +140,7 @@ try{
  await send(new BatchCall(wallet,[bok.methods.authorize_request(badId,badTarget,600n),board.methods.post_with_bok(secondDeposit,badNonce,{...draft,expected_main_policy_version:99},...empty,new Fr(1),badId)]),owner,'authorize-post-revert',true,true);
  assert.equal(await balance(),beforeBadBalance);assert.equal((await bok.methods.request(badId).simulate({from:operator})).result.state,0n);assert.equal(await count(),2n);report.checks.push('authorization and post rollback together');
  assert(!report.transactions.some(row=>row.label==='reserve'));report.checks.push('successful invocation requires exactly posting and final reply transactions');
+ }
  report.passed=true;await save();console.log('NATIVE_PASSED',output);
 }catch(error){report.error={name:error.name,message:error.message,stack:error.stack};await save();console.error('NATIVE_FAILED',error.message);process.exitCode=1;}
 finally{if(wallet)await wallet.stop();if(network)await network.stop();}

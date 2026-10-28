@@ -1,3 +1,4 @@
+import {capturePaidLikeAction} from './application.mjs';
 import {captureThreadAction} from './thread-action.mjs';
 // The caller owns the account lock, PXE lifetime and trusted-route guard.
 // autoSync:false synchronizes once per account flow, and again after chain state changes.
@@ -40,7 +41,7 @@ function accountStatusArguments(args){
   return [{opening:true}];
  }catch{throw Object.assign(Error('Invalid Rolling action'),{code:'ROLLING_INVALID_ACTION'});}
 }
-const boardStateMethods=Object.freeze({thread:'post_thread',like:'set_like',unlike:'set_like',name:'register_name',bio:'set_bio',avatar:'set_avatar',subboard:'create_subboard','moderate-post':'remove_post','moderate-avatar':'remove_avatar','reject-subboard':'reject_subboard','set-main-policy':'set_main_policy','transfer-moderator':'transfer_moderator',screen:'screen',withdraw:'withdraw'});
+const boardStateMethods=Object.freeze({thread:'post_thread',name:'register_name',bio:'set_bio',avatar:'set_avatar',subboard:'create_subboard','moderate-post':'remove_post','moderate-avatar':'remove_avatar','reject-subboard':'reject_subboard','set-main-policy':'set_main_policy','transfer-moderator':'transfer_moderator',screen:'screen',withdraw:'withdraw'});
 export function createSynchronizedRollingApplication({application,synchronize,contextGuard,operationScope=()=>null,prepareContext,prepareContractState,preparePredecessorAnchor,beforePostingPrepare}){
  if(typeof synchronize!=='function'||typeof contextGuard!=='function'||prepareContext!==undefined&&typeof prepareContext!=='function'||prepareContractState!==undefined&&typeof prepareContractState!=='function'||preparePredecessorAnchor!==undefined&&typeof preparePredecessorAnchor!=='function'||beforePostingPrepare!==undefined&&typeof beforePostingPrepare!=='function')throw Error('Rolling synchronization unavailable');
  const refreshPostingAnchor=Symbol('refresh-posting-anchor');
@@ -49,7 +50,7 @@ export function createSynchronizedRollingApplication({application,synchronize,co
   const call=application[name].bind(application);
   return [name,async(...args)=>{
    if(name==='readFundingState'&&args.length!==0)throw Object.assign(Error('Invalid Rolling action'),{code:'ROLLING_INVALID_ACTION'});
-   const captured=name==='prepare'&&args[0]?.type==='thread'?[captureThreadAction(args[0]),...args.slice(1)]:name==='readAccountStatus'?accountStatusArguments(args):name==='resumeSaved'?savedResumeArguments(args):name==='prepareBokRelease'?bokReleaseArguments(args):['readBalances','readBokAccounting'].includes(name)?balanceArguments(args,name==='readBalances'):args;
+   const captured=name==='prepare'&&args[0]?.type==='like'?[capturePaidLikeAction(args[0]),...args.slice(1)]:name==='prepare'&&args[0]?.type==='thread'?[captureThreadAction(args[0]),...args.slice(1)]:name==='readAccountStatus'?accountStatusArguments(args):name==='resumeSaved'?savedResumeArguments(args):name==='prepareBokRelease'?bokReleaseArguments(args):['readBalances','readBokAccounting'].includes(name)?balanceArguments(args,name==='readBalances'):args;
    for(;;){
    const stateMethod=name==='prepare'&&Object.hasOwn(boardStateMethods,captured[0]?.type)?boardStateMethods[captured[0].type]:undefined;
    await contextGuard();
@@ -72,13 +73,13 @@ export function createSynchronizedRollingApplication({application,synchronize,co
     const accountStatus=Boolean(scope)&&name==='readAccountStatus'&&captured[0]?.opening===true;
     // Likes use the same verified captured-anchor ancestry as account reads.
     // Only this owned immediate action changes synchronization strategy.
-    const snapshotAncestry=Boolean(scope)&&name==='prepare'&&captured[1]?.immediate===true&&['like','unlike'].includes(captured[0]?.type);
+    const snapshotAncestry=Boolean(scope)&&name==='prepare'&&captured[1]?.immediate===true&&['like'].includes(captured[0]?.type);
     // Name completion still discovers native ownership after this fresh sync.
     // Only its public Board class/initialization reads may warm at the anchor.
     const ownedNames=Boolean(scope)&&name==='ownedIdentities';
     const reads=[()=>synchronize({ordinaryPolicy,ordinaryPost,...(accountStatus?{accountStatus:true}:{}),...(ownedNames?{ownedNames:true}:{}),...(snapshotAncestry?{snapshotAncestry:true}:{})})];if(scope&&prepareContext)reads.push(()=>prepareContext({predecessor:name==='prepare',
       ...(name==='prepare'&&Array.isArray(scope.preparationReads)&&captured[1]?.immediate===true&&['post','reply','quote','repost'].includes(captured[0]?.type)?{ordinaryPayment:true}:{}),
-      ...(name==='prepare'&&Array.isArray(scope.preparationReads)&&captured[1]?.immediate===true&&['like','unlike'].includes(captured[0]?.type)?{likePayment:true}:{}),
+      ...(name==='prepare'&&Array.isArray(scope.preparationReads)&&captured[1]?.immediate===true&&['like'].includes(captured[0]?.type)?{likePayment:true}:{}),
       ...(name==='prepare'&&Array.isArray(scope.preparationReads)&&captured[1]?.immediate===true&&['name','bio','avatar','subboard'].includes(captured[0]?.type)?{deferredPayment:true}:{})}));
     const results=await Promise.allSettled(reads.map(read=>Promise.resolve().then(read)));
     const failure=results.find(result=>result.status==='rejected');if(failure)throw failure.reason;
@@ -86,7 +87,7 @@ export function createSynchronizedRollingApplication({application,synchronize,co
     if(scope)scope.synchronized=true;
    }
    await contextGuard();
-   const overlapMethod=ordinaryPost?'post':scope&&captured[1]?.immediate===true&&['like','unlike','name','bio','avatar','subboard'].includes(captured[0]?.type)?stateMethod:undefined;
+   const overlapMethod=ordinaryPost?'post':scope&&captured[1]?.immediate===true&&['like','name','bio','avatar','subboard'].includes(captured[0]?.type)?stateMethod:undefined;
    if(scope&&stateMethod&&prepareContractState&&!overlapMethod){
     await prepareContractState({method:stateMethod});
     if(operationScope()!==scope)throw Object.assign(Error('Rolling operation changed'),{code:'ROLLING_CONTEXT_CHANGED'});

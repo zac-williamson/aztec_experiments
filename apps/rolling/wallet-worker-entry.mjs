@@ -1,4 +1,3 @@
-import {createPublicLikeReader,readPublicLikeState} from '../../shared/rolling/like-state.mjs';
 import {prepareRollingAccount} from '../../shared/rolling/account-preparation.mjs';
 import {beginRollingMeasure,observeRollingWorkerPerformance} from './performance.mjs';
 import {createRollingWalletSession,createRollingRefundSession} from './wallet-session.mjs';
@@ -107,7 +106,7 @@ function initialize(value){
  background('execution-engine',sdk.initializePrivateExecution());
  return metadata();
 }
-let derivedIdentity,readLikePage;
+let derivedIdentity;
 async function prepareAccount(raw){
  localGuard();if(!settings)throw workerFailure();
  const modulus=21888242871839275222246405745257275088548364400416034343698204186575808495617n;
@@ -156,11 +155,6 @@ async function invoke(method,args){
  if(method==='initialize')return initialize(args[0]);if(method==='deriveAccount')return deriveAccount(args[0]);if(method==='openAccount')return openAccount(args[0]);
  if(method==='close'){if(fundingBusy||session?.busy)throw workerFailure('ROLLING_BUSY');closing=true;stopPerformance();await Promise.allSettled([warming,opening,pxeArtifactsReady].filter(Boolean));await Promise.allSettled([creating].filter(Boolean));await Promise.allSettled([publicState?.scopePreparation?.result,publicState?.pxePreparation].filter(Boolean));for(const controller of operations.values())controller.abort();if(session)await session.close();funding?.close();publicState?.fundingProvider?.destroy();if(refundSession)await refundSession.close();derivedIdentity=undefined;accountPreparation=undefined;account=undefined;closed=true;return true;}
  if(!account)throw workerFailure('ROLLING_LOCKED');await guard();
- if(method==='application.readLikes'){
-  if(settings.config.refundOnly)throw workerFailure('ROLLING_ACTION_UNAVAILABLE');await cryptoReady;await guard();
-  readLikePage??=createPublicLikeReader({origin:new URL(globalThis.__rollingWalletAssetBase).origin});
-  return readPublicLikeState({sdk,readPage:readLikePage,network:{chainId:settings.config.network.chainId,version:settings.config.network.rollupVersion,rollup:settings.config.network.rollupAddress},board:settings.config.board.contractAddress,walletSecret:account.secretKey,guard},args[0]);
- }
  if(method==='ensureSession'){await ensureSession();return metadata();}
  if(method==='ensureRefundSession'){await ensureRefundSession();return metadata();}
  if(method==='prepareOpening'){
@@ -202,7 +196,7 @@ globalThis.addEventListener('message',event=>{
   localGuard();if(closing)throw workerFailure('ROLLING_CONTEXT_CHANGED');const args=message.args,callbacks=message.callbacks??[];
   if(!Array.isArray(callbacks)||callbacks.some(name=>!CALLBACKS.includes(name)))throw workerFailure();
   if(callbacks.length||message.signal){const index=args.length>1?1:0;const options=args[index]??{};if(!options||typeof options!=='object'||Array.isArray(options))throw workerFailure();args[index]={...options,...Object.fromEntries(callbacks.map(name=>[name,(...values)=>name==='onPrepared'?ask('callback',{operationId:message.id,name,args:values}):send({type:'callback',id:message.id,name,args:values})])),...(message.signal?{signal:controller.signal}:{})};}
-  const visible=!['initialize','deriveAccount','openAccount','close','observeIncluded','application.readLikes','withdrawal.observe','withdrawal.waitUntilReady'].includes(message.method)&&(!message.method.startsWith('funding.')||message.method==='funding.advanceClaim');
+  const visible=!['initialize','deriveAccount','openAccount','close','observeIncluded','withdrawal.observe','withdrawal.waitUntilReady'].includes(message.method)&&(!message.method.startsWith('funding.')||message.method==='funding.advanceClaim');
   if(visible)foreground++;
   return Promise.resolve().then(()=>invoke(message.method,args)).finally(()=>{if(visible)foreground--;});
  }).then(value=>structuredClone(value)).then(value=>send({type:'result',id:message.id,value}),error=>send({type:'result',id:message.id,error:errorRecord(error)})).finally(()=>operations.delete(message.id));

@@ -17,13 +17,13 @@ const requestFields = ['state','invocation_hash','sequence','deadline','budget',
 
 /** Existing pinned V6 SDK only; no wallet/node/service lifecycle is created here. */
 export async function createPrivateBokEscrow(options) {
- const [{Contract,BatchCall}, {Fr}, {AztecAddress}, {TxHash}, {getFeeJuiceBalance}, {getContractClassFromArtifact}, {deriveStorageSlotInMap}, {getFunctionReturnType}, {waitForTx}, {BBBundlePrivateKernelProver}, {BBLazyPrivateKernelProver}] = await Promise.all([
+ const [{Contract,BatchCall}, {Fr}, {AztecAddress}, {TxHash}, {getFeeJuiceBalance}, {getContractClassFromArtifact}, {deriveStorageSlotInMap}, {getFunctionReturnType,FunctionSelector}, {waitForTx}, {BBBundlePrivateKernelProver}, {BBLazyPrivateKernelProver}] = await Promise.all([
   import('@aztec-labs/aztec.js/contracts'), import('@aztec-labs/foundation/curves/bn254'),
   import('@aztec-labs/stdlib/aztec-address'), import('@aztec-labs/stdlib/tx'), import('@aztec-labs/aztec.js/utils'),
   import('@aztec-labs/stdlib/contract'), import('@aztec-labs/stdlib/hash'), import('@aztec-labs/stdlib/abi'), import('@aztec-labs/aztec.js/node'),
   import('@aztec-labs/bb-prover/client/bundle'), import('@aztec-labs/bb-prover/client/lazy'),
  ]);
- return createPrivateBokEscrowFactory({Contract, BatchCall, Fr, AztecAddress, TxHash, getFeeJuiceBalance, getContractClassFromArtifact, deriveStorageSlotInMap, getFunctionReturnType,
+ return createPrivateBokEscrowFactory({Contract, BatchCall, Fr, AztecAddress, TxHash, getFeeJuiceBalance, getContractClassFromArtifact, deriveStorageSlotInMap, getFunctionReturnType, FunctionSelector,
   waitForTx,isTrustedProver: prover => prover instanceof BBBundlePrivateKernelProver || prover instanceof BBLazyPrivateKernelProver})(options);
 }
 
@@ -275,13 +275,13 @@ export function createPrivateBokEscrowFactory(sdk) {
    const recordUpdate=changes=>replacement?update(operationId,{replacement:{...journal().operations[operationId].replacement,...changes}}):update(operationId,changes);
    let phase='request';
    try{
-    const steps=method==='finalize_reply'?[['settle',args.slice(0,4)],['publish_reply',[args[0],...args.slice(4)]],['finish',[args[0]]]]:[[method,args]];
+    const steps=method==='finalize_reply'?[['settle',args.slice(0,4)],['publish_reply',[args[0],...args.slice(4)]],['finish',[args[0]]]]:[[method,[...args]]];
     const interactions=steps.map(([name,values])=>contract.methods[name](...values.map((v,i)=>Array.isArray(v)?v.map(value=>Fr.fromString(value)):i===0||(name==='publish_reply'&&i===1)||((name==='settle'||name==='reconcile')&&i===3)?Fr.fromString(v):v)));
     const interaction=method==='finalize_reply'?new sdk.BatchCall(wallet,interactions):interactions[0];
     const payload=await interaction.request({from:op,additionalScopes:[]});
     assert.equal(payload.calls.length,steps.length);
     for(const [i,call] of payload.calls.entries()){
-     assert.equal(call.name,steps[i][0]);assert.equal(String(call.to),String(addr));assert.equal(call.type,'public');assert.equal(call.isStatic,false);
+     assert.equal(call.name,steps[i][0]);assert.equal(String(call.to),String(addr));assert.equal(call.type,call.name==='publish_reply'?'private':'public');assert.equal(call.isStatic,false);
      assert.deepEqual(call.args.map(x=>x.toBigInt()),steps[i][1].flat().map(x=>BigInt(x)),'Payload arguments changed');
     }
     assert.equal(typeof wallet.pxe.proveTxWithPublicValidation,'function','Validated native proof capability required');
@@ -314,8 +314,23 @@ export function createPrivateBokEscrowFactory(sdk) {
     // contract integration qualifier checks this against an actual mined batch.
     const expected=payload.calls;
     for(const [i,call] of calls.entries()){
-     assert.equal(String(call.request.contractAddress),String(addr));assert.equal(String(call.request.msgSender),String(op));
-     assert.equal(String(call.functionSelector),String(expected[i].selector));assert.deepEqual(call.args.map(x=>x.toBigInt()),expected[i].args.map(x=>x.toBigInt()));
+     assert.equal(String(call.request.contractAddress),String(addr));
+     if(expected[i].name==='publish_reply'){
+      // The pinned private function proves the operator NHK → per-post P
+      // derivation. Its sole public continuation keeps the original request
+      // arguments and appends only canonical curve coordinates, never a secret.
+      assert.equal(String(call.request.msgSender),String(addr));
+      const selector=await sdk.FunctionSelector.fromSignature('_publish_reply(Field,Field,[Field;32],u16,u32,u32,Field,Field)');
+      assert.equal(String(call.functionSelector),String(selector));
+      assert.equal(call.args.length,expected[i].args.length+2);
+      assert.deepEqual(call.args.slice(0,-2).map(x=>x.toBigInt()),expected[i].args.map(x=>x.toBigInt()));
+      const [x,y]=call.args.slice(-2).map(v=>v.toBigInt());
+      assert(x>=0n&&y>=0n&&x<Fr.MODULUS&&y<Fr.MODULUS&&(x!==0n||y!==0n));
+      assert.equal((y*y-x*x*x+17n)%Fr.MODULUS,0n,'Invalid published tip point');
+     }else{
+      assert.equal(String(call.request.msgSender),String(op));
+      assert.equal(String(call.functionSelector),String(expected[i].selector));assert.deepEqual(call.args.map(x=>x.toBigInt()),expected[i].args.map(x=>x.toBigInt()));
+     }
     }
     if(method==='finalize_reply'){
      assert.equal(tx.data.getNonRevertiblePublicCallRequests().length,0,'Final batch must be entirely revertible');

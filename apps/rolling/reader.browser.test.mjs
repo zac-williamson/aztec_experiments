@@ -68,7 +68,7 @@ async function socialFixture(t,{wallet='recorder',policies=[]}={}){
  if(wallet==='real')files.add('wallet-panel.mjs');
  const reason='<img src=x onerror=alert(1)> [unsafe](javascript:alert(1))';
  const record={root:'10',parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'0'};
- const live={id:'10',record,text:'Visible public post',timestamp:'1',likes:'1',mainVersion:'2',localVersion:'0'};
+ const live={id:'10',record,tipKey:{x:'1',y:'2'},text:'Visible public post',timestamp:'1',likes:'1',mainVersion:'2',localVersion:'0'};
  const removed={...live,id:'11',record:{...record,parent:'10',reference:'9',kind:'2',subboard:'20'},text:'REMOVED_TEXT_SENTINEL',localVersion:'1',removal:{reason,policy:'4294967301'},message:'REMOVED_TEXT_SENTINEL'};
  const rejected={...live,id:'12',record:{...record,subboard:'20'},text:'REJECTED_BOARD_TEXT_SENTINEL',localVersion:'1'};
  const malformed={...live,id:'13',mainVersion:'<script>VERSION_SENTINEL</script>',localVersion:'4294967296',text:null,removal:{reason:'No valid version provided',policy:'18446744073709551616'}};
@@ -79,7 +79,7 @@ async function socialFixture(t,{wallet='recorder',policies=[]}={}){
    res.writeHead(200,{'content-type':'application/json'});
    const board={id:'20',name:'Workshop',slug:'workshop',description:'A public board',mainVersion:'8',mainRules:'Current rules',rules:'Local rules',rejected:true,rejection:{reason,mainVersion:'6'}};
    const data={schemaVersion:1,scope:{boardAddress:'0x'+'1'.repeat(64)},complete:true,checkpoint:{number:3,hash:'public'},revision:'1',names:{},boards:{'20':board},nextCursor:null,policies};
-   res.end(JSON.stringify(url.pathname==='/api/directory'?{...data,boards:[board]}:{...data,posts:[live,removed,rejected,malformed]}));return;
+   res.end(JSON.stringify(url.pathname==='/api/directory'?{...data,boards:[board]}:{...data,post:live,posts:[live,removed,rejected,malformed]}));return;
   }
   if(url.pathname==='/wallet-panel.mjs'&&['recorder','liked'].includes(wallet)){
    res.writeHead(200,{'content-type':'text/javascript'});res.end(`let liked=${wallet==='liked'};export function mountRollingWalletPanel({onPrivateChange}){window.changeLiked=value=>{liked=value;onPrivateChange();};return {initialize:async()=>{},privateStatus:()=>'complete',preferenceEnabled:()=>false,likeState:()=>liked,act:async value=>{(window.recordedActions??=[]).push(value);return {status:'confirmed'};},open(value){(window.recordedActions??=[]).push(value);},close(){},attachIdentityControls(){}}}`);return;
@@ -90,7 +90,7 @@ async function socialFixture(t,{wallet='recorder',policies=[]}={}){
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
  const browser=await launchBrowser();t.after(()=>browser.close());const page=await browser.newPage(),requests=[],errors=[];
  page.on('request',request=>requests.push(new URL(request.url()).pathname));page.on('pageerror',error=>errors.push(error.message));
- t.after(()=>assert.deepEqual(errors,[]));await page.goto(`http://127.0.0.1:${server.address().port}/`);await page.locator('#post-13').waitFor();return {page,requests,reason};
+ t.after(()=>assert.deepEqual(errors,[]));await page.goto(`http://127.0.0.1:${server.address().port}/#/${wallet==='liked'?'post/10':'home'}`);await page.locator(wallet==='liked'?'#post-10':'#post-13').waitFor();return {page,requests,reason};
 }
 
 test('labelled social records: removed navigation, literal reasons and distinct authored/removal/current policy provenance',async t=>{
@@ -111,16 +111,16 @@ test('labelled social records: removed navigation, literal reasons and distinct 
  for(const id of ['11','12','13']){
   const post=page.locator('#post-'+id);assert.deepEqual(await post.getByRole('button').allTextContents(),['Bookmark']);assert.equal(await post.getByRole('button',{name:'Mark thread read',exact:true}).count(),0,'No read marker without a bounded canonical position');assert.equal(await post.locator('.post-body').count(),0);
  }
- assert.deepEqual(await page.locator('#post-10').getByRole('button').allTextContents(),['Reply','Like','Bookmark']);
+ assert.deepEqual(await page.locator('#post-10').getByRole('button').allTextContents(),['Reply','Like · 20 credits','Bookmark']);
  await page.setViewportSize({width:390,height:844});
  const live=page.locator('#post-10');assert.equal(await live.locator('.post-more').getAttribute('open'),null);
  await live.locator('.post-more>summary').click();
- assert.deepEqual(await live.getByRole('button').allTextContents(),['Reply','Like','Bookmark','Quote','Repost']);
+ assert.deepEqual(await live.getByRole('button').allTextContents(),['Reply','Like · 20 credits','Bookmark','Quote','Repost']);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  assert(!requests.some(value=>value.includes('/v1/node')||value.includes('/prover')||value.includes('owned')));
- for(const name of ['Reply','Like','Bookmark','Quote','Repost'])await live.getByRole('button',{name,exact:true}).click();
+ for(const name of ['Reply','Like · 20 credits','Bookmark','Quote','Repost'])await live.getByRole('button',{name,exact:true}).click();
  await page.waitForFunction(()=>window.recordedActions?.length===5);
- assert.deepEqual(await page.evaluate(()=>window.recordedActions),[{type:'reply',parent:'10',root:'10',subboard:'0'},{type:'like',post:'10'},{type:'preference',kind:1,target:'10',enabled:true},{type:'quote',reference:'10',subboard:'0'},{type:'repost',reference:'10',subboard:'0'}]);
+ assert.deepEqual(await page.evaluate(()=>window.recordedActions),[{type:'reply',parent:'10',root:'10',subboard:'0'},{type:'like',post:'10',tipKey:{x:'1',y:'2'}},{type:'preference',kind:1,target:'10',enabled:true},{type:'quote',reference:'10',subboard:'0'},{type:'repost',reference:'10',subboard:'0'}]);
  await page.evaluate(()=>window.recordedActions=[]);
  assert.equal(await page.getByRole('button',{name:'Unlike',exact:true,includeHidden:true}).count(),0);
  assert.deepEqual(await page.evaluate(()=>window.recordedActions),[]);
@@ -130,13 +130,14 @@ test('labelled social records: removed navigation, literal reasons and distinct 
  assert(!(await page.getByText('Current parent policy v8',{exact:true}).isVisible()));await page.getByText('Rule history',{exact:true}).click();assert(await page.getByText('Current parent policy v8',{exact:true}).isVisible());assert(await page.getByText('Subboard rejected under parent policy v6',{exact:true}).isVisible());
 });
 
-test('reader restores disabled Liked controls and exposes no Unlike action',async t=>{
+test('reader permits repeated paid likes and exposes no Unlike action',async t=>{
  const {page}=await socialFixture(t,{wallet:'liked'});
- const liked=page.locator('#post-10').getByRole('button',{name:'Liked',exact:true});await liked.waitFor();
- assert.equal(await liked.isDisabled(),true);assert.equal(await liked.getAttribute('aria-pressed'),'true');
- await page.evaluate(()=>window.changeLiked(false));const available=page.locator('#post-10').getByRole('button',{name:'Like',exact:true});assert.equal(await available.isEnabled(),true);assert.equal(await available.getAttribute('aria-pressed'),'false');
+ const like=page.locator('#post-10').getByRole('button',{name:'Like · 20 credits',exact:true});await like.waitFor();
+ assert.equal(await like.isEnabled(),true);assert.equal(await like.getAttribute('aria-pressed'),null);
+ await like.click();await page.waitForFunction(()=>window.recordedActions?.length===1);
+ await like.click();await page.waitForFunction(()=>window.recordedActions?.length===2);
  assert.equal(await page.getByRole('button',{name:'Unlike',exact:true,includeHidden:true}).count(),0);
- assert.deepEqual(await page.evaluate(()=>window.recordedActions??[]),[]);
+ assert.deepEqual(await page.evaluate(()=>window.recordedActions),Array(2).fill({type:'like',post:'10',tipKey:{x:'1',y:'2'}}));
 });
 
 // Controlled intersection callbacks and synthetic public pages; fetch and DOM

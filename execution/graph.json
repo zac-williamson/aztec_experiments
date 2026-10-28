@@ -9402,13 +9402,13 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "28 October: Harry feedback UI and indexed Home ranking published as application/UI8e68ac4a. Images and moderation-information scope dropped. Focused tests and actual browser Home/account/install/nested-thread checks passed; public hashes match, all candidate pools complete, USDC terms200. Native relay reconciliation cleared a successful retained payment without resending. Proxy route omission repaired; pre-stage public-route gate added (35 tests). MetaMask alert and real Phantom extension signing remain unverified. Contracts/SDK/Bok/prover unchanged; performance campaign paused. Report docs/HARRY_FEEDBACK_20261028.md.",
-      "execution_lane": "application performance",
+      "checkpoint": "28 October: integrated20-FEE private paid likes; canonical contract/VK and SDK builds passed,203 client/composer tests,16 policy and91 deployment tests passed, repeated-like browser test passed. Native tips acceptance passed with proofs disabled:20 transfers, author spending tip, mixed inputs, application revert principal refund, double-spend rejection, fresh discovery. Native atomic Bok invocation/rollback passed. Real-proof testnet acceptance next, then publication. MetaMaskhostnameBLOCK confirmed; reportpushed1b6159d1. Liveapp8e68 unchanged; performancepaused.",
+      "execution_lane": "root integration/deployment; isolated contract and client implementers; independent review",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",
       "verification_method": "Native claim/cancel exclusion, Solidity custody/refund proofs, client and browser checks, coherent artifact verification, independent review, then fresh testnet signup and publication.",
       "priority": 0,
-      "next_action": "Integrate operator-only testnet portal activation, verify affected boundaries, publish coherent queued release, and exercise actual browser flows."
+      "next_action": "Integrate reviewed20-token contract/client/UI/prover changes with current atomic threads and single funding router; focused native acceptance and publish."
     }
   ],
   "specification": {
@@ -9856,6 +9856,11 @@
       "execution_lane": "Parallel: preparation/readiness/predecessor/rules; native private execution/logs/witness/kernel/publicvalidation; upload/proverstartup/resultdelivery. Root integrates, publishes, verifies and investigates Aztec inclusion/feed latency.",
       "checkpoint": "25 October: published74c2142c; two current-release real-proof posts228/600characters visible after actualinclusion in11.095/11.894s. Full private\u2192kernel wall1243/1218ms, prep836/814ms, fee ready fromclick769/755ms, encode+upload848/810ms. All measured targets pass, independent review approved. Both automatically checkpointed. Earlier27\u201328s results retained; acceptance is observed cases, not a network-wide guarantee. All services active, sourcepushed, owned transfer/draft cleanup complete.",
       "next_action": "Current measured performance request complete. Preserve evidence and known external-network variance; do not resume historical campaigns without owner scope."
+    },
+    {
+      "request": "Owner25October: apply all proven posting optimizations across ALL other application transaction flows; new goal at least50% end-to-end reduction for every flow against currentpublished74c baseline. Cover Ethereum/Aztec user and operator paths, preservevalidation and genuine usable completion.",
+      "status": "paused",
+      "checkpoint": "Browser restored; e291 real warm funded opening2.255125s/1.914850s, name20.912730s, bio18.548505s, Like visible14.691035s, ETH\u2192usableBok55.345905s. Name/bio/Bok exceed50% observed reduction with recorded fixture/dwell caveats; Like misses. Freshsignup2s notverified: testETHbelow0.001minimumdeposit; fixture refill underway. No appsourcechanges."
     }
   ]
 }
