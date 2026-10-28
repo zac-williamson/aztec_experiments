@@ -32,7 +32,7 @@ function dom(t){
  const old={document:globalThis.document,Node:globalThis.Node,fetch:globalThis.fetch};Object.assign(globalThis,{document,Node:Element,fetch:async()=>{document.ruleReads=(document.ruleReads??0)+1;return new Response(JSON.stringify({schemaVersion:1,complete:true,scope:{chainId:'31337',rollupVersion:'1',boardAddress:'0x'+'1'.repeat(64)},boardId:'0',board:null,mainPolicy:document.rules??{version:'1',text:''}}),{headers:{'content-type':'application/json'}});}});
  t.after(()=>Object.assign(globalThis,old));return document;
 }
-async function fixture(t,{fee='fee-ready',defaults={type:'post'},posting=null,topup=null,profile=false,balanceRead=null,ordinaryLimit='1000000000000000',warm=null,depositIds=['9'],moderator=false,moderatorRead=null}={}){
+async function fixture(t,{fee='fee-ready',defaults={type:'post'},posting=null,topup=null,profile=false,balanceRead=null,ordinaryLimit='1000000000000000',warm=null,depositIds=['9'],moderator=false,moderatorRead=null,onAnalytics=()=>{}}={}){
  const document=dom(t),balance=Promise.withResolvers(),started=Promise.withResolvers(),account={};let reads=0,prepared=null,onProgress;const submissions=[],prepareOptions=[];const core={sessions:0,status:0,names:0,moderator:0};
  const session={...(warm?{preparePostingState:async(deposit,options)=>{session.busy=true;try{return await warm(deposit,options);}finally{session.busy=false;}}}:{}),ordinaryPostingFeeLimit:ordinaryLimit,postingFeeLimit:'1000000000000000',bokConfigured:true,busy:false,topup:{bok:topup??{}},application:{
   readAccountStatus:async()=>{core.status++;if(core.status>1)await posting?.balanceRefresh?.();return {status:fee,privateFeeCredit:'1000000000000000000',depositIds};},ownedIdentities:async options=>{if(session.busy)throw Object.assign(Error('busy'),{code:'ROLLING_BUSY'});core.names++;const names=await posting?.namesRead?.(core.names,options);if(names)return names;return {identities:profile?['5']:[],records:profile?[{id:'5',first:'River',last:'Lane'}]:[],nextCursor:null};},readModeratorStatus:async()=>{core.moderator++;if(!moderatorRead)return {authorized:moderator};session.busy=true;try{return await moderatorRead();}finally{session.busy=false;}},
@@ -43,7 +43,7 @@ async function fixture(t,{fee='fee-ready',defaults={type:'post'},posting=null,to
  }};
  session.application.executeAction=(action,options)=>executeRollingAction(session.application,structuredClone(action),options);
  const runtime={getAccount:()=>account,account:{configure(){}},createSession:async options=>{onProgress=options.onProgress;core.sessions++;return session;}};
- const panel=mountRollingWalletPanel({loadRuntime:async()=>runtime,onPublicEffect:()=>posting?.effect?.(),onIncludedPostRendered:post=>posting?.reveal?.(post)});const host=document.createElement('section');document.body.append(host);panel.attachBokControls(host);panel.open(defaults);
+ const panel=mountRollingWalletPanel({loadRuntime:async()=>runtime,onAnalytics,onPublicEffect:()=>posting?.effect?.(),onIncludedPostRendered:post=>posting?.reveal?.(post)});const host=document.createElement('section');document.body.append(host);panel.attachBokControls(host);panel.open(defaults);
  await document.until(()=>(defaults.type?document.querySelector('[data-action-review]'):document.querySelectorAll('button').find(b=>b.textContent==='Write a post'))&&document.querySelector('dialog').getAttribute('aria-busy')==='false');
  return {document,panel,host,balance,started,session,runtime,progress:value=>onProgress(value),reads:()=>reads,prepared:()=>prepared,submissions,prepareOptions,core:()=>({...core})};
 }
@@ -1420,4 +1420,23 @@ for(const asset of ['ETH','USDC'])test('signup shows total before a collapsed co
  assert.match(total.textContent,/≈ \$3.10 USD/);assert.match(total.textContent,/Includes your deposit, posting credit and payment fees/);
  assert.equal(!!details.open,false);assert.equal(details.querySelector('summary').textContent,'Cost breakdown');assert.match(details.textContent,/Posting credit/);
  assert(total.parentNode.childNodes.indexOf(total)<details.parentNode.childNodes.indexOf(details));assert.equal(payments,0);
+});
+
+// These exercise application outcome hooks, rather than inferring success from a click.
+test('analytics separates attempts, authenticated inclusion and actual visible posts without identifiers',{timeout:3000},async t=>{
+ const canonical=Promise.withResolvers(),sending=Promise.withResolvers(),metrics=[];
+ const f=await fixture(t,{onAnalytics:(name,details)=>metrics.push({name,...details}),posting:{status:'confirmed',txHash:includedPost().txHash,submit:()=>{sending.resolve();return canonical.promise;},reveal:()=>true}});
+ await f.started.promise;f.balance.resolve({available:true,availableCredit:'0'});await f.document.until(()=>f.host.textContent.includes('0 USDC available'));
+ const editor=f.document.querySelector('textarea');editor.value='Private test content must never enter analytics';editor.fire('input');f.document.querySelector('[data-action-review]').fire('click');await sending.promise;
+ assert.equal(metrics.filter(x=>x.name==='post_attempt').length,1);assert.equal(metrics.filter(x=>x.name==='post_included').length,0);assert.equal(metrics.filter(x=>x.name==='first_post').length,0);
+ f.progress(includedPost('wrong-intent'));assert.equal(metrics.filter(x=>x.name==='post_included').length,0);f.progress(includedPost());f.progress(includedPost());assert.equal(metrics.filter(x=>x.name==='post_included').length,1);assert.equal(metrics.filter(x=>x.name==='first_post').length,0);
+ const inclusion=includedPost(),post={id:'17',confirmation:'pending',position:{txHash:inclusion.txHash,blockHash:inclusion.blockHash,blockNumber:String(inclusion.blockNumber)}};
+ const snapshot={checkpoint:{number:108,hash:inclusion.blockHash},renderedPosts:[post]};f.panel.observePublicPosts([post],snapshot);f.panel.observePublicPosts([post],snapshot);
+ assert.equal(metrics.filter(x=>x.name==='post_visible').length,1);assert.equal(metrics.filter(x=>x.name==='first_post').length,1);
+ canonical.resolve();await f.document.until(()=>f.document.querySelector('dialog').getAttribute('aria-busy')==='false');assert.equal(metrics.filter(x=>x.name==='post_included').length,1);
+ assert(metrics.every(row=>Object.keys(row).every(k=>['name','count','durationMs'].includes(k))));assert(!JSON.stringify(metrics).includes('Private test'));assert(!JSON.stringify(metrics).includes(inclusion.txHash));
+});
+test('broken analytics callbacks cannot stop an included application action',{timeout:3000},async t=>{
+ const f=await fixture(t,{onAnalytics:()=>{throw Error('analytics unavailable');},balanceRead:()=>Promise.resolve({available:true,availableCredit:'0'}),posting:{status:'included',txHash:includedPost().txHash,inclusion:{blockNumber:108,blockHash:includedPost().blockHash}}});
+ await f.document.until(()=>f.host.textContent.includes('0 USDC available'));const result=await f.panel.act({type:'like',post:'10'});assert.equal(result.status,'included');assert.equal(f.submissions.length,1);
 });

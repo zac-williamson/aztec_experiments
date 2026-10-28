@@ -200,8 +200,16 @@ const message='This action could not be completed. Your draft is saved. If you a
  * Uploaded bytes come from immutable previewBlob; recovery validates the saved
  * raster but displays its ORIGINAL Blob, never the validator's re-encoded bytes.
  */
-export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPrivateChange=()=>{},onIncludedPostRendered=()=>false}){
+export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPrivateChange=()=>{},onIncludedPostRendered=()=>false,onAnalytics=()=>{}}){
  if(typeof loadRuntime!=='function'||typeof onPublicEffect!=='function'||typeof onPrivateChange!=='function'||typeof onIncludedPostRendered!=='function')throw Error('Wallet panel configuration unavailable.');
+ const metric=(name,details)=>{try{onAnalytics(name,details);}catch{}};
+ const metricNow=()=>globalThis.performance?.now?.()??Date.now();
+ function includedMetric(action,active){
+  if(!active||active.analyticsIncluded)return;active.analyticsIncluded=true;
+  const durationMs=metricNow()-(active.analyticsStarted??metricNow());
+  if(postingTypes.has(action?.type)){const count=action.type==='thread'?Math.min(20,action.contents?.length??1):1;metric('post_included',{count,durationMs});if(action.type==='reply'||action.type==='thread'&&action.parent&&action.parent!=='0')metric('reply_included',{count});}
+  else if(action?.type==='like')metric('like_included',{durationMs});
+ }
  const runtimeFailure=Object.freeze({}),connectionFailure=Object.freeze({}),avatarFailure=Object.freeze({}),rulesFailure=Object.freeze({});
  const readPublic=createPublicReader(),rulesInFlight=new Map();
  let postingRules=null,rulesScope=null,updateRules=()=>{};
@@ -299,7 +307,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     /^0x[0-9a-f]{64}$/.test(position.blockHash)&&Number.isSafeInteger(checkpoint?.number)&&blockNumber<=checkpoint.number&&
     (blockNumber!==checkpoint.number||position.blockHash===checkpoint.hash)){
     // A rendered row supplies the ID; never predict a post before inclusion.
-    try{if(onIncludedPostRendered({id:post.id,txHash:reveal.txHash})===true)pendingPostReveal=null;}catch{}break;
+    try{if(onIncludedPostRendered({id:post.id,txHash:reveal.txHash})===true){metric('post_visible',{durationMs:metricNow()-(reveal.analyticsStarted??metricNow())});metric('first_post');pendingPostReveal=null;}}catch{}break;
    }
   }
   if(!ownBokPosts.size||!Array.isArray(posts)||!unlocked())return;
@@ -325,7 +333,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   let changed=false;
   for(const request of ownBokPosts.values()){
    const confirmedReply=request.replyConfirmed?request.reply:null;
-   if(request.confirmedReply!==confirmedReply){request.confirmedReply=confirmedReply;changed=true;}
+   if(request.confirmedReply!==confirmedReply){request.confirmedReply=confirmedReply;changed=true;if(confirmedReply&&!request.analyticsComplete){request.analyticsComplete=true;metric('bok_completed',{durationMs:metricNow()-(request.analyticsStarted??metricNow())});}}
   }
   if(changed){bokRefreshNeeded=true;requestBokBalance();}
  }
@@ -410,7 +418,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   if((setupMode||postingInProgress)&&text)live.replaceChildren(el('span',{class:'account-setup-spinner','aria-hidden':'true'}),el('strong',{},text),el('span',{class:'account-setup-help'},postingInProgress?'Your post is being processed.':'This can take a little while. Keep this page open.'));
   else live.textContent=text;
  }
- function startSetup(){setupMode='wallet';note('Opening your account…');render();}
+ function startSetup(){metric('account_open');setupMode='wallet';note('Opening your account…');render();}
  function clearOperationFeedback(){error='';notice='';note('');for(const node of content.querySelectorAll('[data-operation-feedback]'))node.remove();}
  let moderatorLookup=null;
  // Optional menu discovery must not lock the presentation. Actual moderator
@@ -492,7 +500,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  async function refresh(openingStatus){
   const epoch=accountEpoch;checkAccount(epoch);balances=null;bokAccounting=null;recoveryInspection=null;invalidateBokBalance();blocked=true;
   const next=openingStatus??await session.application.readAccountStatus();
-  checkAccount(epoch);status=next;intent=next.intent??null;setPendingWithdrawal(next.pendingWithdrawal??null);
+  checkAccount(epoch);status=next;if(next.status==='fee-ready')metric('account_usable');intent=next.intent??null;setPendingWithdrawal(next.pendingWithdrawal??null);
   if(next.status==='recovering'){
    if(!intent?.intentId)throw Error('Missing recovery intent');
   }
@@ -522,7 +530,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    if(diagnostic?.stage==='funding-claim'){
     if(fundingAttempt?.epoch===epoch&&fundingAttempt.session===session){
      if(diagnostic.state==='failed')fundingFailureStep=diagnostic;
-     if(diagnostic.step==='recover'&&diagnostic.state==='complete'&&fundingAttempt.paymentState!=='credited')fundingAttempt.paymentState='confirmed';
+     if(diagnostic.step==='recover'&&diagnostic.state==='complete'&&fundingAttempt.paymentState!=='credited'){fundingAttempt.paymentState='confirmed';metric('payment_confirmed');}
      fundingAttempt.step=diagnostic.step;
     }
     // The continuation's actual stage supersedes the earlier Ethereum notice.
@@ -603,7 +611,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   content.append(paragraph(runtime.startingTestAccount?.()?'Connect your wallet to start a new test account with an empty posting balance.':'Connect your Ethereum wallet to open your account. Use the same wallet whenever you come back.'));
   if(typeof runtime.fundingWallets!=='function'||typeof runtime.signInWallet!=='function'){content.append(paragraph('Wallet sign-in is unavailable. Reload the page to try again.'));return;}
   walletChoices(content,choice=>void work(async()=>{
-   startSetup();note('Approve sign-in in '+choice.name+'…');await runtime.signInWallet(choice.id);await connect();
+   startSetup();note('Approve sign-in in '+choice.name+'…');await runtime.signInWallet(choice.id);metric('wallet_connected');await connect();
    if(!intent&&['fee-needed','collateral-pending'].includes(status?.status)){
     view=status.depositIds?.length?'topup':'funding';topupKind='private-fee';
    }
@@ -1056,7 +1064,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  }
  function requestPostReveal(active,action,txHash){
   if(!active||active.revealRequested||active.epoch!==accountEpoch||!postingTypes.has(action?.type)||!/^0x[0-9a-f]{64}$/.test(txHash))return;
-  active.revealRequested=true;pendingPostReveal={epoch:accountEpoch,txHash};
+  active.revealRequested=true;pendingPostReveal={epoch:accountEpoch,txHash,analyticsStarted:active.analyticsStarted};
  }
  async function receive(result){
   // The sender has returned. Account/UI refreshes are not blockchain waiting.
@@ -1068,12 +1076,13 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   if(['bok-post-reverted','bok-release-reverted'].includes(result.status)){note('');notice=(result.status==='bok-post-reverted'?'The Bok post reverted.':'The Bok release or expiry reverted.')+' A network fee may have been charged. The funded request remains saved; no action is retried automatically.';return;}
   if(['included','confirmed'].includes(result.status)){
    const provisional=result.status==='included';
+   if(actionOperation?.intentId===result.intentId)includedMetric(result.action,actionOperation);
    if(actionOperation?.intentId===result.intentId)requestPostReveal(actionOperation,result.action,result.txHash);
    if(provisional){includedObservation={txHash:result.txHash,action:result.action,inclusion:result.inclusion,observed:null};if(result.action?.type==='like')pendingLikes.set(BigInt(result.action.post).toString(),includedObservation);actionFeedback.textContent=actionLabel(result.action)+': included; final confirmation pending.';actionFeedback.hidden=false;requestIncludedObservation();}
    if(result.action?.type==='like'){likes.set(BigInt(result.action.post).toString(),{liked:true,anchor:likeFeedKey});onPrivateChange();}
    if(actionOperation?.intentId===result.intentId)actionOperation.confirmed=!provisional;
    if((result.action?.type==='bok'||result.action?.type==='thread'&&result.action.budgets?.some(value=>BigInt(value)>0n))&&typeof result.txHash==='string'&&/^0x[0-9a-f]{64}$/i.test(result.txHash)&&!ownBokPosts.has(result.txHash)){
-    ownBokPosts.set(result.txHash,{requestId:null,pluginId:null,reply:null,replyBlock:null,replyConfirmed:false,confirmedReply:null});
+    metric('bok_requested');ownBokPosts.set(result.txHash,{requestId:null,pluginId:null,reply:null,replyBlock:null,replyConfirmed:false,confirmedReply:null,analyticsStarted:metricNow()});
     if(ownBokPosts.size>128)ownBokPosts.delete(ownBokPosts.keys().next().value);
    }
    if(immediateTypes.has(result.action?.type)){if(postingTypes.has(result.action?.type)||['bio','avatar'].includes(result.action?.type)){draft={...draft,content:'',threadPosts:[]};releasePreviews();}note('');if(dialog.open&&!actionOperation?.included&&actionOperation?.modal!==false)dialog.close();}
@@ -1127,7 +1136,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    active.txHash&&active.txHash!==progress.txHash||
    !/^0x[0-9a-f]{64}$/.test(progress.txHash)||!/^0x[0-9a-f]{64}$/.test(progress.blockHash)||
    !Number.isSafeInteger(progress.blockNumber)||progress.blockNumber<=0)return;
-  active.included=true;active.txHash=progress.txHash;
+  active.included=true;active.txHash=progress.txHash;includedMetric(intent.action,active);
   requestPostReveal(active,intent.action,progress.txHash);
   note('Confirmation pending');closeButton.disabled=false;
   if(!postingTypes.has(intent.action.type)){const finish=beginRollingMeasure('action.included');finish();actionFeedback.textContent=actionLabel(intent.action)+': confirmation pending.';actionFeedback.hidden=false;}
@@ -1138,9 +1147,11 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  }
  async function executeAction(action,{immediate=immediateTypes.has(action.type),postingRules:expectedRules,onResult=()=>{},onIncluded=()=>{},modal=true}={}){
   const epoch=accountEpoch;checkAccount(epoch);pendingPostReveal=null;includedObservation=null;blocked=true;
+  const analyticsStarted=metricNow();if(postingTypes.has(action.type))metric('post_attempt');else if(action.type==='like')metric('like_attempt');
   if(immediate){
    let result;
-   try{result=await session.application.executeAction(action,{...(expectedRules===undefined?{}:{postingRules:expectedRules}),onPrepared:prepared=>{checkAccount(epoch);includedObservation=null;intent=prepared;if(immediateTypes.has(prepared.action?.type)){actionFeedback.textContent='';actionFeedback.hidden=true;actionOperation={epoch,intentId:prepared.intentId,included:false,modal,onIncluded};}}});checkAccount(epoch);}catch(failure){
+   try{result=await session.application.executeAction(action,{...(expectedRules===undefined?{}:{postingRules:expectedRules}),onPrepared:prepared=>{checkAccount(epoch);includedObservation=null;intent=prepared;if(immediateTypes.has(prepared.action?.type)){actionFeedback.textContent='';actionFeedback.hidden=true;actionOperation={epoch,intentId:prepared.intentId,included:false,modal,onIncluded,analyticsStarted};}}});checkAccount(epoch);}catch(failure){
+    metric(failure?.code===4001||failure?.code==='ACTION_REJECTED'?'action_cancelled':'action_failed');
     if(['ROLLING_POSTING_RULES_CHANGED','ROLLING_SUBBOARD_REJECTED'].includes(failure?.code)){checkAccount(epoch);intent=null;actionOperation=null;await loadRules(rulesId(action),true).catch(()=>{});checkAccount(epoch);throw rulesFailure;}
     if(['BB_POST_FEE_CREDIT_REQUIRED','BB_LIKE_FEE_CREDIT_REQUIRED','BB_PREFERENCE_FEE_CREDIT_REQUIRED'].includes(failure?.code)){checkAccount(epoch);intent=null;actionOperation=null;accountRefreshNeeded=true;}
     throw failure;
@@ -1440,7 +1451,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   try{
   let result;try{result=await capability.advanceClaim();}finally{if(fundingActiveCapability===capability)fundingActiveCapability=null;}checkAccount(epoch);
   if(['included','complete'].includes(result.state)){
-   attempt.paymentState='credited';attempt.step='readiness';
+   attempt.paymentState='credited';attempt.step='readiness';if(!attempt.analyticsCredited){attempt.analyticsCredited=true;metric('payment_confirmed');metric('credit_received');}
    transactionTiming.complete();
    const finishReadiness=beginRollingMeasure('funding.readiness');
    try{
@@ -1548,10 +1559,10 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   const pay=button('Pay',()=>void work(async()=>{
    const selected=topupSelection(),q=topupQuote,epoch=accountEpoch;
    if(!q||selected?.key!==topupQuoteKey)throw topupFailure(Error('Price changed'),'quote');
-   topupQuote=null;
+   topupQuote=null;metric('payment_started');
    try{
-    await runTopupPayment(cap,selected.input,q,phase=>{checkAccount(epoch);note(phase==='confirmation'?'Waiting for Ethereum confirmation…':phase==='approval'?(isBok?'Approve USDC spending in your wallet…':'Approve FEE spending in your wallet…'):'Confirm your payment in your wallet…');});
-    checkAccount(epoch);topupSaved={paymentSaved:true,phase:'deposit',...selected.input};fundingAutomatic=true;try{await advanceFunding();}catch(error){stopFunding();throw topupFailure(error,'claim');}
+    const payment=await runTopupPayment(cap,selected.input,q,phase=>{checkAccount(epoch);note(phase==='confirmation'?'Waiting for Ethereum confirmation…':phase==='approval'?(isBok?'Approve USDC spending in your wallet…':'Approve FEE spending in your wallet…'):'Confirm your payment in your wallet…');});
+    checkAccount(epoch);if(payment&&!payment.pending)metric('payment_confirmed');topupSaved={paymentSaved:true,phase:'deposit',...selected.input};fundingAutomatic=true;try{await advanceFunding();}catch(error){stopFunding();throw topupFailure(error,'claim');}
    }catch(failure){topupQuoteError=aggregateFundingFailure(failure)??'The payment could not complete. Refresh the price and try again.';try{topupSaved=await cap.inspect();}catch{}throw failure;}
   },aggregateFundingFailure),true);
   const retry=button('Refresh price',()=>{resetTopupQuote();requestTopupQuote();});
@@ -1600,10 +1611,10 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     fundingSummary(isUsdc?'Payment fee':'Ethereum fee limit',(isUsdc?decimal(b.relayFeeUsdc,6):compactAmount(b.gasBudgetWei,18,8,true))+currency,isUsdc?'Included in your USDC payment.':'You pay the actual network fee, up to this limit.'),
     paragraph('Deposit held: '+decimal(isUsdc?b.collateral.amount:b.collateralWei,18)+' ETH.'),paragraph('Posting credit: '+decimal(b.fee.amount,18)+' FEE. Setup can use up to '+decimal(q.privateFeeCap,18)+' of these credits.'),paragraph('Exchange price tolerance: '+(q.slippageBps/100)+'%. Unused exchange funds are returned to the paying wallet.'));content.append(details);
    content.append(button('Confirm payment',()=>void work(async()=>{
-    const epoch=accountEpoch,capability=session.funding;checkAccount(epoch);const attempt=beginFundingAttempt(capability);fundingQuote=null;fundingAutomatic=true;notice='Approve the payment in your wallet…';render();
+    const epoch=accountEpoch,capability=session.funding;checkAccount(epoch);const attempt=beginFundingAttempt(capability);metric('payment_started');fundingQuote=null;fundingAutomatic=true;notice='Approve the payment in your wallet…';render();
     try{
      const payment=await capability.confirm({onSubmitted:()=>{checkAccount(epoch);attempt.paymentState='submitted';note('Waiting for Ethereum confirmation…');}});note('');checkAccount(epoch);
-     attempt.paymentState=payment?.pending?'submitted':'confirmed';fundingAutomatic=true;notice=payment?.pending?'Payment submitted. Waiting for confirmation…':'Payment confirmed. Setting up posting…';await advanceFunding();
+     attempt.paymentState=payment?.pending?'submitted':'confirmed';if(!payment?.pending)metric('payment_confirmed');fundingAutomatic=true;notice=payment?.pending?'Payment submitted. Waiting for confirmation…':'Payment confirmed. Setting up posting…';await advanceFunding();
     }catch(failure){
      checkAccount(epoch);
      // The existing authenticated local payment summary is the only fallback
@@ -1842,6 +1853,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  render();
  return panelApi=Object.freeze({initialize,act,open(defaults={},extras={}){
   if(defaults.type==='preference'||defaults.type==='read-marker')return false;
+  if(!unlocked())metric('account_open');
   if(busy){if(!dialog.open){returnFocus=document.activeElement;dialog.showModal();closeButton.focus();}return;}
   if(inlineCreation){inlineCreation=false;restoreDialogContent();}
   if(session)unlocked(); // Detect replaced custody before rendering cached account data.

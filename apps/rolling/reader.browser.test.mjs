@@ -10,7 +10,7 @@ import {chromium} from 'playwright';
 const root=fileURLToPath(new URL('.',import.meta.url));
 const launchBrowser=()=>chromium.launch({headless:true,...(process.env.T04_CHROMIUM_EXECUTABLE?{executablePath:process.env.T04_CHROMIUM_EXECUTABLE}:{})});
 test('public reader: navigation, unsafe content, failure recovery and narrow keyboard menu',async t=>{
- const files=new Set(['live.html','reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);let unavailable=false,longLabels=false;
+ const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);let unavailable=false,longLabels=false;
  const scope={boardAddress:'0x'+'1'.repeat(64)},identity={id:'7',first:'River',last:'Lane'};
  const post={id:'10',record:{root:'10',parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'7'},text:'[Docs](https://example.com/docs?x=1&y=2)\nhttp://example.org/path [Unsafe](javascript:alert) [Data](data:text/html,hello) <img src=x onerror=alert(1)> 😀',timestamp:'1791734400',likes:'2',bot:null};
  const later={...post,id:'20',record:{...post.record,parent:'10'},text:'The linked reply is outside the first page.'};
@@ -64,7 +64,7 @@ test('public reader: navigation, unsafe content, failure recovery and narrow key
 // These public records and the action-recorder module are labelled doubles.
 // The renderer is real; this checks routing/presentation, never a transaction.
 async function socialFixture(t,{wallet='recorder',policies=[]}={}){
- const files=new Set(['live.html','reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css','avatar-upload.mjs']);
+ const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css','avatar-upload.mjs']);
  if(wallet==='real')files.add('wallet-panel.mjs');
  const reason='<img src=x onerror=alert(1)> [unsafe](javascript:alert(1))';
  const record={root:'10',parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'0'};
@@ -143,7 +143,7 @@ test('reader restores disabled Liked controls and exposes no Unlike action',asyn
 // are real. No wallet, proof or chain acceptance is inferred from these checks.
 async function pagingFixture(t,{observer='controlled',directory=false}={}){
  const state={calls:[],pending:[],hold:false,mode:'normal',active:0,peak:0,prepend:false};
- const files=new Set(['live.html','reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
+ const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
  const post=id=>({id:String(id),record:{root:String(id),parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'0'},text:'Public item '+id+'\n'+('Visible public text.\n'.repeat(20)),timestamp:'1',likes:'0'});
  const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');
@@ -231,7 +231,7 @@ test('native browser intersection loads a page near the end without a button cli
 
 // Labelled board API fixtures exercise the production reader, not chain history.
 async function boardFixture(t,{rejected=false}={}){
- const state={calls:[],mode:'normal'},files=new Set(['live.html','reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
+ const state={calls:[],mode:'normal'},files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
  const hostile='<img src=x onerror=alert(1)> Local rules are data';
  const board={id:'20',name:'Workshop',slug:'workshop',description:'Build useful things.',creationVersion:'1',mainVersion:'2',mainRules:'Current parent rules',rules:hostile,rejected,rejection:rejected?{reason:'<script>rejected()</script>',mainVersion:'2'}:null};
  const post=(id,boardId)=>({id,record:{root:id,parent:'0',reference:'0',kind:'1',subboard:boardId,name_id:'0'},text:rejected&&boardId==='20'?null:'Board post '+id,timestamp:'1',likes:'0',mainVersion:'1',localVersion:boardId==='0'?'0':'1'});
@@ -293,7 +293,7 @@ test('unknown or malformed board route has no generic-feed fallback',async t=>{
 // Labelled private-session/public-HTTP doubles, real panel/reader/pure filter.
 // No proof, paid action or encrypted-chain recovery is represented by this fixture.
 async function privateViewFixture(t,{mutation=null,tombstone=null}={}){
- const files=new Set(['live.html','reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css','avatar-upload.mjs','wallet-panel.mjs']);
+ const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css','avatar-upload.mjs','wallet-panel.mjs']);
  const scope={chainId:'31337',rollupVersion:'1',boardAddress:'0x'+'1'.padStart(64,'0')},hash='0x'+'a'.repeat(64);
  const make=(id,block)=>({id,record:{root:'10',parent:id==='10'?'0':'10',reference:'0',kind:'1',subboard:'0',name_id:'0'},text:'Public content '+id,timestamp:'1',likes:'0',position:{blockNumber:String(block),txIndexWithinBlock:'0',logIndexWithinTx:'0',blockHash:hash}});
  const requests=[],feed=[],state={hold:false,pending:[]};
@@ -561,7 +561,7 @@ test('G18 real reader retains the name selector across navigation and opens crea
 
 
 test('public revision notification renders a Bok response without navigation or polling',async t=>{
- const files=new Set(['live.html','reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
+ const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
  const checkpoint={number:12,hash:'0x'+'a'.repeat(64)},scope={boardAddress:'0x'+'1'.repeat(64)};
  const request={id:'10',record:{root:'10',parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'0'},text:'@bok please reply',timestamp:'1791734400',likes:'0',bot:null};
  const response={...request,id:'11',record:{...request.record,parent:'10'},text:'Here is your answer.',bot:{}};
@@ -583,7 +583,7 @@ test('public revision notification renders a Bok response without navigation or 
 
 async function threadRefreshFixture(t,{total=32,hydrate=false,locked=false}={}){
  const state={total,revision:'1',calls:[],invalidPage:false,hold:false,pending:[],postMetadata:{}};
- const files=new Set(['live.html','reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
+ const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
  const checkpoint={number:12,hash:'0x'+'a'.repeat(64)},scope={boardAddress:'public'};
  let stream;const connected=Promise.withResolvers();
  const server=http.createServer(async(req,res)=>{

@@ -12,7 +12,7 @@ test('reader serves only browser assets and bounded public API from one origin',
  assert.match(page.headers.get('content-security-policy'),/script-src 'self'/);
  assert.match(page.headers.get('content-security-policy'),/frame-ancestors 'none'/);
  assert.equal(page.headers.get('cache-control'),'no-store');assert.equal(page.headers.get('access-control-allow-origin'),null);
- for(const asset of ['reader.mjs','reader-client.mjs','profile-view.mjs','avatar-upload.mjs','model.mjs','navigation.mjs','style.css']){
+ for(const asset of ['reader.mjs','analytics.mjs','analytics-schema.mjs','reader-client.mjs','profile-view.mjs','avatar-upload.mjs','model.mjs','navigation.mjs','style.css']){
   const response=await get('/'+asset);assert.equal(response.status,200);assert.equal(response.headers.get('x-content-type-options'),'nosniff');
   assert.match(response.headers.get('content-type'),asset.endsWith('.css')?/text\/css/:/text\/javascript/);
  }

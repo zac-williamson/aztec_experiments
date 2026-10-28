@@ -1,3 +1,4 @@
+import {createAnalytics} from './analytics.mjs';
 import {createReaderUpdates} from './reader-updates.mjs';
 import {beginRollingMeasure} from './performance.mjs';
 import {createPublicReader} from './reader-client.mjs';
@@ -7,6 +8,7 @@ import {createPublicAvatar,createPublicProfile} from './profile-view.mjs';
 import {createMessageContent as richText,createInlineActionRegistry,savedPreferenceControl,savedReaderSelection,savedReaderRoute,createIcon,createBrand,createSkeletonFeed,createThreadView,boardTone,boardInitial} from './model.mjs';
 import {captureRoutePosition,focusRoute,skipToContent,revealIncludedPost} from './navigation.mjs';
 
+const analytics=createAnalytics();
 const app=document.querySelector('#app'),positions=new Map(),feedPreferences=createFeedPreferences(),priorityTxs=new Set();
 const read=createRankedHomeReader({read:createPublicReader(),getPreferences:()=>feedPreferences.snapshot(privatePanel?.savedItemsSnapshot?.()),getPriorityTxs:()=>[...priorityTxs]});
 const currentRoute=()=>savedReaderRoute(location.hash==='#/new-account'?'/home':location.hash.slice(1)||'/home');
@@ -57,7 +59,7 @@ function privateChanged(){
 }
 async function accountPanel(){
  return walletPanel??=import('./wallet-panel.mjs').then(({mountRollingWalletPanel})=>mountRollingWalletPanel({
-   loadRuntime:prepareAccountTools,onIncludedPostRendered:post=>{activeThread?.reveal(post?.id);const shown=revealIncludedPost(post);if(shown)priorityTxs.delete(post?.txHash);return shown;},onPublicEffect:effect=>{if(['post','reply','quote','repost','thread','bok'].includes(effect?.type)&&/^0x[0-9a-f]{64}$/.test(effect?.txHash)){priorityTxs.add(effect.txHash);if(priorityTxs.size>10)priorityTxs.delete(priorityTxs.values().next().value);}return !main?.querySelector('.public-content')||privateViews.has(route.split('/')[1])||route.split('/')[1]==='directory'?render({live:!!main?.querySelector('.public-content')}):updates.request();},onPrivateChange:privateChanged})).then(panel=>{privatePanel=panel;void Promise.resolve(panel.initialize()).then(privateChanged).catch(()=>{});return panel;});
+   loadRuntime:prepareAccountTools,onAnalytics:(name,details)=>analytics.track(name,details),onIncludedPostRendered:post=>{activeThread?.reveal(post?.id);const shown=revealIncludedPost(post);if(shown)priorityTxs.delete(post?.txHash);return shown;},onPublicEffect:effect=>{if(['post','reply','quote','repost','thread','bok'].includes(effect?.type)&&/^0x[0-9a-f]{64}$/.test(effect?.txHash)){priorityTxs.add(effect.txHash);if(priorityTxs.size>10)priorityTxs.delete(priorityTxs.values().next().value);}return !main?.querySelector('.public-content')||privateViews.has(route.split('/')[1])||route.split('/')[1]==='directory'?render({live:!!main?.querySelector('.public-content')}):updates.request();},onPrivateChange:privateChanged})).then(panel=>{privatePanel=panel;void Promise.resolve(panel.initialize()).then(privateChanged).catch(()=>{});return panel;});
 }
 // `extras` carries display-only hints (such as the post being answered); the action itself is `defaults`.
 async function openWallet(defaults={},extras={}){
@@ -199,6 +201,7 @@ function shell(title,{boardId=null}={}){
  const nav=(label,to,icon)=>link([el('span',{class:'nav-icon','aria-hidden':'true'},createIcon(icon)),label],to);
  const rail=el('aside',{class:'rail',id:'community-navigation'},link(createBrand(),'/home',{class:'brand'}),el('p',{class:'rail-label'},'Browse'),el('nav',{class:'nav-group','aria-label':'Community'},nav('Home','/home','home'),nav('Main board','/board/0','message'),nav('Explore boards','/directory','compass'),nav('Following','/following','users'),nav('Bookmarks','/bookmarks','bookmark')),el('p',{class:'rail-foot'},'Say it in public. Stay private.',el('br'),el('a',{href:'/archive/'},'Earlier conversations')));
  for(const entry of rail.querySelectorAll('nav a'))if(entry.hash.slice(1)===route||entry.hash==='#/directory'&&route.startsWith('/directory/')){entry.setAttribute('aria-current','page');entry.classList.add('active');}
+ const privacyToggle=button(analytics.enabled()?'Turn off usage analytics':'Usage analytics off',()=>{analytics.setOptOut(true);privacyToggle.textContent='Usage analytics off';privacyToggle.disabled=true;},{class:'analytics-choice'});privacyToggle.disabled=!analytics.enabled();rail.querySelector('.rail-foot').append(el('br'),privacyToggle);
  const closeMenu=()=>{rail.classList.remove('open');rail.inert=narrow.matches;document.querySelector('.workspace').inert=false;menu.setAttribute('aria-expanded','false');menu.focus();};
  const menu=button(createIcon('menu'),()=>{rail.inert=false;rail.classList.add('open');document.querySelector('.workspace').inert=true;menu.setAttribute('aria-expanded','true');rail.querySelector('a').focus();},{class:'menu-toggle','aria-label':'Open navigation','aria-expanded':'false','aria-controls':'community-navigation'});
  rail.append(button(createIcon('close'),closeMenu,{class:'mobile-close','aria-label':'Close navigation'}));rail.inert=narrow.matches;
@@ -247,7 +250,7 @@ function boardOverview(data){
 }
 function capturePosition(){return renderedRoute===route?{...captureRoutePosition(loadedPages),threadEnd:loadedThreadEnd}:positions.get(route);}
 async function render({live=false,publicationRevision}={}){
- const finishTiming=beginRollingMeasure(live?'reader.update':'reader.load');
+ const finishTiming=beginRollingMeasure(live?'reader.update':'reader.load'),analyticsStarted=performance.now();
  if(live)positions.set(route,capturePosition());
  controller?.abort();controller=new AbortController();const signal=controller.signal,current=++sequence;renderActive=current;
  try{
@@ -410,6 +413,7 @@ async function render({live=false,publicationRevision}={}){
   if(live){main.querySelector('.public-content')?.replaceWith(contentHost);announce('Conversations updated.');}
   notifyRenderedPosts();
   renderedRoute=route;loadedPages=pages;loadedThreadEnd=api==='thread'&&!cursor;
+  if(!live){analytics.track('feed_loaded',{durationMs:performance.now()-analyticsStarted});if(api==='thread'||api==='post')analytics.track('conversation_opened');if(api==='board')analytics.track('board_opened');}
   finishDOM();
   updates.rendered(data.revision);
   finishTiming();
@@ -421,7 +425,7 @@ async function render({live=false,publicationRevision}={}){
    observer.observe(more);
   }
 
- }catch(error){if(signal.aborted)return;if(live){announce('Conversations could not refresh.');return false;}loading.remove();contentHost.append(el('div',{class:'empty',role:'alert'},el('h2',{},error.code==='READER_SYNCING'?'Conversations are being checked':error.code==='READER_NOT_FOUND'?({board:'Board',profile:'Profile',post:'Post',thread:'Conversation'}[api]??'Page')+' not found':'Conversations could not load'),el('p',{},error.code==='READER_SYNCING'?'The feed is catching up with new posts. Try again shortly.':error.code==='READER_NOT_FOUND'?'This link does not point to an available '+({board:'board',profile:'profile',post:'post',thread:'conversation'}[api]??'page')+'.':'Check your connection, then try loading the conversations again.'),button('Try again',()=>render())));focusRoute(route,positions.get(route),current===1);}
+ }catch(error){if(signal.aborted)return;if(!live)analytics.track('feed_failed');if(live){announce('Conversations could not refresh.');return false;}loading.remove();contentHost.append(el('div',{class:'empty',role:'alert'},el('h2',{},error.code==='READER_SYNCING'?'Conversations are being checked':error.code==='READER_NOT_FOUND'?({board:'Board',profile:'Profile',post:'Post',thread:'Conversation'}[api]??'Page')+' not found':'Conversations could not load'),el('p',{},error.code==='READER_SYNCING'?'The feed is catching up with new posts. Try again shortly.':error.code==='READER_NOT_FOUND'?'This link does not point to an available '+({board:'board',profile:'profile',post:'post',thread:'conversation'}[api]??'page')+'.':'Check your connection, then try loading the conversations again.'),button('Try again',()=>render())));focusRoute(route,positions.get(route),current===1);}
  }finally{finishTiming();if(renderActive===current)renderActive=0;void updates.flush();}
 }
 const updates=createReaderUpdates({refresh:publicationRevision=>render({live:!!main?.querySelector('.public-content'),publicationRevision}),canRefresh:()=>!renderActive&&!document.hidden&&route.split('/')[1]!=='directory'&&!!main?.querySelector('.public-content')});

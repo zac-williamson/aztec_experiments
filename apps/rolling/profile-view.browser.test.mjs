@@ -11,7 +11,7 @@ window.make=async(mime='image/png',size=100)=>{const c=document.createElement('c
 window.identity=(bytes,extra={})=>({id:'7',first:'River',last:'Lane',profile:{bio:{version:'1',length:'0',text:''},avatar:{version:'1',width:'100',height:'100',length:String(bytes.length),encoding:'base64',data:btoa(String.fromCharCode(...bytes)),...extra}}});
 window.mount=(id,options)=>{const n=avatar(id,options);document.body.append(n);return n;};window.ready=true;`;
 async function setup(t){
- const files=new Set(['profile-view.mjs','reader.mjs','reader-client.mjs','model.mjs','navigation.mjs','style.css','live.html']);
+ const files=new Set(['profile-view.mjs','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-client.mjs','model.mjs','navigation.mjs','style.css','live.html']);
  const state={identity:{id:'7',first:'River',last:'Lane',profile:{bio:{version:'1',text:'<script>bad()</script> Plain public bio'},avatar:{version:'0'}}}};
  const post=(id,name,bot=null)=>({id,record:{root:id,parent:'0',reference:'0',kind:'1',subboard:'0',name_id:name},text:'Public conversation',timestamp:'1791734400',likes:'0',bot});
  const server=http.createServer(async(req,res)=>{
