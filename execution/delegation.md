@@ -1,3 +1,7 @@
+# Paid-like release continuation — 28 October 2026
+
+Root owns source integration, static publication and real browser acceptance. thread_composer_review prepared the claim SDK packet and corrected publisher configuration selection; thread_application independently reviewed both and prepared current deployment documentation. posting_credit_ui verified the fresh signup/post/two-tip/post test without running transactions. All agents use temporary drafts; root is the only shared source writer. Performance remains paused. Publication and real-proof acceptance are pending.
+
 # Active functional certification —26 October2026
 
 Root owns source, publication and live browser tests. functional_flow_inventory independently reviewed the temporary profile-only native-error capture; no transaction or ordinary-error behavior changed. Descriptor-only array reads incorporated. Performance remains paused.

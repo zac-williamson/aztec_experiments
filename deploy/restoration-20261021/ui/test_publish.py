@@ -10,6 +10,7 @@ import re
 import stat
 import subprocess
 import shutil
+import shlex
 import tempfile
 import types
 import unittest
@@ -60,7 +61,7 @@ class RepeatPublication(unittest.TestCase):
             return self.root / text.lstrip('/') if text.startswith('/proc/') else pathlib.Path(value)
 
         self.ns = {'hashlib': hashlib, 'importlib':importlib, 'json': json, 'os': os, 'pathlib': types.SimpleNamespace(Path=path, PurePosixPath=pathlib.PurePosixPath),
-                   're': re, 'stat': stat, 'shutil': shutil, 'PACKET_ROOT': self.root, 'SOURCE': self.old_source, 'RUNNING': self.old_source, 'NEXT': self.new_source,
+                   're': re, 'shlex':shlex, 'stat': stat, 'shutil': shutil, 'PACKET_ROOT': self.root, 'SOURCE': self.old_source, 'RUNNING': self.old_source, 'NEXT': self.new_source,
                    'UI': self.new_ui, 'BASE': self.base, 'P': self.packet, 'CADDY': self.caddy, 'NOTIFY': self.notify,
                    '__file__': str(SOURCE_FILE), 'sha': lambda data: hashlib.sha256(data).hexdigest(),
                    'urllib': types.SimpleNamespace(request=types.SimpleNamespace(urlopen=self.urlopen))}
@@ -256,6 +257,49 @@ class RepeatPublication(unittest.TestCase):
         self.assertEqual(os.readlink(self.base / 'current'), str(self.old_ui))
         self.assertNotIn(['systemctl', 'daemon-reload'], self.calls)
 
+    def bind_wallet(self, selected):
+        self.plan['runningWalletFile']=self.plan['configuredWalletFile']=str(selected)
+        self.plan['configHashes'][str(selected)]=self.ns['digest'](selected)
+        args=['/node','apps/rolling/start.mjs','/public.json',str(selected),'/relay.json']
+        (self.root/'proc/101/cmdline').write_bytes(('\0'.join(args)+'\0').encode())
+        self.unit.write_text('WorkingDirectory='+str(self.old_source)+'\nExecStart='+shlex.join(args)+'\n')
+
+    def test_wallet_selection_ignores_inherited_override_and_keeps_startup_path(self):
+        selected=self.root/'active-wallet.json';selected.write_text('current config')
+        self.bind_wallet(selected)
+        for source in (self.old_source,self.new_source):
+            (source/'deploy').mkdir();(source/'deploy/runtime-wallet.json').write_text('obsolete config')
+            self.assertEqual(self.ns['wallet_file'](source),selected)
+        updated=self.ns['next_wallet_startup'](self.unit.read_text())
+        self.assertEqual(shlex.split(updated.split('ExecStart=')[1])[3],str(selected))
+        self.plan['files']['deploy/runtime-wallet.json']={}
+        self.assertEqual(self.ns['wallet_file'](self.new_source),self.new_source/'deploy/runtime-wallet.json')
+        updated=self.ns['next_wallet_startup'](self.unit.read_text())
+        self.assertEqual(shlex.split(updated.split('ExecStart=')[1])[3],str(self.new_source/'deploy/runtime-wallet.json'))
+
+    def test_wallet_selection_rejects_unbound_changed_or_wrong_process_config(self):
+        selected=self.root/'active-wallet.json';selected.write_text('current config');self.bind_wallet(selected)
+        self.plan['configHashes'].clear()
+        with self.assertRaises(AssertionError):self.ns['wallet_file'](self.old_source)
+        self.bind_wallet(selected);selected.write_text('changed')
+        with self.assertRaises(AssertionError):self.ns['wallet_file'](self.old_source)
+        self.bind_wallet(selected);(self.root/'proc/101/cmdline').write_bytes(b'/node\0apps/rolling/start.mjs\0/public.json\0/wrong-wallet.json\0/relay.json\0')
+        with self.assertRaises(AssertionError):self.ns['wallet_file'](self.old_source)
+
+    def test_repeat_publication_keeps_independent_running_and_configured_wallets(self):
+        running=self.root/'running-wallet.json';running.write_text('old prices');self.bind_wallet(running)
+        configured=self.root/'configured-wallet.json';configured.write_text('intended new prices')
+        self.plan['configuredWalletFile']=str(configured)
+        self.plan['configHashes'][str(configured)]=self.ns['digest'](configured)
+        self.unit.write_text(self.unit.read_text().replace(str(running),str(configured)))
+        self.assertEqual(self.ns['wallet_file'](self.old_source),running)
+        self.assertEqual(self.ns['wallet_file'](self.new_source),configured)
+        updated=self.ns['next_wallet_startup'](self.unit.read_text())
+        self.assertEqual(shlex.split(updated.split('ExecStart=')[1])[3],str(configured))
+        self.unit.write_text(self.unit.read_text().replace(str(configured),'/wrong-config.json'))
+        with self.assertRaises(AssertionError):self.ns['wallet_file'](self.new_source)
+        self.assertEqual(self.ns['wallet_file'](self.old_source),running)
+
     def test_static_fee_override_cannot_change_contracts_or_providers(self):
         name='deploy/runtime-wallet.json'
         self.assertEqual(str(self.ns['safe_relative'](name)),name)
@@ -263,6 +307,11 @@ class RepeatPublication(unittest.TestCase):
         old={'config':{'board':{'contractAddress':'board'},'privateFee':{'gasSettings':{'maxFeesPerGas':{'feePerDaGas':'0','feePerL2Gas':'2'},'gasLimits':{'l2Gas':'100'}}}},'trustedQuery':{'url':'original'}}
         for root in (self.old_source,self.packet/'files'):(root/'deploy').mkdir(parents=True,exist_ok=True)
         (self.old_source/name).write_text(json.dumps(old))
+        running=self.root/'still-running-wallet.json';prior=json.loads(json.dumps(old));prior['config']['board']['contractAddress']='prior-board';running.write_text(json.dumps(prior))
+        self.bind_wallet(running)
+        self.plan['configuredWalletFile']=str(self.old_source/name)
+        self.plan['configHashes'][str(self.old_source/name)]=self.ns['digest'](self.old_source/name)
+        self.unit.write_text(self.unit.read_text().replace(str(running),str(self.old_source/name)))
         new=json.loads(json.dumps(old));new['config']['privateFee']['gasSettings']['maxFeesPerGas']['feePerL2Gas']='20'
         self.ns['m']['files']={name:{}}
         target=self.packet/'files'/name;target.write_text(json.dumps(new))
