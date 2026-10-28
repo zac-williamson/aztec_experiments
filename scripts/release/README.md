@@ -223,8 +223,12 @@ filter them. A separately deployed stage Board gives clean separation if needed.
 
 `node scripts/release/checks.mjs` exercises real local filesystem swaps and HTTP
 asset checks, failure blocking, concurrent release exclusion, rollback failure,
-same-SHA retry and runtime/config identity checks, plus focused current reader
-tests. These are local tests with injected adapters, not testnet acceptance.
+same-SHA retry and runtime/config identity checks, plus focused current reader,
+anonymous analytics, operator authentication, collector, capacity and backup
+checks. Python checks cover privacy projections, the bounded cloud adapter and
+deployment configuration validation. They use local disposable fixtures and no
+cloud credentials or dependency install. These are local component checks;
+the full pinned build and actual testnet journey remain separate release gates.
 The browser journey and host installation require the first actual staging run
 after the active contract release finishes. No testnet success is claimed from
 a green unit suite or a generated manifest.
