@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+  "site": "https://d30njln0kead8n.cloudfront.net/",
+  "status": "published",
+  "network": "Aztec6.0.0 / Ethereum Sepolia",
+  "cleanState": true,
+  "scope": {
+    "chainId": "11155111",
+    "rollupVersion": "679261766",
+    "rollupAddress": "0x1f435a7f2da358caf887a470faeee7d5d5f4efba",
+    "boardAddress": "0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5",
+    "classId": "0x129f10e1a9e290654415f97ca5f082f143504ff1bc80bd26ed441f6bb738701f",
+    "bok": {
+      "address": "0x18eb9f9de94df31b450930e8b97c7f661cd69af7a992f1e076ec6c0d852208f7",
+      "classId": "0x0c59d24f902ce86319f91e15513e514e23b78b0b1685ca63812974df862f509e",
+      "operatorAddress": "0x119fa1d976f386eb0b3577a9661c923ce02ca500fbc1e68096718aa7f24948e5",
+      "deployer": "0x0233a0ebe93af15f273c200ce05a893ae2c7e87c0b24196eec705c1d09f6ceaa",
+      "salt": "0x05821247d91e7b44033bc152724eb1e48054d35a27f965fc8f745d8b90f9109b",
+      "deployment": {
+        "txHash": "0x0ee8e54c49caeb1db86c22be23f55bef4d4fbb4936d11db7885df48292150963",
+        "blockNumber": 9716,
+        "blockHash": "0x2388581dca29618edc6856a8201e619a5b7a6011292290d1775b45aa7bd65a96"
+      }
+    }
+  },
+  "deployment": {
+    "txHash": "0x184e91da71a353d202883586b75eb490b9e306c621b6d6065663ad8f47558059",
+    "blockNumber": 9713,
+    "blockHash": "0x0dabca4615ba52e0ac7ebfd695b5637adaa87005df1daaf43a37b2ccd288c0ed"
+  },
+  "bokPortal": "0x487dc0ac4984ef830307044bad577713bee62392",
+  "router": "0x4036f93a035433b704fc60d52fdba4aa813ab2b3",
+  "routerCodeHash": "0xd91c238dcb5d0da74a6e4951e27262f79611640366703014d6930c5d60da5932",
+  "collateralPortal": "0xb1b393e696c1ceb744ad47325dd18e5c96f5c073",
+  "privateFee": {
+    "contractAddress": "0x2d71392cfb41aa25a62c5ecc510400167dda9f3669676d2b539413a4fa0bcbb7",
+    "gasSettings": {
+      "gasLimits": {
+        "daGas": "117624",
+        "l2Gas": "6540000"
+      },
+      "teardownGasLimits": {
+        "l2Gas": "40000",
+        "daGas": "512"
+      },
+      "maxFeesPerGas": {
+        "feePerDaGas": "0",
+        "feePerL2Gas": "18981708800000"
+      },
+      "maxPriorityFeesPerGas": {
+        "feePerDaGas": "0",
+        "feePerL2Gas": "0"
+      }
+    }
+  },
+  "scopeVerification": {
+    "anchor": {
+      "number": 9723,
+      "hash": "0x0324b0524882a978130ff4b3c7ab1c2089bff135da7f5284a3a48e79b5bccae0"
+    },
+    "ethereumAnchor": {
+      "number": 12014435,
+      "hash": "0xfb56b44ef02c5bb00cd62515bf156db0caff2a9c33719184660442508e69c0ba"
+    },
+    "receipts": {
+      "board": {
+        "txHash": "0x184e91da71a353d202883586b75eb490b9e306c621b6d6065663ad8f47558059",
+        "blockNumber": 9713,
+        "blockHash": "0x0dabca4615ba52e0ac7ebfd695b5637adaa87005df1daaf43a37b2ccd288c0ed"
+      },
+      "bok": {
+        "txHash": "0x0ee8e54c49caeb1db86c22be23f55bef4d4fbb4936d11db7885df48292150963",
+        "blockNumber": 9716,
+        "blockHash": "0x2388581dca29618edc6856a8201e619a5b7a6011292290d1775b45aa7bd65a96"
+      },
+      "registration": {
+        "txHash": "0x26593a820760e88d2bcf558d80f377653351d66ae4593ba52275ceef57d40172",
+        "blockNumber": 9721,
+        "blockHash": "0x0ce738d1c0c06a878b32df05a8497fa6b810e9f1aa254bf55862b34663208026"
+      }
+    }
+  },
+  "fullCi": {
+    "run": 40753383089,
+    "conclusion": "success"
+  },
+  "runtimeSources": {
+    "core": "/opt/rolling-app/releases/48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+    "bok": "/opt/rolling-bok/releases/48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+    "prover": "/opt/board-prover/releases/fresh-board-48c2750f617b7e8b7c3ed1dbe73fb4263517daca"
+  },
+  "operatingBaseline": "Handed to operations chat for fresh seal/adoption; automatic source release remains disabled until new baseline is bound."
+}

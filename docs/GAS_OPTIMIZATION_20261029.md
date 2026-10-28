@@ -1,6 +1,6 @@
 # Compact post state and complete transaction gas — 29 October 2026
 
-Implemented on the integration branch; **not deployed to the website**. This changes Board storage and private circuits. The Board, client, SDK, prover registrations and runtime must be released together. Old test state requires no migration. The paused latency campaign remains paused.
+**Published to the testnet website**, with matching app, SDK, prover and fresh Board. See [live acceptance](COMPACT_DEPLOYMENT_20261029.md). This changes Board storage and private circuits. The Board, client, SDK, prover registrations and runtime must be released together. Old test state requires no migration. The paused latency campaign remains paused.
 
 ## Complete transaction measurement
 
@@ -26,7 +26,7 @@ The native public simulator reports `publicGas` as 242,056 L2 / 2,208 DA, **incl
 
 At the earlier live baseline's price of 1,250,000,200,000 base units per L2 gas and zero DA price, the measured gas would cost **1.275306454049 FEE**. This conversion is not a new Sepolia receipt. Actual local test fees were 0.0589202710195 and 0.015641580144 FEE because the local block prices differed.
 
-The earlier live transaction used 2,805,609 L2 gas. The new observation is 63.64% lower, but it is not a matched-state live comparison: the old transaction had two private output notes/logs, while these new transactions have three. A coherent new testnet deployment and included receipt remain outstanding.
+The earlier live transaction used 2,805,609 L2 gas. The new observation is 63.64% lower, but it is not a matched-state live comparison: the old transaction had two private output notes/logs, while these new transactions have three. The subsequent coherent testnet deployment and included receipts passed: the 29-byte browser post used 998,470 billed L2 gas and paid 2.760553580939 FEE at its actual block price of 2,764,783,700,000. See the live acceptance report; network prices and account states differ.
 
 ## State removed
 
@@ -56,6 +56,6 @@ Measurements cover 22/29-byte ASCII and maximal 992-byte ASCII/UTF-8. Current pu
 
 The full native payment lifecycle passed with exactly that allowance: mint; repeated 20-FEE tips; tip-funded and ordinary-credit posts; mixed inputs; reverted tip returning principal while charging fees; competing-spend rejection; fresh-reader balance discovery. Exact source and artifact bindings are retained alongside the report.
 
-Focused checks cover full event messages/record fields, empty reposts, linked thread parents and atomic rollback, plugin replies, timestamp-zero existence, absent IDs, overflow, foreign callers, duplicate IDs, policy/subboard/parent changes, paid likes and removed targets. Private history/thread/moderation checks and owner-note restoration also passed. No remote prover or website deployment is claimed by these native checks.
+Focused checks cover full event messages/record fields, empty reposts, linked thread parents and atomic rollback, plugin replies, timestamp-zero existence, absent IDs, overflow, foreign callers, duplicate IDs, policy/subboard/parent changes, paid likes and removed targets. Private history/thread/moderation checks and owner-note restoration also passed. These native checks are separate from the subsequent real-proof browser acceptance linked above.
 
 Evidence: `execution/evidence/G21/stable6/gas-optimization/compact-native-lifecycle.json`, `compact-public-measurements.json`, and `compact-source-binding.json`. Diagnostic code: `scripts/testing/private-tail-gas.mjs`. Gas regressions run against freshly built artifacts in CI.

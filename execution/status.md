@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 29 October owner authorizes publishing d4623b16 compact Board gas optimization and explicitly accepts empty new state. Native source, SDK and full gas qualification complete. Root preparing fresh Board/portal/Bok/router release with canonical existing FPC and 40000/512 refund allowance; operations chat handing over live window. No live mutations yet. Performance campaign remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 29 October compact Board deployment48c2750f is published with coherent SDK/app/prover/moderator/Bok. Fresh real-proof browser signup/post/two20-FEE tips/post passed;2likes and exact tip fee conservation verified.29-bytepost998470 billedL2gas. Source CI40753383089 passed. Test pool replenished after no-payment liquidity refusal. Operations now owns resealing/verifier rebinding; performance remains paused.
 
 ## Ready internal work
 

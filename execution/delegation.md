@@ -1,6 +1,6 @@
 # Compact gas deployment —29 October2026
 
-Root owns integration, existing testnet signers, host changes and browser acceptance. deployment_review performs read-only review of all new storage consumers and deployment coherence. Operations chat is relinquishing runtime ownership; no concurrent signer or service changes. Old state disposable; latency campaign paused.
+Root completed publication and real-proof browser signup/post/tip/tip/post acceptance. deployment_review independently reviewed active storage consumers, coherent configuration, smoke preparation and test-pool refill. cutover_review reviewed service cutover, delta transfer, explicit host-role selection and timer-driven snapshot invariants. Both bounded reviews are complete. Operations chat now owns service/signing changes, fresh baseline seal and stage/public verifier rebinding. Root only records public evidence and cleans owned transfer/browser files. Old state disposable; latency campaign remains paused.
 
 # Paid-like release continuation — 28 October 2026
 
