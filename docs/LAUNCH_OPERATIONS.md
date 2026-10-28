@@ -17,15 +17,20 @@ and recovery delivery without causing an application outage or restart. See
 Fresh encrypted off-host backup and actual restore passed on both hosts on
 28 October: **twenty core inputs and four Bok inputs**. Both daily timers are
 active. See [`backup-verification.json`](../deploy/launch-ops/backup-verification.json)
-for the observed results. Candidate `89dbc88c` also
-[passed its full build](https://github.com/zac-williamson/aztec_experiments/actions/runs/40755838251)
-on 28 October. That result belongs to the exact revision; later changes require
-their own normal checks.
+for the observed results. Candidate `aad8c265`
+[passed its full build](https://github.com/zac-williamson/aztec_experiments/actions/runs/40775154163)
+on 28 October. Its real staged release then passed ETH signup, posting, reply,
+like and reload, but stopped at Bok credit before USDC signup or promotion.
+Baseline `48c2750f` remains live, and automatic release was disabled after the
+failed attempt.
 
-The next repaired candidate still needs its own full build, genuine real-proof
-release journey and promotion, and the two-leg operator rollback exercise.
-These remain **pending final receipts**. Do not infer release acceptance from a
-configured workflow or from the completed backup checks.
+A local reproduction with the actual account panel confirmed a missing funding
+wallet reconnection in the journey harness after reload. The next repaired
+candidate still needs its own exact full build and complete genuine journey.
+Promotion, normal release pruning and the two-leg operator rollback exercise
+remain **pending final receipts**. The five completed steps do not establish
+full release acceptance. A subsequent read-only check also found insufficient
+USDC/FEE test liquidity; it needs repair and a fresh quote before another journey.
 See [`release-acceptance.json`](../deploy/launch-ops/release-acceptance.json) and
 [backup acceptance and procedure](../ops/LAUNCH-ESSENTIALS.md).
 

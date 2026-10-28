@@ -7,10 +7,16 @@ visitors have no persistent analytics profile. See the
 
 Slack ALARM and subsequent OK recovery delivery were actually observed on
 28 October using an explicit test alarm and real healthy datapoints, without an
-application outage. Candidate `89dbc88c` passed its full build on 28 October;
-that evidence applies only to the exact revision. The next repaired candidate's
-full build, genuine real-proof release journey/promotion and operator rollback
-remain **pending final receipts**. Fresh off-host restores now verify twenty
+application outage. Candidate `aad8c265` passed its exact full build on
+28 October. Its staged journey passed ETH signup, posting, reply, like and reload,
+then stopped at Bok credit; USDC signup and promotion were not attempted.
+Baseline `48c2750f` remains live and automatic release is disabled. A local
+actual-panel reproduction confirmed the harness omitted funding-wallet
+reconnection after reload. The next repaired candidate's exact full build,
+complete genuine journey, promotion, pruning and operator rollback remain
+**pending final receipts**. A subsequent read-only check found insufficient
+USDC/FEE test liquidity, which must be repaired and quoted again before retrying.
+Fresh off-host restores now verify twenty
 core inputs and four Bok inputs, with both daily timers active; see
 [`backup-verification.json`](../deploy/launch-ops/backup-verification.json).
 

@@ -427,3 +427,21 @@ Root holds application mutations/signing while the coordinated newBoard owner co
 Root owns live mutations/signing and final integration. CI owner repaired and locally reproduced the actual account-modal journey failure; monitoring independently approved source and exact two-file operator packet. Analytics records fresh20-input core and4-input Bok backup/restore acceptance. Both timers active; acceptedB48 stays live until candidateD passes exact full build and seven-step real testnet gate. No agent performs a host mutation or payment.
 
 28 October21:35UTC: DfullCI failed one existing30ms receipt-fixture timing case after clean builds and newUI regressions passed. CI owner corrects actual native waiter test clock; monitoring independently reviews. Root alone finishes free-testnet liquidity and owns futureEactivation/acceptance. No production source change or weakened native receipt predicate.
+
+
+### Operations continuation — 28 October 22:25 UTC
+
+Root owns live mutations and signing. Candidate E `aad8c265` passed full CI
+`40775154163`; release `40777920503` attempt 2 completed ETH signup, post, reply,
+like and reload, then blocked at Bok credit before USDC signup or promotion.
+B48 remains live; root disabled automatic release under SSM
+`43028701-83d8-4594-9445-c52a5d004706`. CI owner reproduced the harness's missing
+Ethereum funding-wallet reconnection in the actual panel after reload and is
+repairing only that test flow, with monitoring review. The remote failed step is
+known; its exact inner action was not retained. Analytics records the closed
+receipts and updates documentation only. The next repaired candidate requires
+its own exact full CI, complete genuine journey, promotion, normal pruning and
+operator rollback. This scope remains the four launch operations deliverables;
+broader R04 is not marked complete. Monitoring subsequently verified at block
+12015308 that the shared USDC/FEE pool no longer covers one signup; root must
+resolve and recheck that test liquidity before the next complete journey.
