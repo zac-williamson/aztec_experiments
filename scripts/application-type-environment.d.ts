@@ -1,5 +1,5 @@
 // SDK/host dependencies are private to the application adapter, not its UI contract.
-interface Window {BillboardPlugins:any;BillboardModerationCodec:any;BillboardScreeningHistory:any;BillboardOperations:any;BillboardProving:any;BillboardConnectionCheck:any;loadHostedSettings:any;walletState:any;__aztec:any;BillboardPublic:any;BillboardConfig:any;billboardConfigStore:any;unpackFieldsToString:any;BillboardAccount:any;BillboardWalletBackup:any;BillboardClaimBackup:any;ethereum:any;}
+interface Window {BillboardPlugins:any;BillboardModerationCodec:any;BillboardScreeningHistory:any;BillboardOperations:any;BillboardProving:any;BillboardConnectionCheck:any;loadHostedSettings:any;walletState:any;__aztec:any;BillboardPublic:any;BillboardConfig:any;billboardConfigStore:any;unpackFieldsToString:any;BillboardAccount:any;BillboardEthereumSession:any;BillboardWalletBackup:any;BillboardClaimBackup:any;ethereum:any;}
 declare const BILLBOARD_ARTIFACT:object, BILLBOARD_PRIVATE_FEE_ARTIFACT:object, PORTAL_BYTECODE:string;
 declare function _getConfigRevision():number;
 declare function _getPublicConfig():any;
