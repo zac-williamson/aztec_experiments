@@ -63,7 +63,7 @@ test('release closes the actual account modal before posting once', {timeout:150
  const {page,dialog,remaining}=await setup(t);
  assert.equal(await page.getByRole('button',{name:'Close',exact:true}).count(),0);
  // Reproduce the obsolete selector leaving a real modal over the board.
- await assert.rejects(page.locator('#write').click({timeout:250}),{name:'TimeoutError'});
+ await assert.rejects(page.getByRole('button',{name:'Write a post',exact:true}).first().click({timeout:250}),{name:'TimeoutError'});
  assert.deepEqual(await page.evaluate(()=>calls.submitted),[]);
  await closeJourneyAccountPanel(page,remaining);assert.equal(await dialog.isVisible(),false);
  await openJourneyComposer(page,'UI regression post',remaining);
