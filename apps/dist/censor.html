@@ -45069,7 +45069,6 @@ const FEE_JUICE_SIGN_MSG = 'Aztec fee-juice deposit claim secret v1\n\n' +
         const {tx,applicationNullifier}=await (async()=>{
           const txRequest = await measured('accountRequest',()=>this.createTxExecutionRequestFromPayloadAndFee(executionPayload, opts.from, feeOpts2));
           const proveOpts={scopes:this.scopesFrom(opts.from,opts.additionalScopes??[],opts.sendMessagesAs),senderForTags:this.senderForTagsFrom(opts.from,opts.sendMessagesAs)};
-          if(atomicSimulation&&executionPayload.calls?.length===2&&executionPayload.calls[0].name==='pay_fee'&&executionPayload.calls[1].name==='post')proveOpts.preSyncCalls=executionPayload.calls;
           let provenTx;
           try { provenTx = atomicSimulation
             ? await measured('proveTxWithPublicValidation',()=>this.pxe.proveTxWithPublicValidation(txRequest,proveOpts))

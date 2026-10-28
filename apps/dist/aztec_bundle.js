@@ -413571,73 +413571,18 @@ See docs for context: https://docs.aztec.network/errors/14`);
   init_process2();
   init_bn254();
   init_hash2();
-
-  // shared/ordinary-post-fees.mjs
-  init_dirname();
-  init_buffer2();
-  init_process2();
-  init_constants();
-  init_gas2();
-  var ORDINARY_POST_GAS_PROFILE = Object.freeze({
-    boardArtifactSha256: "4de9f9202ff4952eb99a0767cae17c8ad41e5d36e045e620d4b3a0190c5b8b28",
-    boardClassId: "0x03c9bf685f78a9b8731b010884f7728f552cd3c59fe169c2e3e7ee302cc17088",
-    accountClassId: "0x222287bfcd04411264393983dd8d01ca5ea9ae305d1a10a1e6d8deef7f17659b",
-    privateFeeClassId: "0x1e74f64c7ddbab25de51eb7fc667064c0713ee67e04b8589871f214aacce4df0",
-    postSelector: "0xc3ff19cd",
-    publicGas: Object.freeze({ daGas: 2368, l2Gas: 2e6 }),
-    teardownGas: Object.freeze({ daGas: 192, l2Gas: 27510 })
-  });
-  var fail6 = (code) => Object.assign(Error(code), { code });
-  var check13 = (value, code = "BB_POST_FEE_PROFILE_MISMATCH") => {
-    if (!value) throw fail6(code);
-  };
-  var equal4 = (a, b2) => a?.toString() === b2?.toString();
-  function ordinaryPostGasLimits() {
-    const p = ORDINARY_POST_GAS_PROFILE;
-    check13(MAX_NULLIFIERS_PER_TX === 64 && MAX_PRIVATE_LOGS_PER_TX === 64 && PRIVATE_LOG_SIZE_IN_FIELDS === 16 && DA_GAS_PER_FIELD === 32 && TX_DA_GAS_OVERHEAD === 96 && PUBLIC_TX_L2_GAS_OVERHEAD === 54e4 && FIXED_AVM_STARTUP_L2_GAS === 2e4 && AVM_EMITNOTEHASH_BASE_L2_GAS === 19275 && AVM_EMITNULLIFIER_BASE_L2_GAS === 30800 && L2_GAS_PER_PRIVATE_LOG === 2500);
-    const privateNotes = 4;
-    const gasLimits = new Gas(
-      TX_DA_GAS_OVERHEAD + (privateNotes + MAX_NULLIFIERS_PER_TX + MAX_PRIVATE_LOGS_PER_TX * (PRIVATE_LOG_SIZE_IN_FIELDS + 1)) * DA_GAS_PER_FIELD + p.teardownGas.daGas + p.publicGas.daGas,
-      PUBLIC_TX_L2_GAS_OVERHEAD + privateNotes * AVM_EMITNOTEHASH_BASE_L2_GAS + MAX_NULLIFIERS_PER_TX * AVM_EMITNULLIFIER_BASE_L2_GAS + MAX_PRIVATE_LOGS_PER_TX * L2_GAS_PER_PRIVATE_LOG + 2 * FIXED_AVM_STARTUP_L2_GAS + p.teardownGas.l2Gas + p.publicGas.l2Gas
-    );
-    return gasLimits;
-  }
-  function ordinaryPostFeeLimit(value) {
-    const gas = ordinaryPostGasLimits(), prices = GasSettings.from(value).maxFeesPerGas;
-    return BigInt(gas.daGas) * prices.feePerDaGas + BigInt(gas.l2Gas) * prices.feePerL2Gas;
-  }
-  function ordinaryPostFeeBudget({ wallet, prepared: prepared2, board: board2 }) {
-    const p = ORDINARY_POST_GAS_PROFILE, account = wallet?._accountManager?.getInstance();
-    check13(board2?.currentContractClassId?.toString() === p.boardClassId && board2?.originalContractClassId?.toString() === p.boardClassId);
-    check13(account?.currentContractClassId?.toString() === p.accountClassId && account?.originalContractClassId?.toString() === p.accountClassId);
-    check13(prepared2?.metadata?.classId === p.privateFeeClassId && prepared2.paymentMethod?.constructor === PrivateFeePaymentMethod);
-    const gasLimits = ordinaryPostGasLimits();
-    const ceiling = GasSettings.from(prepared2.gasSettings), network = prepared2.networkGasLimits;
-    for (const dimension of ["daGas", "l2Gas"]) check13(Number.isSafeInteger(network?.[dimension]) && gasLimits[dimension] <= network[dimension] && gasLimits[dimension] <= ceiling.gasLimits[dimension] && p.teardownGas[dimension] <= ceiling.teardownGasLimits[dimension]);
-    const gasSettings = GasSettings.from({ gasLimits, teardownGasLimits: Gas.from(p.teardownGas), maxFeesPerGas: ceiling.maxFeesPerGas, maxPriorityFeesPerGas: ceiling.maxPriorityFeesPerGas });
-    const maximumFee = gasSettings.getFeeLimit().toBigInt(), reservation = maximumFee || 1n;
-    if (prepared2.creditCheck === "ordinary-post-proof") check13(!Object.hasOwn(prepared2, "availableCredit"));
-    else {
-      check13(prepared2.creditCheck === void 0 || prepared2.creditCheck === "read-balance");
-      check13(reservation <= BigInt(prepared2.availableCredit), "BB_POST_FEE_CREDIT_REQUIRED");
-    }
-    return { gasSettings, maximumFee, reservation };
-  }
-  function assertOrdinaryPostPayload({ wallet, from, application, board: board2 }) {
-    const account = wallet?._accountManager?.getInstance(), call2 = application.calls?.[0];
-    check13(equal4(account?.address, from) && application.calls?.length === 1 && equal4(call2?.to, board2.address) && call2?.selector?.toString() === ORDINARY_POST_GAS_PROFILE.postSelector && call2?.name === "post" && call2?.type === "private" && call2?.hideMsgSender === false && call2?.isStatic === false);
-    check13(application.authWitnesses?.length === 0 && application.capsules?.length === 0 && application.extraHashedArgs?.length === 0 && !application.feePayer);
-  }
-
-  // shared/ordinary-post-witnesses.mjs
+  init_contract();
   async function prefetchOrdinaryPostWitnesses({ wallet, node: node2, board: board2, artifact, hints, owner, noteHashWitnessHints }) {
     const pxe = wallet?.pxe;
-    if (!isPrivatePXEForNode(pxe, node2) || board2?.currentContractClassId?.toString() !== ORDINARY_POST_GAS_PROFILE.boardClassId || !Array.isArray(hints) || hints.length !== 2)
+    if (!isPrivatePXEForNode(pxe, node2) || !board2?.address || !board2?.currentContractClassId || artifact?.name !== "RollingBoard" || !Array.isArray(hints) || hints.length !== 2)
       throw Object.assign(Error("Invalid ordinary post witness context"), { code: "BB_POST_FEE_PROFILE_MISMATCH" });
     const cachedNode = pxe.node;
     const guard = () => {
       if (wallet.pxe !== pxe || pxe.node !== cachedNode || !isPrivatePXEForNode(pxe, node2)) throw Object.assign(Error("Ordinary post witness context changed"), { code: "ROLLING_CONTEXT_CHANGED" });
     };
+    if (!board2.currentContractClassId.equals((await getContractClassFromArtifact(artifact)).id))
+      throw Object.assign(Error("Invalid ordinary post artifact"), { code: "ROLLING_ABI_MISMATCH" });
+    guard();
     const posts = hints.map((hint, index) => hint && !hint.note.is_dummy ? { post: new Fr(BigInt(hint.note.post_id)), index } : null).filter(Boolean);
     const header = await pxe.getSyncedBlockHeader(), anchor2 = await header.toBlockParameter();
     guard();
@@ -414919,7 +414864,7 @@ See docs for context: https://docs.aztec.network/errors/14`);
     bigint: () => bigint14,
     boolean: () => boolean14,
     catch: () => _catch10,
-    check: () => check14,
+    check: () => check13,
     cidrv4: () => cidrv410,
     cidrv6: () => cidrv610,
     clone: () => clone5,
@@ -427518,7 +427463,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     bigint: () => bigint14,
     boolean: () => boolean14,
     catch: () => _catch10,
-    check: () => check14,
+    check: () => check13,
     cidrv4: () => cidrv410,
     cidrv6: () => cidrv610,
     codec: () => codec5,
@@ -428983,7 +428928,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     ZodType5.init(inst, def);
     inst._zod.processJSONSchema = (ctx, json7, params) => customProcessor5(inst, ctx, json7, params);
   });
-  function check14(fn) {
+  function check13(fn) {
     const ch = new $ZodCheck5({
       check: "custom"
       // ...util.normalizeParams(params),
@@ -429712,7 +429657,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     bigint: () => bigint17,
     boolean: () => boolean17,
     catch: () => _catch12,
-    check: () => check15,
+    check: () => check14,
     cidrv4: () => cidrv412,
     cidrv6: () => cidrv612,
     clone: () => clone6,
@@ -442311,7 +442256,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     bigint: () => bigint17,
     boolean: () => boolean17,
     catch: () => _catch12,
-    check: () => check15,
+    check: () => check14,
     cidrv4: () => cidrv412,
     cidrv6: () => cidrv612,
     codec: () => codec6,
@@ -443776,7 +443721,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     ZodType6.init(inst, def);
     inst._zod.processJSONSchema = (ctx, json7, params) => customProcessor6(inst, ctx, json7, params);
   });
-  function check15(fn) {
+  function check14(fn) {
     const ch = new $ZodCheck6({
       check: "custom"
       // ...util.normalizeParams(params),
@@ -446048,7 +445993,7 @@ ${context2.join("\n")}`;
   init_dirname();
   init_buffer2();
   init_process2();
-  var fail7 = () => transactionError("BB_RECOVERY_REQUIRED", "Recover the saved transaction before starting another operation.");
+  var fail6 = () => transactionError("BB_RECOVERY_REQUIRED", "Recover the saved transaction before starting another operation.");
   var invalid6 = () => transactionError("BB_JOURNAL_INVALID", "Transaction recovery storage could not be authenticated. Preserve it before continuing.");
   function replacementOptions(options = {}) {
     try {
@@ -446141,7 +446086,7 @@ ${context2.join("\n")}`;
     async function checkedScope(expected) {
       try {
         if (expected && contextGuard) await contextGuard();
-        if (ownedScope() !== expected) throw fail7();
+        if (ownedScope() !== expected) throw fail6();
       } catch (error312) {
         canonicalPermit = null;
         throw error312;
@@ -446150,22 +446095,22 @@ ${context2.join("\n")}`;
     async function rememberCanonical(saved, receipt, owner) {
       if (!owner || !receipt) return;
       await checkedScope(owner);
-      if (!await slot.isCurrent(saved.encoded)) throw fail7();
+      if (!await slot.isCurrent(saved.encoded)) throw fail6();
       await checkedScope(owner);
       canonicalPermit = { owner, encoded: saved.encoded, hash: saved.tx.getTxHash().toString(), receipt };
     }
     async function checkPredecessorAnchor(receipt, owner) {
-      if (!owner || !receipt) throw fail7();
+      if (!owner || !receipt) throw fail6();
       const header = await predecessorAnchor();
       await checkedScope(owner);
       const number20 = Number(header?.globalVariables?.blockNumber), hash14 = (await header?.hash?.())?.toString();
       await checkedScope(owner);
-      if (!Number.isSafeInteger(number20) || number20 < receipt.blockNumber || !/^0x[0-9a-f]{64}$/.test(hash14)) throw fail7();
+      if (!Number.isSafeInteger(number20) || number20 < receipt.blockNumber || !/^0x[0-9a-f]{64}$/.test(hash14)) throw fail6();
       const reads = await Promise.allSettled([number20, ...number20 === receipt.blockNumber ? [] : [receipt.blockNumber]].map((height) => boundedTransactionRead(() => node2.getBlock(height), waitOptions.readTimeoutMs ?? 2e4)));
       const failed = reads.find((read3) => read3.status === "rejected");
       if (failed) throw failed.reason;
       const block2 = reads[0].value, predecessor = number20 === receipt.blockNumber ? block2 : reads[1].value;
-      if (block2?.hash?.toString() !== hash14 || predecessor?.hash?.toString() !== receipt.blockHash.toString()) throw fail7();
+      if (block2?.hash?.toString() !== hash14 || predecessor?.hash?.toString() !== receipt.blockHash.toString()) throw fail6();
       await checkedScope(owner);
     }
     async function assertCanStart(options) {
@@ -446197,30 +446142,30 @@ ${context2.join("\n")}`;
       await checkedScope(owner);
       const previous = await read2();
       await checkedScope(owner);
-      if (predecessor && (!previous.tx || previous.value.operation !== predecessor.operation || previous.tx.getTxHash().toString() !== predecessor.txHash)) throw fail7();
+      if (predecessor && (!previous.tx || previous.value.operation !== predecessor.operation || previous.tx.getTxHash().toString() !== predecessor.txHash)) throw fail6();
       if (requested?.value || !owner || canonicalPermit?.owner !== owner || canonicalPermit?.encoded !== previous.encoded) canonicalPermit = null;
       if (previous.tx) {
         if (!predecessor && replacement?.encoded === previous.encoded) {
           await rejectedAttempts(previous, { requireMissingAnchor: replacement.requireMissingAnchor });
           return previous;
         }
-        if (!predecessor && acknowledged !== previous.tx.getTxHash().toString()) throw fail7();
+        if (!predecessor && acknowledged !== previous.tx.getTxHash().toString()) throw fail6();
         if (canonicalPermit?.hash !== previous.tx.getTxHash().toString()) {
           canonicalPermit = null;
           const receipt = predecessor ? await readCanonicalReceipt(node2, previous.tx.getTxHash(), receiptOptions(previous)) : await waitForCanonicalReceipt(node2, previous.tx, receiptOptions(previous));
-          if (!receipt || receipt.status === "proposed" && receipt.executionResult !== "success") throw fail7();
+          if (!receipt || receipt.status === "proposed" && receipt.executionResult !== "success") throw fail6();
           await rememberCanonical(previous, receipt, owner);
         }
         if (receiptOptions(previous).confirmationTier === "proposed") {
           const permit = canonicalPermit;
           if (!permit?.anchorChecked) {
             await checkPredecessorAnchor(permit?.receipt, owner);
-            if (canonicalPermit !== permit) throw fail7();
+            if (canonicalPermit !== permit) throw fail6();
             permit.anchorChecked = true;
           }
         }
         if (predecessor) {
-          if (!owner && (await read2()).encoded !== previous.encoded) throw fail7();
+          if (!owner && (await read2()).encoded !== previous.encoded) throw fail6();
           await checkedScope(owner);
           acknowledged = predecessor.txHash;
         }
@@ -446231,7 +446176,7 @@ ${context2.join("\n")}`;
     const strictMode = (saved, requested) => requested || saved.value.replacementPolicy === "missing-anchor";
     async function attemptState(attempt, active) {
       const reading = Object.fromEntries(["getTxReceipt", "isValidTx", "getBlock"].map((name) => [name, (...args) => {
-        if (!active()) throw fail7();
+        if (!active()) throw fail6();
         return node2[name](...args);
       }]));
       const result = { txHash: attempt.txHash, status: "unknown", stateReasons: [] };
@@ -446280,7 +446225,7 @@ ${context2.join("\n")}`;
     }
     async function rejectedAttempts(saved, { requireMissingAnchor = false, priorOnly = false } = {}) {
       const rows = await inspectAttempts(saved, priorOnly);
-      if (!rejected(rows, strictMode(saved, requireMissingAnchor))) throw fail7();
+      if (!rejected(rows, strictMode(saved, requireMissingAnchor))) throw fail6();
       return [...rows.at(-1).stateReasons];
     }
     async function prepare2(tx, previous, { applicationNullifier } = {}) {
@@ -446292,13 +446237,13 @@ ${context2.join("\n")}`;
       let replacements = [];
       const authorization = replacement, selectedOperation = operation, selectedTier = operationTier;
       if (authorization) {
-        if (authorization.encoded !== previous.encoded || selectedOperation !== previous.value.operation || !selectedOperation) throw fail7();
-        if (previous.value.applicationNullifier !== void 0 && applicationNullifier !== previous.value.applicationNullifier) throw fail7();
+        if (authorization.encoded !== previous.encoded || selectedOperation !== previous.value.operation || !selectedOperation) throw fail6();
+        if (previous.value.applicationNullifier !== void 0 && applicationNullifier !== previous.value.applicationNullifier) throw fail6();
         await rejectedAttempts(previous, { requireMissingAnchor: authorization.requireMissingAnchor });
         replacements = [...previous.value.replacements || [], { txHash: previous.value.txHash, tx: previous.value.tx }];
-        if (replacements.length > 8 || replacements.some((prior) => prior.txHash === tx.getTxHash().toString())) throw fail7();
+        if (replacements.length > 8 || replacements.some((prior) => prior.txHash === tx.getTxHash().toString())) throw fail6();
       }
-      if (operation !== selectedOperation || operationTier !== selectedTier || replacement !== authorization) throw fail7();
+      if (operation !== selectedOperation || operationTier !== selectedTier || replacement !== authorization) throw fail6();
       await slot.write(previous, { version: 1, txHash: tx.getTxHash().toString(), tx: Buffer2.from(tx.toBuffer()).toString("hex"), operation: selectedOperation, confirmationTier: selectedTier, ...authorization?.requireMissingAnchor ? { replacementPolicy: "missing-anchor" } : {}, ...applicationNullifier !== void 0 ? { applicationNullifier } : {}, ...replacements.length ? { replacements } : {} });
       replacement = null;
     }
@@ -446308,7 +446253,7 @@ ${context2.join("\n")}`;
       await checkedScope(owner);
       const saved = await read2();
       await checkedScope(owner);
-      if (!owner || saved.value?.confirmationTier !== "proposed" || saved.value.txHash !== receipt.txHash.toString()) throw fail7();
+      if (!owner || saved.value?.confirmationTier !== "proposed" || saved.value.txHash !== receipt.txHash.toString()) throw fail6();
       acknowledged = receipt.txHash.toString();
       lastHash = acknowledged;
     }
@@ -446318,12 +446263,12 @@ ${context2.join("\n")}`;
       lastHash = acknowledged;
     }
     function bindRecovery(saved, binding2) {
-      if (binding2 && (!saved.tx || saved.value.operation !== binding2.expectedOperation || saved.value.txHash !== binding2.expectedTxHash)) throw fail7();
+      if (binding2 && (!saved.tx || saved.value.operation !== binding2.expectedOperation || saved.value.txHash !== binding2.expectedTxHash)) throw fail6();
     }
     async function savedRecoveryStatus(saved) {
       let active = true;
       const reading = Object.fromEntries(["getTxReceipt", "isValidTx", "getBlock"].map((name) => [name, (...args) => {
-        if (!active) throw fail7();
+        if (!active) throw fail6();
         return node2[name](...args);
       }]));
       try {
@@ -446354,36 +446299,36 @@ ${context2.join("\n")}`;
       try {
         receipt = await boundedTransactionRead(() => node2.getTxReceipt(saved.tx.getTxHash()));
       } catch {
-        throw fail7();
+        throw fail6();
       }
-      if (receipt?.txHash?.toString() !== saved.tx.getTxHash().toString()) throw fail7();
+      if (receipt?.txHash?.toString() !== saved.tx.getTxHash().toString()) throw fail6();
       if (receipt.status === "dropped") {
-        if (reconcileOnly) throw fail7();
+        if (reconcileOnly) throw fail6();
         let validation;
         try {
           validation = await boundedTransactionRead(() => node2.isValidTx(saved.tx));
         } catch {
-          throw fail7();
+          throw fail6();
         }
         try {
           receipt = await boundedTransactionRead(() => node2.getTxReceipt(saved.tx.getTxHash()), waitOptions.readTimeoutMs ?? 2e4);
         } catch {
-          throw fail7();
+          throw fail6();
         }
-        if (receipt?.txHash?.toString() !== saved.value.txHash) throw fail7();
+        if (receipt?.txHash?.toString() !== saved.value.txHash) throw fail6();
         if (receipt.status === "dropped") {
-          if (validation?.result !== "valid") throw fail7();
+          if (validation?.result !== "valid") throw fail6();
           if (contextGuard) await contextGuard();
           if (saved.value.replacementPolicy === "missing-anchor") {
             await rejectedAttempts(saved, { requireMissingAnchor: true, priorOnly: true });
           }
           if (binding2?.beforeSubmit) await binding2.beforeSubmit(saved.value.txHash);
-          if ((await read2()).encoded !== saved.encoded) throw fail7();
+          if ((await read2()).encoded !== saved.encoded) throw fail6();
           if (contextGuard) await contextGuard();
-          if ((await read2()).encoded !== saved.encoded) throw fail7();
+          if ((await read2()).encoded !== saved.encoded) throw fail6();
           if (contextGuard) await contextGuard();
           await submitOnceWithReconciliation(node2, saved.tx);
-        } else if (!["pending", "proposed", "checkpointed", "proven", "finalized"].includes(receipt.status)) throw fail7();
+        } else if (!["pending", "proposed", "checkpointed", "proven", "finalized"].includes(receipt.status)) throw fail6();
       }
       const result = await waitForCanonicalReceipt(node2, saved.tx, waitOptions);
       confirmed(result);
@@ -446402,7 +446347,7 @@ ${context2.join("\n")}`;
         await checkedScope(owner);
         const saved = await read2();
         await checkedScope(owner);
-        if (typeof txHash !== "string" || !saved.tx || saved.value.txHash !== txHash) throw fail7();
+        if (typeof txHash !== "string" || !saved.tx || saved.value.txHash !== txHash) throw fail6();
         if (selectedOptions.confirmationTier !== void 0 && selectedOptions.confirmationTier !== receiptOptions(saved).confirmationTier) throw invalid6();
         const receipt = await waitForSuccessfulReceipt(node2, saved.tx, { ...waitOptions, ...selectedOptions, confirmationTier: receiptOptions(saved).confirmationTier });
         const observed = Object.freeze({
@@ -446414,7 +446359,7 @@ ${context2.join("\n")}`;
           transactionFee: receipt.transactionFee
         });
         await checkedScope(owner);
-        if (operation !== selectedOperation || !await slot.isCurrent(saved.encoded)) throw fail7();
+        if (operation !== selectedOperation || !await slot.isCurrent(saved.encoded)) throw fail6();
         await checkedScope(owner);
         if (owner) completionPermit = { owner, encoded: saved.encoded, hash: txHash, receipt: observed };
         return receipt;
@@ -446456,7 +446401,7 @@ ${context2.join("\n")}`;
         if (!permitted) canonicalPermit = null;
         let receipt = cached7 ?? await readCanonicalReceipt(node2, saved.tx.getTxHash(), receiptOptions(saved));
         if (receipt?.status === "proposed" && receipt.executionResult !== "success") receipt = null;
-        if (!await slot.isCurrent(saved.encoded)) throw fail7();
+        if (!await slot.isCurrent(saved.encoded)) throw fail6();
         await rememberCanonical(saved, receipt, owner);
         return { operation: saved.value.operation ?? null, txHash: saved.value.txHash, applicationNullifier: saved.value.applicationNullifier ?? null, outcome: receipt?.executionResult ?? "pending", receipt };
       },
@@ -446467,7 +446412,7 @@ ${context2.join("\n")}`;
         const expected = expectedOperation(operationInput), requested = replacementOptions(options);
         const saved = await read2();
         if (!saved.tx) return Object.freeze({ status: "empty", operation: null, txHash: null, predecessorTxHashes: Object.freeze([]), requireMissingAnchor: requested, attempts: Object.freeze([]) });
-        if (saved.value.operation !== expected) throw fail7();
+        if (saved.value.operation !== expected) throw fail6();
         const requireMissingAnchor = strictMode(saved, requested);
         let rows;
         try {
@@ -446475,7 +446420,7 @@ ${context2.join("\n")}`;
         } catch {
           rows = attemptsOf(saved).map((attempt) => ({ txHash: attempt.txHash, status: "unknown", stateReasons: [] }));
         }
-        if ((await read2()).encoded !== saved.encoded) throw fail7();
+        if ((await read2()).encoded !== saved.encoded) throw fail6();
         const status = rows.some((row) => row.status === "canonical") ? "canonical" : rows.some((row) => row.status === "pending") ? "pending" : !rejected(rows, requireMissingAnchor) ? "unknown" : (saved.value.replacements?.length ?? 0) >= 8 ? "limit-reached" : "available";
         return Object.freeze({
           status,
@@ -446502,7 +446447,7 @@ ${context2.join("\n")}`;
             status = "unknown";
           }
         }
-        if ((await read2()).encoded !== saved.encoded) throw fail7();
+        if ((await read2()).encoded !== saved.encoded) throw fail6();
         if (contextGuard) await contextGuard();
         return Object.freeze({ status, operation: saved.value.operation ?? null, txHash: saved.value.txHash });
       },
@@ -446510,10 +446455,10 @@ ${context2.join("\n")}`;
         replacement = null;
         const expected = expectedOperation(operationInput), requested = replacementOptions(options);
         const saved = await read2();
-        if (!saved.tx || saved.value.operation !== expected || (saved.value.replacements?.length ?? 0) >= 8) throw fail7();
+        if (!saved.tx || saved.value.operation !== expected || (saved.value.replacements?.length ?? 0) >= 8) throw fail6();
         const requireMissingAnchor = strictMode(saved, requested);
         const reasons = await rejectedAttempts(saved, { requireMissingAnchor });
-        if ((await read2()).encoded !== saved.encoded) throw fail7();
+        if ((await read2()).encoded !== saved.encoded) throw fail6();
         replacement = { encoded: saved.encoded, requireMissingAnchor };
         operation = expected;
         return reasons;
@@ -446525,9 +446470,9 @@ ${context2.join("\n")}`;
         const expected = expectedOperation(operationInput), requested = replacementOptions(options);
         if (typeof currentTxHash !== "string" || !/^0x[0-9a-f]{64}$/.test(currentTxHash)) throw invalid6();
         const saved = await read2();
-        if (!saved.tx || saved.value.operation !== expected || saved.value.txHash !== currentTxHash || !saved.value.replacements?.length) throw fail7();
+        if (!saved.tx || saved.value.operation !== expected || saved.value.txHash !== currentTxHash || !saved.value.replacements?.length) throw fail6();
         await rejectedAttempts(saved, { requireMissingAnchor: requested, priorOnly: true });
-        if ((await read2()).encoded !== saved.encoded) throw fail7();
+        if ((await read2()).encoded !== saved.encoded) throw fail6();
         return true;
       },
       setOperation(value, { confirmationTier: minimum = "checkpointed" } = {}) {
@@ -446547,7 +446492,7 @@ ${context2.join("\n")}`;
         const saved = await read2();
         if (!saved.tx) return null;
         const receipt = await recoverSaved(saved, binding2);
-        if ((await read2()).encoded !== saved.encoded) throw fail7();
+        if ((await read2()).encoded !== saved.encoded) throw fail6();
         return { receipt, operation: saved.value.operation ?? null };
       }
     };
@@ -477445,7 +477390,7 @@ mod tests {
   var FIELD_MODULUS2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001n;
 
   // shared/journal-backup.mjs
-  var fail8 = () => transactionError("BB_JOURNAL_INVALID", "Recovery records could not be authenticated or conflict with newer local records. Preserve both copies.");
+  var fail7 = () => transactionError("BB_JOURNAL_INVALID", "Recovery records could not be authenticated or conflict with newer local records. Preserve both copies.");
   var domains = /* @__PURE__ */ new Map([
     ["ROLLING_TOPUP_FUNDING_V1", "ROLLING_TOPUP_FUNDING_V1"],
     ["ROLLING_AGGREGATE_FUNDING_V1", "ROLLING_AGGREGATE_FUNDING_V1"],
@@ -477455,56 +477400,56 @@ mod tests {
   ]);
   var LIMIT = 16 * 1024 * 1024;
   function validDescriptor(descriptor) {
-    if (!descriptor || Object.keys(descriptor).sort().join() !== "keyDomain,scopeText" || !domains.has(descriptor.keyDomain) || typeof descriptor.scopeText !== "string") throw fail8();
+    if (!descriptor || Object.keys(descriptor).sort().join() !== "keyDomain,scopeText" || !domains.has(descriptor.keyDomain) || typeof descriptor.scopeText !== "string") throw fail7();
     const frame = JSON.parse(descriptor.scopeText);
-    if (frame[0] !== domains.get(descriptor.keyDomain)) throw fail8();
+    if (frame[0] !== domains.get(descriptor.keyDomain)) throw fail7();
     if (descriptor.keyDomain === "ROLLING_TOPUP_FUNDING_V1") {
-      if (!Array.isArray(frame) || ![11, 12].includes(frame.length) || frame.at(-1) !== 1 || descriptor.scopeText !== JSON.stringify(frame) || !["private-fee", "bok"].includes(frame[6])) throw fail8();
-      for (const index of [1, 2]) if (typeof frame[index] !== "string" || !/^[1-9][0-9]{0,19}$/.test(frame[index]) || BigInt(frame[index]) >= FIELD_MODULUS2) throw fail8();
+      if (!Array.isArray(frame) || ![11, 12].includes(frame.length) || frame.at(-1) !== 1 || descriptor.scopeText !== JSON.stringify(frame) || !["private-fee", "bok"].includes(frame[6])) throw fail7();
+      for (const index of [1, 2]) if (typeof frame[index] !== "string" || !/^[1-9][0-9]{0,19}$/.test(frame[index]) || BigInt(frame[index]) >= FIELD_MODULUS2) throw fail7();
       for (const index of [3, 4, 5, 7, 8, 9]) {
         const width = [3, 7, 8].includes(index) ? 40 : 64, value = frame[index];
-        if (typeof value !== "string" || !new RegExp(`^0x[0-9a-f]{${width}}$`).test(value) || BigInt(value) === 0n || width === 64 && BigInt(value) >= FIELD_MODULUS2) throw fail8();
+        if (typeof value !== "string" || !new RegExp(`^0x[0-9a-f]{${width}}$`).test(value) || BigInt(value) === 0n || width === 64 && BigInt(value) >= FIELD_MODULUS2) throw fail7();
       }
-      if (frame.length === 12 && (typeof frame[10] !== "string" || !/^0x[0-9a-f]{64}$/.test(frame[10]))) throw fail8();
+      if (frame.length === 12 && (typeof frame[10] !== "string" || !/^0x[0-9a-f]{64}$/.test(frame[10]))) throw fail7();
     }
     if (descriptor.keyDomain === "ROLLING_AGGREGATE_FUNDING_V1") {
-      if (!Array.isArray(frame) || ![8, 9].includes(frame.length) || frame.at(-1) !== 1 || descriptor.scopeText !== JSON.stringify(frame)) throw fail8();
-      if (frame.length === 9 && (typeof frame[7] !== "string" || !/^0x[0-9a-f]{64}$/.test(frame[7]))) throw fail8();
-      for (const index of [1, 2]) if (typeof frame[index] !== "string" || !/^[1-9][0-9]{0,19}$/.test(frame[index]) || BigInt(frame[index]) >= FIELD_MODULUS2) throw fail8();
+      if (!Array.isArray(frame) || ![8, 9].includes(frame.length) || frame.at(-1) !== 1 || descriptor.scopeText !== JSON.stringify(frame)) throw fail7();
+      if (frame.length === 9 && (typeof frame[7] !== "string" || !/^0x[0-9a-f]{64}$/.test(frame[7]))) throw fail7();
+      for (const index of [1, 2]) if (typeof frame[index] !== "string" || !/^[1-9][0-9]{0,19}$/.test(frame[index]) || BigInt(frame[index]) >= FIELD_MODULUS2) throw fail7();
       for (const index of [3, 4, 5, 6]) {
         const width = index === 3 || index === 5 ? 40 : 64, value = frame[index];
-        if (typeof value !== "string" || !new RegExp(`^0x[0-9a-f]{${width}}$`).test(value) || BigInt(value) === 0n || width === 64 && BigInt(value) >= FIELD_MODULUS2) throw fail8();
+        if (typeof value !== "string" || !new RegExp(`^0x[0-9a-f]{${width}}$`).test(value) || BigInt(value) === 0n || width === 64 && BigInt(value) >= FIELD_MODULUS2) throw fail7();
       }
     }
     if (descriptor.keyDomain === "ROLLING_WORKFLOW_V1") {
-      if (!Array.isArray(frame) || frame.length !== 2 || typeof frame[1] !== "string") throw fail8();
+      if (!Array.isArray(frame) || frame.length !== 2 || typeof frame[1] !== "string") throw fail7();
       const nested = JSON.parse(frame[1]), names = ["account", "chainId", "rollup", "version", "board", "portal"];
-      if (!Array.isArray(nested) || nested.length !== 7 || nested[0] !== "AZTEC_BB_L2_JOURNAL_V1" || nested.some((value) => typeof value !== "string")) throw fail8();
+      if (!Array.isArray(nested) || nested.length !== 7 || nested[0] !== "AZTEC_BB_L2_JOURNAL_V1" || nested.some((value) => typeof value !== "string")) throw fail7();
       const canonical2 = l2JournalScopeText(Object.fromEntries(names.map((name, index) => [name, nested[index + 1]])));
-      if (frame[1] !== canonical2 || descriptor.scopeText !== JSON.stringify(["ROLLING_WORKFLOW_V1", canonical2])) throw fail8();
+      if (frame[1] !== canonical2 || descriptor.scopeText !== JSON.stringify(["ROLLING_WORKFLOW_V1", canonical2])) throw fail7();
     }
   }
   async function createJournalBackup({ storage, walletSecret, walletSalt }) {
     const identity = await journalRecoveryIdentity({ walletSecret, walletSalt });
     async function authenticate(record8) {
       try {
-        if (!record8 || typeof record8.key !== "string" || !/^[0-9a-f]{64}$/.test(record8.key) || typeof record8.encoded !== "string" || record8.encoded.length > LIMIT) throw fail8();
+        if (!record8 || typeof record8.key !== "string" || !/^[0-9a-f]{64}$/.test(record8.key) || typeof record8.encoded !== "string" || record8.encoded.length > LIMIT) throw fail7();
         const envelope = JSON.parse(record8.encoded), descriptor = await decryptJournalDescriptor(envelope.recovery, identity);
         validDescriptor(descriptor);
         const slot = await createEncryptedJournalSlot({ walletSecret, walletSalt, ...descriptor, storage: { read: async (key) => {
-          if (key !== record8.key) throw fail8();
+          if (key !== record8.key) throw fail7();
           return record8.encoded;
         } } });
-        if (slot.storageKey !== record8.key) throw fail8();
+        if (slot.storageKey !== record8.key) throw fail7();
         const { value } = await slot.read();
         return { record: record8, descriptor, value };
       } catch {
-        throw fail8();
+        throw fail7();
       }
     }
     return {
       async exportRecords() {
-        if (typeof storage.keys !== "function") throw fail8();
+        if (typeof storage.keys !== "function") throw fail7();
         const keys = await storage.keys(), records = [];
         let total = 0;
         for (const key of keys) {
@@ -477514,34 +477459,34 @@ mod tests {
           try {
             envelope = JSON.parse(encoded);
           } catch {
-            throw fail8();
+            throw fail7();
           }
-          if (!envelope.recovery) throw fail8();
+          if (!envelope.recovery) throw fail7();
           if (envelope.recovery.owner !== identity.owner) continue;
           total += encoded.length;
-          if (total > LIMIT) throw fail8();
+          if (total > LIMIT) throw fail7();
           records.push((await authenticate({ key, encoded })).record);
         }
         const finalKeys = await storage.keys();
-        if (JSON.stringify([...keys].sort()) !== JSON.stringify([...finalKeys].sort())) throw fail8();
-        for (const record8 of records) if (await storage.read(record8.key) !== record8.encoded) throw fail8();
+        if (JSON.stringify([...keys].sort()) !== JSON.stringify([...finalKeys].sort())) throw fail7();
+        for (const record8 of records) if (await storage.read(record8.key) !== record8.encoded) throw fail7();
         return records;
       },
       async restoreRecords(records) {
-        if (!Array.isArray(records) || records.length > 1e4) throw fail8();
+        if (!Array.isArray(records) || records.length > 1e4) throw fail7();
         const seen = /* @__PURE__ */ new Set(), retained = /* @__PURE__ */ new Map();
         let total = 0;
         for (const record8 of records) {
           const incoming = await authenticate(record8);
           total += record8.encoded.length;
-          if (incoming.descriptor.keyDomain === "ROLLING_WORKFLOW_V1" && (incoming.value?.preproof || incoming.value?.preproofReview) && typeof storage.rotateRecoveryEpoch !== "function") throw fail8();
-          if (total > LIMIT || seen.has(record8.key)) throw fail8();
+          if (incoming.descriptor.keyDomain === "ROLLING_WORKFLOW_V1" && (incoming.value?.preproof || incoming.value?.preproofReview) && typeof storage.rotateRecoveryEpoch !== "function") throw fail7();
+          if (total > LIMIT || seen.has(record8.key)) throw fail7();
           seen.add(record8.key);
           const current = await storage.read(record8.key);
           if (current !== null && current !== record8.encoded) {
             const local = await authenticate({ key: record8.key, encoded: current });
-            if (local.descriptor.keyDomain !== incoming.descriptor.keyDomain || local.descriptor.scopeText !== incoming.descriptor.scopeText) throw fail8();
-            if (JSON.stringify(local.value) !== JSON.stringify(incoming.value)) throw fail8();
+            if (local.descriptor.keyDomain !== incoming.descriptor.keyDomain || local.descriptor.scopeText !== incoming.descriptor.scopeText) throw fail7();
+            if (JSON.stringify(local.value) !== JSON.stringify(incoming.value)) throw fail7();
             retained.set(record8.key, current);
           }
         }
@@ -477549,17 +477494,17 @@ mod tests {
         for (const record8 of records) {
           const current = await storage.read(record8.key);
           if (retained.has(record8.key)) {
-            if (current !== retained.get(record8.key)) throw fail8();
+            if (current !== retained.get(record8.key)) throw fail7();
             continue;
           }
           if (current === record8.encoded) continue;
-          if (current !== null) throw fail8();
+          if (current !== null) throw fail7();
           try {
             await storage.compareAndSwap(record8.key, null, record8.encoded);
           } catch {
-            throw fail8();
+            throw fail7();
           }
-          if (await storage.read(record8.key) !== record8.encoded) throw fail8();
+          if (await storage.read(record8.key) !== record8.encoded) throw fail7();
         }
       }
     };
@@ -477658,39 +477603,39 @@ mod tests {
   init_buffer2();
   init_process2();
   var FR2 = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
-  var fail9 = (message) => {
+  var fail8 = (message) => {
     throw Object.assign(Error(message), { code: "BB_DEPLOYMENT_MANIFEST" });
   };
   function exact2(value, keys, label) {
-    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).sort().join() !== [...keys].sort().join()) fail9("Invalid " + label + " fields");
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).sort().join() !== [...keys].sort().join()) fail8("Invalid " + label + " fields");
   }
   function uint7(v, bits, label) {
-    if (typeof v !== "string" || !/^[1-9][0-9]*$/.test(v) || v.length > 78 || BigInt(v) >= 1n << BigInt(bits)) fail9("Invalid " + label);
+    if (typeof v !== "string" || !/^[1-9][0-9]*$/.test(v) || v.length > 78 || BigInt(v) >= 1n << BigInt(bits)) fail8("Invalid " + label);
     return v;
   }
   function hex20(v, size2, label) {
-    if (typeof v !== "string" || !new RegExp("^0x[0-9a-f]{" + size2 * 2 + "}$").test(v) || BigInt(v) === 0n) fail9("Invalid " + label);
+    if (typeof v !== "string" || !new RegExp("^0x[0-9a-f]{" + size2 * 2 + "}$").test(v) || BigInt(v) === 0n) fail8("Invalid " + label);
     return v;
   }
   function field12(v, label) {
     hex20(v, 32, label);
-    if (BigInt(v) >= FR2) fail9("Invalid " + label);
+    if (BigInt(v) >= FR2) fail8("Invalid " + label);
     return v;
   }
   function endpoint2(v) {
-    if (typeof v !== "string" || v.length > 4096 || v !== v.trim()) fail9("Invalid deployment endpoint");
+    if (typeof v !== "string" || v.length > 4096 || v !== v.trim()) fail8("Invalid deployment endpoint");
     let u;
     try {
       u = new URL(v);
     } catch {
-      fail9("Invalid deployment endpoint");
+      fail8("Invalid deployment endpoint");
     }
-    if (!["http:", "https:"].includes(u.protocol) || u.username || u.password || u.search || u.hash) fail9("Deployment endpoints must exclude credentials, query and fragment");
+    if (!["http:", "https:"].includes(u.protocol) || u.username || u.password || u.search || u.hash) fail8("Deployment endpoints must exclude credentials, query and fragment");
     return u.href;
   }
   function validateDeploymentManifest(value) {
     exact2(value, ["schemaVersion", "profile", "network", "actors", "board", "artifacts"], "deployment manifest");
-    if (![1, 2].includes(value.schemaVersion) || !["local-test", "operator"].includes(value.profile)) fail9("Invalid deployment profile");
+    if (![1, 2].includes(value.schemaVersion) || !["local-test", "operator"].includes(value.profile)) fail8("Invalid deployment profile");
     const n2 = value.network, b2 = value.board, a = value.actors, f2 = value.artifacts, rolling = value.schemaVersion === 2;
     exact2(n2, ["nodeUrl", "ethRpcUrl", "chainId", "rollupVersion", "rollup", "inbox", "outbox"], "network");
     endpoint2(n2.nodeUrl);
@@ -477702,15 +477647,15 @@ mod tests {
     field12(a.aztecDeployer, "Aztec deployer");
     hex20(a.ethereumDeployer, 20, "Ethereum deployer");
     exact2(b2, ["salt", "minDeposit", "maxDeposit", "baseCooldown", "kMultiplier", "censorWindow", "maxSaveUp", rolling ? "kind" : "censor", "policy"], "board");
-    if (rolling && b2.kind !== "rolling") fail9("Invalid board kind");
-    if (typeof b2.salt !== "string" || !/^(0|[1-9][0-9]*)$/.test(b2.salt) || b2.salt.length > 78 || BigInt(b2.salt) >= FR2) fail9("Invalid contract salt");
+    if (rolling && b2.kind !== "rolling") fail8("Invalid board kind");
+    if (typeof b2.salt !== "string" || !/^(0|[1-9][0-9]*)$/.test(b2.salt) || b2.salt.length > 78 || BigInt(b2.salt) >= FR2) fail8("Invalid contract salt");
     uint7(b2.minDeposit, 96, "minimum deposit");
     uint7(b2.maxDeposit, 96, "maximum deposit");
-    if (BigInt(b2.minDeposit) > BigInt(b2.maxDeposit)) fail9("Reversed deposit bounds");
+    if (BigInt(b2.minDeposit) > BigInt(b2.maxDeposit)) fail8("Reversed deposit bounds");
     for (const k of ["baseCooldown", "censorWindow"]) uint7(b2[k], 32, k);
     for (const k of ["kMultiplier", "maxSaveUp"]) uint7(b2[k], 16, k);
     if (!rolling) field12(b2.censor, "censor");
-    if (typeof b2.policy !== "string" || !b2.policy.isWellFormed() || b2.policy.includes("\0") || !b2.policy.trim() || new TextEncoder().encode(b2.policy).length > (rolling ? 992 : 1488)) fail9("Explicit nonempty policy required");
+    if (typeof b2.policy !== "string" || !b2.policy.isWellFormed() || b2.policy.includes("\0") || !b2.policy.trim() || new TextEncoder().encode(b2.policy).length > (rolling ? 992 : 1488)) fail8("Explicit nonempty policy required");
     exact2(f2, ["boardJsonSha256", "boardClassId", "portalCreationSha256", "portalRuntimeMetadataSha256"], "artifacts");
     for (const k of Object.keys(f2)) hex20(f2[k], 32, k);
     field12(f2.boardClassId, "board class");
@@ -477722,28 +477667,28 @@ mod tests {
   }
   function verifyDeploymentInputs(manifest, { artifact, portalBytecode, runtimeMetadata, config: config8, ethers }) {
     const m2 = validateDeploymentManifest(manifest), expected = deploymentManifestConfig(m2);
-    for (const k of ["aztecNodeUrl", "ethRpcUrl"]) if (endpoint2(config8[k]) !== endpoint2(expected[k])) fail9("Manifest endpoint mismatch");
-    for (const k of ["contractSalt", "minDepositWei", "maxDepositWei", "baseCooldown", "kMultiplier", "censorWindow", "maxSaveUp"]) if (config8[k] === void 0 || BigInt(config8[k]) !== BigInt(expected[k])) fail9("Manifest parameter mismatch: " + k);
-    if ((m2.schemaVersion === 2 ? config8.boardProfile !== "rolling" || config8.censor !== void 0 : config8.boardProfile !== void 0 || config8.censor?.toLowerCase() !== m2.board.censor) || config8.moderationPolicy !== m2.board.policy) fail9("Manifest policy/censor mismatch");
-    if (m2.schemaVersion === 2 && artifact?.name !== "RollingBoard") fail9("Rolling artifact required");
+    for (const k of ["aztecNodeUrl", "ethRpcUrl"]) if (endpoint2(config8[k]) !== endpoint2(expected[k])) fail8("Manifest endpoint mismatch");
+    for (const k of ["contractSalt", "minDepositWei", "maxDepositWei", "baseCooldown", "kMultiplier", "censorWindow", "maxSaveUp"]) if (config8[k] === void 0 || BigInt(config8[k]) !== BigInt(expected[k])) fail8("Manifest parameter mismatch: " + k);
+    if ((m2.schemaVersion === 2 ? config8.boardProfile !== "rolling" || config8.censor !== void 0 : config8.boardProfile !== void 0 || config8.censor?.toLowerCase() !== m2.board.censor) || config8.moderationPolicy !== m2.board.policy) fail8("Manifest policy/censor mismatch");
+    if (m2.schemaVersion === 2 && artifact?.name !== "RollingBoard") fail8("Rolling artifact required");
     const hash14 = (o) => ethers.sha256(ethers.toUtf8Bytes(JSON.stringify(o)));
-    if (hash14(artifact) !== m2.artifacts.boardJsonSha256 || ethers.sha256(portalBytecode) !== m2.artifacts.portalCreationSha256 || hash14(runtimeMetadata) !== m2.artifacts.portalRuntimeMetadataSha256) fail9("Deployment artifact identity mismatch");
+    if (hash14(artifact) !== m2.artifacts.boardJsonSha256 || ethers.sha256(portalBytecode) !== m2.artifacts.portalCreationSha256 || hash14(runtimeMetadata) !== m2.artifacts.portalRuntimeMetadataSha256) fail8("Deployment artifact identity mismatch");
     return { manifest: m2, intentDigest: hash14(m2) };
   }
   async function preflightDeploymentNetwork(manifest, { node: node2, provider, ethers, timeoutMs = 2e4 }) {
     const m2 = validateDeploymentManifest(manifest), n2 = m2.network;
-    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2e4) fail9("Invalid preflight timeout");
+    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2e4) fail8("Invalid preflight timeout");
     const read2 = (fn) => boundedTransactionRead(fn, timeoutMs);
     const [info, contracts, network] = await read2(() => Promise.all([node2.getNodeInfo(), node2.getL1ContractAddresses(), provider.getNetwork()]));
     const realProofs = info && Object.getOwnPropertyDescriptor(info, "realProofs");
-    if (!realProofs || !Object.hasOwn(realProofs, "value") || typeof realProofs.value !== "boolean") fail9("Native proof configuration unavailable");
+    if (!realProofs || !Object.hasOwn(realProofs, "value") || typeof realProofs.value !== "boolean") fail8("Native proof configuration unavailable");
     const proofsEnabled = realProofs.value;
-    if (m2.profile === "local-test" ? n2.chainId !== "31337" || proofsEnabled : n2.chainId !== "11155111" || !proofsEnabled) fail9("Native proof configuration differs from deployment profile");
-    if (String(info.l1ChainId) !== n2.chainId || String(network.chainId) !== n2.chainId || String(info.rollupVersion) !== n2.rollupVersion || contracts.rollupAddress?.toString().toLowerCase() !== n2.rollup) fail9("Deployment network identity mismatch");
-    for (const [key, name] of [["inboxAddress", "inbox"], ["outboxAddress", "outbox"]]) if (contracts[key] && contracts[key].toString().toLowerCase() !== n2[name]) fail9("Node bridge identity mismatch");
+    if (m2.profile === "local-test" ? n2.chainId !== "31337" || proofsEnabled : n2.chainId !== "11155111" || !proofsEnabled) fail8("Native proof configuration differs from deployment profile");
+    if (String(info.l1ChainId) !== n2.chainId || String(network.chainId) !== n2.chainId || String(info.rollupVersion) !== n2.rollupVersion || contracts.rollupAddress?.toString().toLowerCase() !== n2.rollup) fail8("Deployment network identity mismatch");
+    for (const [key, name] of [["inboxAddress", "inbox"], ["outboxAddress", "outbox"]]) if (contracts[key] && contracts[key].toString().toLowerCase() !== n2[name]) fail8("Node bridge identity mismatch");
     const rollup = new ethers.Contract(n2.rollup, ["function getInbox() view returns (address)", "function getOutbox() view returns (address)"], provider);
     const [inbox, outbox, ...codes] = await read2(() => Promise.all([rollup.getInbox(), rollup.getOutbox(), ...["rollup", "inbox", "outbox"].map((k) => provider.getCode(n2[k]))]));
-    if (inbox.toLowerCase() !== n2.inbox || outbox.toLowerCase() !== n2.outbox || codes.some((c) => typeof c !== "string" || !/^0x(?:[0-9a-fA-F]{2})+$/.test(c))) fail9("Deployment bridge/code mismatch");
+    if (inbox.toLowerCase() !== n2.inbox || outbox.toLowerCase() !== n2.outbox || codes.some((c) => typeof c !== "string" || !/^0x(?:[0-9a-fA-F]{2})+$/.test(c))) fail8("Deployment bridge/code mismatch");
     return { nodeInfo: info, l1Contracts: contracts, proofsEnabled };
   }
   async function deploymentPolicyVersion(board2, policy2) {
@@ -477756,26 +477701,26 @@ mod tests {
   init_process2();
   var PORTAL_IMMUTABLES = Object.freeze(["MIN_DEPOSIT", "MAX_DEPOSIT", "L2_CONTRACT", "ROLLUP", "INBOX", "OUTBOX", "VERSION", "L1_CHAIN_ID", "CONFIG_HASH", "DEPLOYMENT_OPERATOR"]);
   var hex21 = (value) => typeof value === "string" && /^0x(?:[0-9a-fA-F]{2})+$/.test(value);
-  var fail10 = () => {
+  var fail9 = () => {
     throw new Error("Invalid portal runtime metadata or immutable values");
   };
   function expectedPortalRuntime(metadata, values) {
-    if (!metadata || metadata.schemaVersion !== 1 || !hex21(metadata.runtimeTemplate) || !metadata.immutables || !values) fail10();
+    if (!metadata || metadata.schemaVersion !== 1 || !hex21(metadata.runtimeTemplate) || !metadata.immutables || !values) fail9();
     const names = Object.keys(metadata.immutables).sort();
-    if (JSON.stringify(names) !== JSON.stringify([...PORTAL_IMMUTABLES].sort()) || JSON.stringify(Object.keys(values).sort()) !== JSON.stringify(names)) fail10();
+    if (JSON.stringify(names) !== JSON.stringify([...PORTAL_IMMUTABLES].sort()) || JSON.stringify(Object.keys(values).sort()) !== JSON.stringify(names)) fail9();
     const bytes4 = metadata.runtimeTemplate.slice(2).toLowerCase().match(/../g), occupied = /* @__PURE__ */ new Set();
     for (const name of names) {
       const raw = values[name];
-      if (!(typeof raw === "bigint" || typeof raw === "string" && /^(?:0|[1-9][0-9]*|0x[0-9a-fA-F]+)$/.test(raw))) fail10();
+      if (!(typeof raw === "bigint" || typeof raw === "string" && /^(?:0|[1-9][0-9]*|0x[0-9a-fA-F]+)$/.test(raw))) fail9();
       const value = BigInt(raw), width = ["ROLLUP", "INBOX", "OUTBOX", "DEPLOYMENT_OPERATOR"].includes(name) ? 160n : 256n;
-      if (value < 0n || value >= 1n << width) fail10();
+      if (value < 0n || value >= 1n << width) fail9();
       const word2 = value.toString(16).padStart(64, "0").match(/../g), refs = metadata.immutables[name];
-      if (!Array.isArray(refs) || !refs.length) fail10();
+      if (!Array.isArray(refs) || !refs.length) fail9();
       for (const ref of refs) {
-        if (!ref || Object.keys(ref).sort().join(",") !== "length,start" || ref.length !== 32 || !Number.isSafeInteger(ref.start) || ref.start < 0 || ref.start + 32 > bytes4.length) fail10();
+        if (!ref || Object.keys(ref).sort().join(",") !== "length,start" || ref.length !== 32 || !Number.isSafeInteger(ref.start) || ref.start < 0 || ref.start + 32 > bytes4.length) fail9();
         for (let i = 0; i < 32; i++) {
           const offset = ref.start + i;
-          if (occupied.has(offset) || bytes4[offset] !== "00") fail10();
+          if (occupied.has(offset) || bytes4[offset] !== "00") fail9();
           occupied.add(offset);
           bytes4[offset] = word2[i];
         }
@@ -478072,14 +478017,14 @@ mod tests {
     publicGas: Object.freeze({ daGas: 384, l2Gas: 92440 }),
     teardownGas: Object.freeze({ daGas: 192, l2Gas: 27510 })
   });
-  var fail11 = (code) => Object.assign(Error(code), { code });
-  var check16 = (value, code = "BB_LIKE_FEE_PROFILE_MISMATCH") => {
-    if (!value) throw fail11(code);
+  var fail10 = (code) => Object.assign(Error(code), { code });
+  var check15 = (value, code = "BB_LIKE_FEE_PROFILE_MISMATCH") => {
+    if (!value) throw fail10(code);
   };
-  var equal5 = (a, b2) => a?.toString() === b2?.toString();
+  var equal4 = (a, b2) => a?.toString() === b2?.toString();
   function likeGasLimits() {
     const p = LIKE_GAS_PROFILE;
-    check16(MAX_NULLIFIERS_PER_TX === 64 && MAX_PRIVATE_LOGS_PER_TX === 64 && PRIVATE_LOG_SIZE_IN_FIELDS === 16 && DA_GAS_PER_FIELD === 32 && TX_DA_GAS_OVERHEAD === 96 && PUBLIC_TX_L2_GAS_OVERHEAD === 54e4 && FIXED_AVM_STARTUP_L2_GAS === 2e4 && AVM_EMITNOTEHASH_BASE_L2_GAS === 19275 && AVM_EMITNULLIFIER_BASE_L2_GAS === 30800 && L2_GAS_PER_PRIVATE_LOG === 2500);
+    check15(MAX_NULLIFIERS_PER_TX === 64 && MAX_PRIVATE_LOGS_PER_TX === 64 && PRIVATE_LOG_SIZE_IN_FIELDS === 16 && DA_GAS_PER_FIELD === 32 && TX_DA_GAS_OVERHEAD === 96 && PUBLIC_TX_L2_GAS_OVERHEAD === 54e4 && FIXED_AVM_STARTUP_L2_GAS === 2e4 && AVM_EMITNOTEHASH_BASE_L2_GAS === 19275 && AVM_EMITNULLIFIER_BASE_L2_GAS === 30800 && L2_GAS_PER_PRIVATE_LOG === 2500);
     const privateNotes = 1;
     const gasLimits = new Gas(
       TX_DA_GAS_OVERHEAD + (privateNotes + MAX_NULLIFIERS_PER_TX + MAX_PRIVATE_LOGS_PER_TX * (PRIVATE_LOG_SIZE_IN_FIELDS + 1)) * DA_GAS_PER_FIELD + p.teardownGas.daGas + p.publicGas.daGas,
@@ -478093,25 +478038,82 @@ mod tests {
   }
   function likeFeeBudget({ wallet, prepared: prepared2, board: board2 }) {
     const p = LIKE_GAS_PROFILE, account = wallet?._accountManager?.getInstance();
-    check16(board2?.currentContractClassId?.toString() === p.boardClassId && board2?.originalContractClassId?.toString() === p.boardClassId);
-    check16(account?.currentContractClassId?.toString() === p.accountClassId && account?.originalContractClassId?.toString() === p.accountClassId);
-    check16(prepared2?.metadata?.classId === p.privateFeeClassId && prepared2.paymentMethod?.constructor === PrivateFeePaymentMethod);
+    check15(board2?.currentContractClassId?.toString() === p.boardClassId && board2?.originalContractClassId?.toString() === p.boardClassId);
+    check15(account?.currentContractClassId?.toString() === p.accountClassId && account?.originalContractClassId?.toString() === p.accountClassId);
+    check15(prepared2?.metadata?.classId === p.privateFeeClassId && prepared2.paymentMethod?.constructor === PrivateFeePaymentMethod);
     const gasLimits = likeGasLimits();
     const ceiling = GasSettings.from(prepared2.gasSettings), network = prepared2.networkGasLimits;
-    for (const dimension of ["daGas", "l2Gas"]) check16(Number.isSafeInteger(network?.[dimension]) && gasLimits[dimension] <= network[dimension] && gasLimits[dimension] <= ceiling.gasLimits[dimension] && p.teardownGas[dimension] <= ceiling.teardownGasLimits[dimension]);
+    for (const dimension of ["daGas", "l2Gas"]) check15(Number.isSafeInteger(network?.[dimension]) && gasLimits[dimension] <= network[dimension] && gasLimits[dimension] <= ceiling.gasLimits[dimension] && p.teardownGas[dimension] <= ceiling.teardownGasLimits[dimension]);
     const gasSettings = GasSettings.from({ gasLimits, teardownGasLimits: Gas.from(p.teardownGas), maxFeesPerGas: ceiling.maxFeesPerGas, maxPriorityFeesPerGas: ceiling.maxPriorityFeesPerGas });
     const maximumFee = gasSettings.getFeeLimit().toBigInt(), reservation = maximumFee || 1n;
-    if (prepared2.creditCheck === "qualified-like-proof") check16(!Object.hasOwn(prepared2, "availableCredit"));
+    if (prepared2.creditCheck === "qualified-like-proof") check15(!Object.hasOwn(prepared2, "availableCredit"));
     else {
-      check16(prepared2.creditCheck === void 0 || prepared2.creditCheck === "read-balance");
-      check16(BigInt(prepared2.availableCredit) >= 0n);
+      check15(prepared2.creditCheck === void 0 || prepared2.creditCheck === "read-balance");
+      check15(BigInt(prepared2.availableCredit) >= 0n);
     }
     return { gasSettings, maximumFee, reservation };
   }
   function assertLikePayload({ wallet, from, application, board: board2 }) {
     const account = wallet?._accountManager?.getInstance(), call2 = application.calls?.[0];
-    check16(equal5(account?.address, from) && application.calls?.length === 1 && equal5(call2?.to, board2.address) && call2?.selector?.toString() === LIKE_GAS_PROFILE.selector && call2?.name === "set_like" && call2?.type === "private" && call2?.hideMsgSender === false && call2?.isStatic === false);
-    check16(call2.args?.length === 2 && call2.args[0]?.toBigInt?.() > 0n && [0n, 1n].includes(call2.args[1]?.toBigInt?.()));
+    check15(equal4(account?.address, from) && application.calls?.length === 1 && equal4(call2?.to, board2.address) && call2?.selector?.toString() === LIKE_GAS_PROFILE.selector && call2?.name === "set_like" && call2?.type === "private" && call2?.hideMsgSender === false && call2?.isStatic === false);
+    check15(call2.args?.length === 2 && call2.args[0]?.toBigInt?.() > 0n && [0n, 1n].includes(call2.args[1]?.toBigInt?.()));
+    check15(application.authWitnesses?.length === 0 && application.capsules?.length === 0 && application.extraHashedArgs?.length === 0 && !application.feePayer);
+  }
+
+  // shared/ordinary-post-fees.mjs
+  init_dirname();
+  init_buffer2();
+  init_process2();
+  init_constants();
+  init_gas2();
+  var ORDINARY_POST_GAS_PROFILE = Object.freeze({
+    boardArtifactSha256: "4de9f9202ff4952eb99a0767cae17c8ad41e5d36e045e620d4b3a0190c5b8b28",
+    boardClassId: "0x03c9bf685f78a9b8731b010884f7728f552cd3c59fe169c2e3e7ee302cc17088",
+    accountClassId: "0x222287bfcd04411264393983dd8d01ca5ea9ae305d1a10a1e6d8deef7f17659b",
+    privateFeeClassId: "0x1e74f64c7ddbab25de51eb7fc667064c0713ee67e04b8589871f214aacce4df0",
+    postSelector: "0xc3ff19cd",
+    publicGas: Object.freeze({ daGas: 2368, l2Gas: 2e6 }),
+    teardownGas: Object.freeze({ daGas: 192, l2Gas: 27510 })
+  });
+  var fail11 = (code) => Object.assign(Error(code), { code });
+  var check16 = (value, code = "BB_POST_FEE_PROFILE_MISMATCH") => {
+    if (!value) throw fail11(code);
+  };
+  var equal5 = (a, b2) => a?.toString() === b2?.toString();
+  function ordinaryPostGasLimits() {
+    const p = ORDINARY_POST_GAS_PROFILE;
+    check16(MAX_NULLIFIERS_PER_TX === 64 && MAX_PRIVATE_LOGS_PER_TX === 64 && PRIVATE_LOG_SIZE_IN_FIELDS === 16 && DA_GAS_PER_FIELD === 32 && TX_DA_GAS_OVERHEAD === 96 && PUBLIC_TX_L2_GAS_OVERHEAD === 54e4 && FIXED_AVM_STARTUP_L2_GAS === 2e4 && AVM_EMITNOTEHASH_BASE_L2_GAS === 19275 && AVM_EMITNULLIFIER_BASE_L2_GAS === 30800 && L2_GAS_PER_PRIVATE_LOG === 2500);
+    const privateNotes = 4;
+    const gasLimits = new Gas(
+      TX_DA_GAS_OVERHEAD + (privateNotes + MAX_NULLIFIERS_PER_TX + MAX_PRIVATE_LOGS_PER_TX * (PRIVATE_LOG_SIZE_IN_FIELDS + 1)) * DA_GAS_PER_FIELD + p.teardownGas.daGas + p.publicGas.daGas,
+      PUBLIC_TX_L2_GAS_OVERHEAD + privateNotes * AVM_EMITNOTEHASH_BASE_L2_GAS + MAX_NULLIFIERS_PER_TX * AVM_EMITNULLIFIER_BASE_L2_GAS + MAX_PRIVATE_LOGS_PER_TX * L2_GAS_PER_PRIVATE_LOG + 2 * FIXED_AVM_STARTUP_L2_GAS + p.teardownGas.l2Gas + p.publicGas.l2Gas
+    );
+    return gasLimits;
+  }
+  function ordinaryPostFeeLimit(value) {
+    const gas = ordinaryPostGasLimits(), prices = GasSettings.from(value).maxFeesPerGas;
+    return BigInt(gas.daGas) * prices.feePerDaGas + BigInt(gas.l2Gas) * prices.feePerL2Gas;
+  }
+  function ordinaryPostFeeBudget({ wallet, prepared: prepared2, board: board2 }) {
+    const p = ORDINARY_POST_GAS_PROFILE, account = wallet?._accountManager?.getInstance();
+    check16(board2?.currentContractClassId?.toString() === p.boardClassId && board2?.originalContractClassId?.toString() === p.boardClassId);
+    check16(account?.currentContractClassId?.toString() === p.accountClassId && account?.originalContractClassId?.toString() === p.accountClassId);
+    check16(prepared2?.metadata?.classId === p.privateFeeClassId && prepared2.paymentMethod?.constructor === PrivateFeePaymentMethod);
+    const gasLimits = ordinaryPostGasLimits();
+    const ceiling = GasSettings.from(prepared2.gasSettings), network = prepared2.networkGasLimits;
+    for (const dimension of ["daGas", "l2Gas"]) check16(Number.isSafeInteger(network?.[dimension]) && gasLimits[dimension] <= network[dimension] && gasLimits[dimension] <= ceiling.gasLimits[dimension] && p.teardownGas[dimension] <= ceiling.teardownGasLimits[dimension]);
+    const gasSettings = GasSettings.from({ gasLimits, teardownGasLimits: Gas.from(p.teardownGas), maxFeesPerGas: ceiling.maxFeesPerGas, maxPriorityFeesPerGas: ceiling.maxPriorityFeesPerGas });
+    const maximumFee = gasSettings.getFeeLimit().toBigInt(), reservation = maximumFee || 1n;
+    if (prepared2.creditCheck === "ordinary-post-proof") check16(!Object.hasOwn(prepared2, "availableCredit"));
+    else {
+      check16(prepared2.creditCheck === void 0 || prepared2.creditCheck === "read-balance");
+      check16(reservation <= BigInt(prepared2.availableCredit), "BB_POST_FEE_CREDIT_REQUIRED");
+    }
+    return { gasSettings, maximumFee, reservation };
+  }
+  function assertOrdinaryPostPayload({ wallet, from, application, board: board2 }) {
+    const account = wallet?._accountManager?.getInstance(), call2 = application.calls?.[0];
+    check16(equal5(account?.address, from) && application.calls?.length === 1 && equal5(call2?.to, board2.address) && call2?.selector?.toString() === ORDINARY_POST_GAS_PROFILE.postSelector && call2?.name === "post" && call2?.type === "private" && call2?.hideMsgSender === false && call2?.isStatic === false);
     check16(application.authWitnesses?.length === 0 && application.capsules?.length === 0 && application.extraHashedArgs?.length === 0 && !application.feePayer);
   }
 
