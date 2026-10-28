@@ -1,0 +1,37 @@
+{
+  "instanceId": "i-0a9b5b9ba55815cda",
+  "commandId": "9d1aaf03-4c19-431f-ab2d-9627f86466cc",
+  "observedAt": "2026-10-28T14:27:42.076Z",
+  "report": {
+    "status": "installed",
+    "playwrightVersion": "1.63.0",
+    "browsers": [
+      "chromium_headless_shell-1243",
+      "chromium-1243",
+      "ffmpeg-1011",
+      ".links"
+    ],
+    "beforePids": {
+      "rolling-application": "604361",
+      "rolling-application-proxy": "427800",
+      "rolling-node": "561751",
+      "rolling-query": "561753",
+      "board-prover": "604038",
+      "board-prover-proxy": "739",
+      "rolling-moderator": "604372"
+    },
+    "afterPids": {
+      "rolling-application": "604361",
+      "rolling-application-proxy": "427800",
+      "rolling-node": "561751",
+      "rolling-query": "561753",
+      "board-prover": "604038",
+      "board-prover-proxy": "739",
+      "rolling-moderator": "604372"
+    },
+    "livePidsUnchanged": true,
+    "freeBytes": 7326793728
+  },
+  "stageServiceStarted": false,
+  "releaseEnabled": false
+}
