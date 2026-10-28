@@ -10,7 +10,7 @@ import {validateJourneyConfig,createTestWalletBridge} from './journey.mjs';
 import {reuseCandidate} from './prepare.mjs';
 import {runtimeIdentity,stageRuntimeIdentity} from './compatibility.mjs';
 import {checkRuntime} from './smoke.mjs';
-import {runnerDropin} from './harden-runner.mjs';
+import {releaseRestrictions,releaseJobUnit} from './install-job.mjs';
 import {pruneReleases} from './prune.mjs';
 
 const oldRevision='1'.repeat(40),revision='2'.repeat(40);
@@ -106,10 +106,10 @@ test('GitHub baseline gate binds trusted workflow success to exact source and re
  for(const patch of [{head_sha:oldRevision},{event:'pull_request'},{conclusion:'failure'},{status:'in_progress'},{head_repository:{full_name:'someone/fork'}}])assert.throws(()=>acceptBaseline([{...run,...patch}],revision),{code:'RELEASE_BASELINE_CHECK'});
  assert.throws(()=>acceptBaseline([run,{...run,id:2,conclusion:'failure'}],revision));
 });
-test('runner sandbox blocks metadata and confines writes; injected unit paths are rejected',()=>{
+test('release job sandbox blocks metadata and confines writes; injected unit paths are rejected',()=>{
  const cfg={releaseDirectory:'/opt/rolling-releases',stagingLink:'/opt/rolling-stage/current',liveLink:'/opt/rolling-app/current',stateFile:'/var/lib/rolling-ops/release-state.json',nodeBinary:'/opt/node/bin/node'};
- const unit=runnerDropin(cfg,'/var/lib/rolling-runner');assert.match(unit,/User=rolling-release/);assert.match(unit,/IPAddressDeny=169\.254\.169\.254\/32/);assert.match(unit,/IPAddressDeny=fd00:ec2::254\/128/);assert.match(unit,/ProtectSystem=strict/);assert.match(unit,/AWS_SHARED_CREDENTIALS_FILE=\/dev\/null/);assert.match(unit,/runner-preflight\.mjs/);assert(!unit.includes('ReadWritePaths=\/etc'));
- assert.throws(()=>runnerDropin({...cfg,nodeBinary:'/bin/node\nUser=root'},'/var/lib/rolling-runner'),{code:'RELEASE_CONFIG'});
+ const unit=releaseRestrictions(cfg,'/var/lib/rolling-release-job');assert.match(unit,/User=rolling-release/);assert.match(unit,/IPAddressDeny=169\.254\.169\.254\/32/);assert.match(unit,/IPAddressDeny=fd00:ec2::254\/128/);assert.match(unit,/ProtectSystem=strict/);assert.match(unit,/AWS_SHARED_CREDENTIALS_FILE=\/dev\/null/);assert.match(unit,/job-preflight\.mjs/);assert(!unit.includes('ReadWritePaths=\/etc'));
+ assert.throws(()=>releaseRestrictions({...cfg,nodeBinary:'/bin/node\nUser=root'},'/var/lib/rolling-release-job'),{code:'RELEASE_CONFIG'});
 });
 test('separate stage signer is pinned while every other contract field remains identical',()=>{
  const live={proofsEnabled:true,remoteProver:{proofsEnabled:true},config:{network:{chainId:'11155111',rollupAddress:'rollup',rollupVersion:'6'},board:{contractAddress:'board'},privateFee:{contractAddress:'fee'},bok:{contractAddress:'bok'},aggregateFunding:{router:'router',usdcRelayAddress:'0x'+'1'.repeat(40)}}};
@@ -127,4 +127,42 @@ test('retention preserves live, stage, rollback and a newly prepared candidate',
  const liveLink=path.join(directory,'live'),stageLink=path.join(directory,'stage'),stateFile=path.join(directory,'state.json');await fs.symlink(path.join(directory,'2'.repeat(40)),liveLink);await fs.symlink(path.join(directory,'2'.repeat(40)),stageLink);await fs.writeFile(stateFile,JSON.stringify({status:'live',revision:'2'.repeat(40),previousRevision:'1'.repeat(40),updatedAt:new Date(Date.now()-500).toISOString()}));
  const options={directory,liveLink,stageLink,stateFile};await fs.writeFile(stateFile+'.lock','');assert.equal((await pruneReleases(options)).reason,'release-active');await fs.rm(stateFile+'.lock');assert.equal((await pruneReleases(options)).removed,1);
  for(const digit of ['1','2','4'])assert((await fs.stat(path.join(directory,digit.repeat(40)))).isDirectory());await assert.rejects(fs.stat(path.join(directory,'3'.repeat(40))),{code:'ENOENT'});
+});
+
+test('fixed host job rejects non-master or superseded source; git has no credential or hook path',async()=>{
+ const {assertMasterRevision,gitOptions,REPOSITORY}=await import('./host-job.mjs');
+ assertMasterRevision(revision,revision+'\trefs/heads/master\n');
+ for(const value of [oldRevision+'\trefs/heads/master',revision+'\trefs/heads/feature',revision+'\trefs/heads/master\n'+oldRevision+'\trefs/heads/master'])assert.throws(()=>assertMasterRevision(revision,value),{code:'RELEASE_SUPERSEDED'});
+ assert.equal(REPOSITORY,'https://github.com/zac-williamson/aztec_experiments.git');
+ assert(gitOptions().includes('core.hooksPath=/dev/null'));assert(gitOptions().includes('credential.helper='));assert(gitOptions().includes('protocol.allow=never'));
+});
+test('release transport has an exact environment trust and parameterless command with no arbitrary execution grant',async()=>{
+ const template=JSON.parse(await fs.readFile(new URL('./oidc-template.json',import.meta.url),'utf8'));
+ const role=template.Resources.ReleaseRole.Properties,trust=role.AssumeRolePolicyDocument.Statement[0];
+ assert.deepEqual(trust.Condition.StringEquals,{'token.actions.githubusercontent.com:aud':'sts.amazonaws.com','token.actions.githubusercontent.com:sub':'repo:zac-williamson/aztec_experiments:environment:rolling-testnet-release'});
+ const statements=role.Policies[0].PolicyDocument.Statement;assert.deepEqual(statements.map(x=>x.Action),['ssm:SendCommand','ssm:GetCommandInvocation']);assert.equal(statements[0].Resource.length,2);assert(!statements[0].Resource.includes('*'));
+ const doc=template.Resources.ReleaseCommand.Properties.Content;assert.deepEqual(doc.parameters,{});assert.equal(doc.mainSteps.length,1);assert(doc.mainSteps[0].inputs.runCommand.includes('/usr/bin/systemctl start --wait rolling-release-job.service'));
+ const unit=releaseJobUnit({releaseDirectory:'/opt/rolling-releases',stagingLink:'/opt/rolling-stage/current',liveLink:'/opt/rolling-release-live/current',stateFile:'/var/lib/rolling-release-state/state.json',nodeBinary:'/opt/rolling-ops/runtime/node'});
+ assert.match(unit,/Type=oneshot/);assert.match(unit,/host-job\.mjs/);assert(!unit.includes('actions.runner'));assert(!unit.includes('[Install]'));
+});
+
+test('gasless wallet bridge refuses even a zero-value transaction requiring gas',async()=>{
+ const wallet={address:'0x'+'1'.repeat(40),sendTransaction:()=>{throw Error('must never sign');}},target='0x'+'2'.repeat(40);
+ const bridge=await createTestWalletBridge({wallet,provider:{},allowedTargets:new Set([target]),capWei:0n,getBytes:x=>x});
+ await assert.rejects(bridge({method:'eth_sendTransaction',params:[{from:wallet.address,to:target,gas:'0x5208',gasPrice:'0x1',value:'0x0'}]}),{code:'RELEASE_FIXTURE_SPEND_LIMIT'});
+});
+
+test('sanitized candidates built with private permissions become readable to separate app users',async t=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'rolling-readable-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
+ const nested=path.join(root,'wallet');await fs.mkdir(nested,{mode:0o700});await fs.writeFile(path.join(nested,'runtime.mjs'),'public bytes',{mode:0o600});
+ const {makeRuntimeReadable}=await import('./prepare.mjs');await makeRuntimeReadable(root);
+ assert.equal((await fs.stat(nested)).mode&0o777,0o755);assert.equal((await fs.stat(path.join(nested,'runtime.mjs'))).mode&0o777,0o644);
+ await fs.symlink('/etc/passwd',path.join(root,'unexpected'));await assert.rejects(makeRuntimeReadable(root),{code:'RELEASE_SYMLINK'});
+});
+
+test('private job umask still permits the dashboard group to read sanitized release state',async t=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'rolling-state-mode-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
+ const {writeReleaseState}=await import('./pipeline.mjs'),target=path.join(root,'state.json'),old=process.umask(0o077);
+ try{await writeReleaseState(target,{status:'checking'});}finally{process.umask(old);}
+ assert.equal((await fs.stat(target)).mode&0o777,0o640);
 });

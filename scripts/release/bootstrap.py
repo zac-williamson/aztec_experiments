@@ -91,7 +91,7 @@ def prepare(folder,m,p):
   actual=src/name
   if actual.is_file():require(sha(actual.read_bytes())==record['sha256'],'Deployed source differs from declared application revision');compared+=1
  require(compared>100,'Insufficient deployed source inventory')
- release=user('rolling-release',pathlib.Path('/var/lib/rolling-runner'));stage=user('rolling-staging',pathlib.Path('/var/lib/rolling-stage'));ops=grp.getgrnam('rolling-ops')
+ release=user('rolling-release',pathlib.Path('/var/lib/rolling-release-job'));stage=user('rolling-staging',pathlib.Path('/var/lib/rolling-stage'));ops=grp.getgrnam('rolling-ops')
  directory(RELEASES,uid=release.pw_uid,gid=release.pw_gid);directory(STAGE,uid=release.pw_uid,gid=release.pw_gid);directory(LIVE,uid=release.pw_uid,gid=release.pw_gid)
  directory(CONFIG,0o750,0,release.pw_gid);directory(STAGE_CONFIG,0o750,0,stage.pw_gid);directory(STATE,0o2750,release.pw_uid,ops.gr_gid)
  directory(pathlib.Path(release.pw_dir),0o700,release.pw_uid,release.pw_gid);directory(pathlib.Path(stage.pw_dir),0o700,stage.pw_uid,stage.pw_gid)
@@ -100,6 +100,9 @@ def prepare(folder,m,p):
   unpack(folder,'application',baseline)
   for name in GENERATED:copy_generated(src/name,baseline/name)
   (baseline/'node_modules').symlink_to(dependencies)
+  for current,dirs,files in os.walk(baseline):
+   os.chmod(current,0o755)
+   for name in files:os.chmod(pathlib.Path(current)/name,0o644)
  else:require((baseline/'release.json').is_file(),'Incomplete existing baseline; inspect before retry')
  directory(OPERATOR);unpack(folder,'operator',OPERATOR);link(OPERATOR/'node_modules',dependencies)
  public.update({'port':8091,'cacheDirectory':'/var/lib/rolling-stage/index','artifactPath':str(STAGE/'current/billboard/target/rolling_contract-RollingBoard.json'),'bokArtifactPath':str(STAGE/'current/experiments/private-bok/target/private_bok-PrivateBok.json')})
@@ -107,7 +110,7 @@ def prepare(folder,m,p):
  relay['signerFile']='/run/credentials/rolling-staging.service/relay-signer';relay['stateDirectory']='/var/lib/rolling-stage/relay';relay['policy']['relayer']=address
  relay['policy']['totalGasBudgetWei']=str(min(int(relay['policy']['totalGasBudgetWei']),10**16));require(int(relay['policy']['maxGasWei'])<=int(relay['policy']['totalGasBudgetWei']),'Stage relay budget needs explicit review')
  json_file(STAGE_CONFIG/'public.json',public,mode=0o640,gid=stage.pw_gid);json_file(STAGE_CONFIG/'wallet.json',wallet,mode=0o640,gid=stage.pw_gid);json_file(STAGE_CONFIG/'relay.json',relay,mode=0o640,gid=stage.pw_gid)
- # Runner sees only the non-secret verifier projection, not service configs.
+ # The release job sees only the non-secret verifier projection, not service configs.
  artifacts=OPERATOR.parent/'artifacts';directory(artifacts)
  for name,source in [('board.json','billboard/target/rolling_contract-RollingBoard.json'),('bok.json','experiments/private-bok/target/private_bok-PrivateBok.json')]:atomic(artifacts/name,(baseline/source).read_bytes())
  verifier={k:public[k] for k in ['nodeUrl','scope','artifactPath','bokArtifactPath']};verifier['artifactPath']=str(artifacts/'board.json');verifier['bokArtifactPath']=str(artifacts/'bok.json')
@@ -119,8 +122,13 @@ def prepare(folder,m,p):
  link(STAGE/'current',baseline);link(LIVE/'current',baseline)
  atomic(pathlib.Path('/etc/systemd/system/rolling-staging.service'),(folder/'rolling-staging.service').read_bytes())
  for name in ['rolling-release-prune.service','rolling-release-prune.timer']:atomic(pathlib.Path('/etc/systemd/system')/name,(folder/name).read_bytes())
- if not pathlib.Path('/usr/local/lib/rolling-release').exists():command([NODE,str(OPERATOR/'scripts/release/install.mjs'),str(CONFIG/'config.json')],timeout=300)
- return {'status':'prepared-not-started','baseline':str(baseline),'operatorConfig':str(CONFIG/'config.json'),'stageRelaySignerRequired':str(STAGE_CONFIG/'relay-signer.json'),'ciFunderRequired':str(CONFIG/'test-wallet.json'),'runnerRegistered':False,'liveUnitChanged':False,'caddyChanged':False}
+ installed=pathlib.Path('/usr/local/lib/rolling-release')
+ if not installed.exists():command([NODE,str(OPERATOR/'scripts/release/install.mjs'),str(CONFIG/'config.json')],timeout=300)
+ else:
+  for name in m['operator']['files']:
+   if name=='toolchain.json':continue
+   actual=installed/name;st=actual.lstat();require(actual.is_file() and not actual.is_symlink() and st.st_uid==0 and not st.st_mode&0o022 and actual.read_bytes()==(OPERATOR/name).read_bytes(),'Installed operator differs; review an explicit update')
+ return {'status':'prepared-not-started','baseline':str(baseline),'operatorConfig':str(CONFIG/'config.json'),'stageRelaySignerRequired':str(STAGE_CONFIG/'relay-signer.json'),'ciFunderRequired':str(CONFIG/'test-wallet.json'),'githubRunnerInstalled':False,'releaseJobStarted':False,'liveUnitChanged':False,'caddyChanged':False}
 
 def main():
  a=argparse.ArgumentParser();a.add_argument('--payload',required=True,type=pathlib.Path);a.add_argument('--plan',type=pathlib.Path);a.add_argument('--apply',action='store_true');args=a.parse_args()

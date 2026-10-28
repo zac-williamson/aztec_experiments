@@ -1,4 +1,4 @@
-// Run once as root from a reviewed checkout. This does not register a runner,
+// Run once as root from a reviewed checkout. This does not register a GitHub runner,
 // restart services, change application symlinks or enable a GitHub environment.
 import fs from 'node:fs/promises';
 import path from 'node:path';

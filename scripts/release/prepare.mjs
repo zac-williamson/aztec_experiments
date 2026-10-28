@@ -37,6 +37,16 @@ export async function collectPublicFiles(root){
  }
  return files;
 }
+// The build service has a restrictive umask and the application has a different
+// user. This tree contains only sanitized public source/assets, so explicitly
+// make it readable before staging; never traverse the shared dependency link.
+export async function makeRuntimeReadable(root,relative=''){
+ const filename=path.join(root,relative),entry=await fs.lstat(filename);
+ if(entry.isSymbolicLink()){if(relative!=='node_modules')throw failure('RELEASE_SYMLINK');return;}
+ if(entry.isDirectory()){await fs.chmod(filename,0o755);for(const name of await fs.readdir(filename))await makeRuntimeReadable(root,path.join(relative,name));}
+ else if(entry.isFile())await fs.chmod(filename,0o644);
+ else throw failure('RELEASE_FILE');
+}
 export async function prepareCandidate(source,cfg){
  const revision=execFileSync('git',['rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();
  if(execFileSync('git',['status','--porcelain','--untracked-files=no'],{cwd:source,encoding:'utf8'}).trim())throw failure('RELEASE_DIRTY_SOURCE');
@@ -64,7 +74,7 @@ export async function prepareCandidate(source,cfg){
   // This is the actual repository asset builder and its provenance checks. A
   // build failure blocks before staging; stdout stays in private host journals.
   execFileSync(cfg.nodeBinary,['scripts/rolling-wallet-assets.mjs'],{cwd:destination,stdio:'pipe',timeout:300000,maxBuffer:1024*1024});
-  const publicFiles=await collectPublicFiles(destination);
+  const publicFiles=await collectPublicFiles(destination);await makeRuntimeReadable(destination);
   await sealBundle(destination,{revision,baseline:baseline.revision,compatibility:baseline.compatibility,publicFiles});
   await fs.rename(destination,finalDestination);return finalDestination;
  }catch(e){await fs.writeFile(path.join(destination,'FAILED'),e.code?.startsWith('RELEASE_')?e.code:'RELEASE_BUILD_FAILED',{mode:0o600});throw failure(e.code?.startsWith('RELEASE_')?e.code:'RELEASE_BUILD_FAILED');}

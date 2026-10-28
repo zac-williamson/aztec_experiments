@@ -16,7 +16,9 @@ build prerequisite. It does not deploy contracts, a node, a prover or a Bok work
 3. Every candidate file has a SHA-256 inventory. Staging serves the exact public
    asset bytes, a real-proof Sepolia runtime and a ready reader of the same board.
 4. Playwright creates two fresh wallets, funds them from a dedicated test faucet
-   account, and uses the actual wallet UI for ETH and USDC account creation. It
+   account, and uses the actual wallet UI for ETH and USDC account creation. The USDC
+   wallet receives no ETH; its balance is checked before and after gasless signup
+   and the injected wallet refuses gas-bearing sends. It
    posts, replies, likes, reloads, buys Bok credit and waits for Bok's reply.
    The installed native event decoder independently binds submitted transactions
    to the canonical node receipt, archive block, effect, Board class and actual
@@ -40,20 +42,26 @@ Do this after the active contract release finishes. The integrating operator own
 these host and GitHub changes; unit tests do not perform them. Reuse the existing
 host, node and prover to stay within the launch budget.
 
-- Create the `rolling-release` service user and a self-hosted GitHub runner with
-  labels `self-hosted,linux,x64,rolling-release`. Restrict this runner to this
-  repository's trusted release workflow; never dispatch PRs onto it. The runner
-  needs no AWS key. Protect `master` and the `rolling-testnet-release` GitHub
-  environment; restrict that environment to `master`.
-  Use `/var/lib/rolling-runner` as the user's home and runner directory. Give it
-  no membership in `sudo`, `wheel`, `admin`, `docker` or `lxd` groups. Register
-  with GitHub's short-lived registration token, which must not go in release
-  config or environment. Run `sudo ./svc.sh install rolling-release`, leaving
-  the runner stopped.
+- Use GitHub-hosted jobs only. This repository is public; no persistent GitHub
+  runner is registered on the application host. Create the `rolling-release`
+  service account with home `/var/lib/rolling-release-job` and no membership in
+  `sudo`, `wheel`, `admin`, `docker` or `lxd`. The fixed systemd job runs under
+  this user only when invoked; it stores no GitHub token or cloud credential.
+- Restrict GitHub environment `rolling-testnet-release` to the exact `master`
+  branch. This environment policy is essential: the OIDC subject contains the
+  environment, not a branch claim. Protect master from unreviewed changes.
+  Review and provision `oidc-template.json` in us-east-1 with
+  `CAPABILITY_NAMED_IAM`; it creates the GitHub OIDC provider (only if absent),
+  one role and one parameterless SSM command on the existing core instance.
+  Set environment variable `ROLLING_RELEASE_ROLE_ARN` to its role ARN. No new
+  machine is created. The role can only submit this fixed document to this
+  instance and read invocation status. It cannot change documents, units, IAM,
+  source references or commands. The workflow pins document version1.
 - Install the pinned Node version in `toolchain.json`. The shared `node_modules`
   tree must be root-owned, unwritable by group/others, and installed from the
   same lockfile with the repository's pinned patch/build process. It must include
-  Playwright and its Chromium browser installation for `rolling-release`.
+  Playwright and its Chromium browser installation at the root-owned
+  `/opt/rolling-ci-bootstrap/browsers` (`PLAYWRIGHT_BROWSERS_PATH`).
   The installer checks dependency ownership and the Node version.
 - Run the application under a separate non-root service account. Create
   `/opt/rolling-releases`, `/opt/rolling-stage/current` and
@@ -139,30 +147,40 @@ the privileged gate. Set the state directory's group so the private monitoring
 service can read `release-state.json` (mode `0640`). The dashboard should display
 only status, source revisions, timestamps, stage names and the error enum.
 
-Apply runner hardening as root after `svc.sh install`:
+After preparing the stopped stage service, reload systemd so its non-root user
+is visible, then install the fixed release job as root:
 
-    node scripts/release/harden-runner.mjs /etc/rolling-release/config.json
+    node scripts/release/install-job.mjs /etc/rolling-release/config.json
 
-It installs a systemd drop-in and the two exact sudo restart permissions, without
-starting/enabling the runner. The runner stays unprivileged; its filesystem is
-read-only except its own runner, release/link and sanitized-state directories.
-It cannot read home directories/cloud-init state. Both IPv4 and IPv6 EC2 metadata
-addresses are denied at the service cgroup, AWS credential environment variables
-are removed, and SDK credential files point to `/dev/null`. The startup preflight
-checks that no AWS credentials are present and metadata TCP access fails; it
-never requests credential contents. Ineffective network filtering fails startup
-when metadata is reachable. `sudo` is limited to two fixed unit restarts, so
-`NoNewPrivileges` is deliberately not enabled. The application units themselves
-must run as an unprivileged application user.
+This writes `rolling-release-job.service` and the two exact sudo permissions. It
+never starts or enables a service. The unit has no automatic startup target. It
+uses a root-owned `host-job.mjs` which fetches only the fixed public repository's
+current master. Git hooks, credential helpers and non-HTTPS Git protocols are
+disabled. The job independently checks public GitHub's full build result for that
+exact commit; a newer failed/incomplete run blocks it. No passed receipt, source
+archive, command or revision can be supplied by the caller. A manual workflow
+request checks the current master too; it does not deploy an old trigger SHA.
 
-Only after the final contract baseline is ready, run `systemctl daemon-reload`,
-enable/start the installed runner service, and verify its preflight and an actual
-stage journey. Follow GitHub's official
-[service setup](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/configure-the-application):
-the service invokes `runsvc.sh`; the hardener keeps that entry point. Never copy
-the shared deployment/funder key onto this runner. Create and fund a separate
-capped Sepolia CI funder locally, coordinated with other signers of the shared
-account, then install only that dedicated fixture.
+The job's filesystem is read-only except its own checkout, releases, pointers and
+sanitized-state directory. Service configs and state, cloud-init data and home
+directories are inaccessible. Both EC2 metadata addresses are denied. AWS
+credential variables are removed and credential files point to `/dev/null`.
+The startup preflight checks that no AWS credentials are present and metadata TCP
+access fails without requesting credentials. The two fixed sudo restarts require
+`NoNewPrivileges` to remain off; both application services must use separate
+non-root accounts. No repository code runs as root.
+
+Install Chromium from the pinned shared Playwright package into the root-owned
+browser directory, including its OS libraries. Install only dedicated capped
+Sepolia test funder and stage relay keys; coordinate their initial funding with
+the operator of the shared signer. Never copy that shared key to this job.
+
+After final baseline adoption and staging smoke, create root-owned mode0644
+`/etc/rolling-release/enabled` to allow the fixed SSM document. Keep that marker
+absent until final contract acceptance and fixtures are ready. A one-shot run
+then executes the actual stage journey; failed full builds remain blocked.
+GitHub logs show only invocation status, never host output or private fixtures.
+Inspect the private dashboard and host journal for sanitized failure enums.
 
 The current journey targets the paid-like release: a post must emit `PostTipKey`,
 the UI must offer `Like · 20 credits`, and the independently decoded transaction
@@ -175,8 +193,8 @@ old 635a33b3 release after the tipping contract deployment.
 
 A successful full build on `master` triggers the release workflow. Manual
 dispatch on `master` uses the same full-build check and real journey. The workflow
-is not operational until the runner, baseline, stage services, private test
-fixture and GitHub environment above are installed and exercised.
+is not operational until the OIDC trigger, installed job, baseline, stage
+services, private test fixture and GitHub environment are installed and exercised.
 
 - Staging failure: live remains unchanged. Fix the cause and rerun. The same SHA
   reuses a complete verified candidate; a partial build stays in a uniquely named
@@ -223,13 +241,13 @@ Use a dedicated stage relay signer and separate state. `seal-current.mjs` accept
 an optional fifth argument naming the stage wallet config. It pins the stage
 runtime separately, admitting only the relay address and endpoint-host differences
 from live. All contract identities, code hashes and funding/gas policy stay bound.
-The runner reads `/etc/rolling-release/public-verifier.json`, a non-secret copy of
+The release job reads `/etc/rolling-release/public-verifier.json`, a non-secret copy of
 node URL, scope and immutable verifier artifact paths; all service configs are
-explicitly inaccessible inside the runner service.
+explicitly inaccessible inside the release job.
 
 The state parent is `/var/lib/rolling-release-state`, owned
 `rolling-release:rolling-ops` with mode2750 so mode0640 output is readable by the
-dashboard without giving the runner access to analytics storage. A 3GiB reserve
+dashboard without giving the release job access to analytics storage. A 3GiB reserve
 blocks new candidate builds. The optional root prune timer only removes sealed
 releases predating the last successful promotion, under the deployment lock, and
 keeps actual live/stage targets and the previous successful release. Fresh

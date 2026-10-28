@@ -1,0 +1,52 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Rolling release: GitHub master environment may start one fixed gated job on the existing core host",
+  "Resources": {
+    "GithubOidc": {
+      "Type": "AWS::IAM::OIDCProvider",
+      "Properties": {"Url": "https://token.actions.githubusercontent.com", "ClientIdList": ["sts.amazonaws.com"]}
+    },
+    "ReleaseCommand": {
+      "Type": "AWS::SSM::Document",
+      "Properties": {
+        "Name": "RollingApplicationRelease",
+        "DocumentType": "Command",
+        "DocumentFormat": "JSON",
+        "Content": {
+          "schemaVersion": "2.2",
+          "description": "No parameters: start installed root-owned release gate; never receive scripts, source or refs from GitHub",
+          "parameters": {},
+          "mainSteps": [{"action": "aws:runShellScript", "name": "release", "inputs": {
+            "timeoutSeconds": "1320",
+            "runCommand": ["#!/bin/sh", "set -eu", "test -f /etc/rolling-release/enabled", "/usr/bin/systemctl start --wait rolling-release-job.service", "/usr/bin/systemctl show rolling-release-job.service --property=Result --property=ExecMainStatus --no-pager"]
+          }}]
+        }
+      }
+    },
+    "ReleaseRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "rolling-github-release",
+        "MaxSessionDuration": 3600,
+        "AssumeRolePolicyDocument": {"Version": "2012-10-17", "Statement": [{
+          "Effect": "Allow", "Principal": {"Federated": {"Ref": "GithubOidc"}}, "Action": "sts:AssumeRoleWithWebIdentity",
+          "Condition": {"StringEquals": {
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+            "token.actions.githubusercontent.com:sub": "repo:zac-williamson/aztec_experiments:environment:rolling-testnet-release"
+          }}
+        }]},
+        "Policies": [{"PolicyName": "StartOnlyInstalledRelease", "PolicyDocument": {"Version": "2012-10-17", "Statement": [
+          {"Effect": "Allow", "Action": "ssm:SendCommand", "Resource": [
+            {"Fn::Sub": "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${ReleaseCommand}"},
+            {"Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/i-0a9b5b9ba55815cda"}
+          ]},
+          {"Effect": "Allow", "Action": "ssm:GetCommandInvocation", "Resource": "*"}
+        ]}}]
+      }
+    }
+  },
+  "Outputs": {
+    "ReleaseRoleArn": {"Value": {"Fn::GetAtt": ["ReleaseRole", "Arn"]}},
+    "ReleaseDocument": {"Value": {"Ref": "ReleaseCommand"}}
+  }
+}

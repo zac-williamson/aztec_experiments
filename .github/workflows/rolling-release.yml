@@ -38,8 +38,8 @@ jobs:
         run: node scripts/release/checks.mjs
 
   release:
-    # PR code never reaches the privileged runner. workflow_run is admitted only
-    # after the existing build passed for a push to this repository's master.
+    # Only GitHub-hosted jobs run repository workflows. The public repo never
+    # registers a persistent self-hosted runner on the application host.
     if: >-
       github.repository == 'zac-williamson/aztec_experiments' &&
       ((github.event_name == 'workflow_run' &&
@@ -50,34 +50,34 @@ jobs:
        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'))
     needs: focused-checks
     environment: rolling-testnet-release
-    runs-on: [self-hosted, linux, x64, rolling-release]
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Obtain short-lived permission for the fixed release command
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-          clean: true
-      - name: Reject a superseded candidate
+          role-to-assume: ${{ vars.ROLLING_RELEASE_ROLE_ARN }}
+          aws-region: us-east-1
+          role-duration-seconds: 1800
+          role-session-name: rolling-release-${{ github.run_id }}
+      - name: Run the installed gate and wait for its result
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/master)"
-      - name: Require successful full baseline checks for this exact commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: /usr/local/bin/rolling-release-check-build "$GITHUB_WORKSPACE"
-      - name: Prepare immutable candidate using pinned installed runtime
-        id: candidate
-        shell: bash
-        run: |
-          set -euo pipefail
-          candidate=$(/usr/local/bin/rolling-release-prepare "$GITHUB_WORKSPACE")
-          test -n "$candidate"
-          printf 'path=%s\n' "$candidate" >> "$GITHUB_OUTPUT"
-      - name: Stage, exercise real testnet journeys, promote and verify
-        shell: bash
-        env:
-          ROLLING_CANDIDATE: ${{ steps.candidate.outputs.path }}
-        run: /usr/local/bin/rolling-release-activate "$ROLLING_CANDIDATE"
+          command_id=$(aws ssm send-command --document-name RollingApplicationRelease --document-version 1 --instance-ids i-0a9b5b9ba55815cda --timeout-seconds 60 --query Command.CommandId --output text)
+          test -n "$command_id"
+          for attempt in $(seq 1 135); do
+            # Initial propagation may return InvocationDoesNotExist. No command
+            # output or private host logs are copied into public Actions logs.
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id i-0a9b5b9ba55815cda --query Status --output text 2>/dev/null || true)
+            case "$status" in
+              Success) echo 'Installed release gate passed.'; exit 0 ;;
+              Failed|Cancelled|TimedOut|Cancelling) echo "Installed release gate: $status"; exit 1 ;;
+            esac
+            sleep 10
+          done
+          echo 'Release result unavailable within the wait budget; inspect private operations dashboard.'
+          exit 1

@@ -9,7 +9,7 @@ export async function replaceLink(link,target){
  try{await fs.rename(temp,link);}finally{await fs.rm(temp,{force:true});}
 }
 const safeError=e=>typeof e?.code==='string'&&/^RELEASE_[A-Z_]+$/.test(e.code)?e.code:'RELEASE_FAILED';
-export async function writeReleaseState(file,state){const tmp=file+'.next';await fs.mkdir(path.dirname(file),{recursive:true,mode:0o750});await fs.writeFile(tmp,JSON.stringify(state)+'\n',{mode:0o640});await fs.rename(tmp,file);}
+export async function writeReleaseState(file,state){const tmp=file+'.next';await fs.mkdir(path.dirname(file),{recursive:true,mode:0o750});await fs.writeFile(tmp,JSON.stringify(state)+'\n',{mode:0o640});await fs.chmod(tmp,0o640);await fs.rename(tmp,file);}
 /** The gate is an in-process call to the browser journey, never an imported JSON
  * report or caller-supplied passed flag. Only an operator-owned entry point may
  * supply adapters; all live adapters are fixed by run.mjs. */

@@ -71,11 +71,15 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
   browser=await chromium.launch({headless:true});
   for(const asset of ['ETH','USDC']){
    const wallet=Wallet.createRandom().connect(provider);
-   const paid=await funder.sendTransaction({to:wallet.address,value:BigInt(cfg.ethPerAccountWei)});if((await paid.wait(1,remaining()))?.status!==1)throw failure('RELEASE_FIXTURE_FUNDING');
-   if(asset==='USDC'){const transfer=await token.transfer(wallet.address,BigInt(cfg.usdcPerAccount));if((await transfer.wait(1,remaining()))?.status!==1)throw failure('RELEASE_FIXTURE_FUNDING');}
+   if(asset==='ETH'){const paid=await funder.sendTransaction({to:wallet.address,value:BigInt(cfg.ethPerAccountWei)});if((await paid.wait(1,remaining()))?.status!==1)throw failure('RELEASE_FIXTURE_FUNDING');}
+   else{
+    // Gasless signup must work for an address which has never received ETH.
+    if(await provider.getBalance(wallet.address)!==0n)throw failure('RELEASE_GASLESS_FIXTURE');
+    const transfer=await token.transfer(wallet.address,BigInt(cfg.usdcPerAccount));if((await transfer.wait(1,remaining()))?.status!==1)throw failure('RELEASE_FIXTURE_FUNDING');
+   }
    const context=await browser.newContext({serviceWorkers:'block'});context.setDefaultTimeout(Math.min(90000,remaining()));
    try{
-    const bridge=await createTestWalletBridge({wallet,provider,allowedTargets,capWei:BigInt(cfg.ethPerAccountWei),getBytes});
+    const bridge=await createTestWalletBridge({wallet,provider,allowedTargets,capWei:asset==='USDC'?0n:BigInt(cfg.ethPerAccountWei),getBytes});
     await context.exposeBinding('__rollingReleaseWallet',async({frame},request)=>{
      if(new URL(frame.url()).origin!==cfg.stagingOrigin)return {error:true,code:4100};
      try{return {result:await bridge(request)};}catch{return {error:true,code:4001};}
@@ -95,6 +99,7 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
     await page.getByText(/Your posting balance is (ready|set up)/).waitFor({timeout:remaining()});
     const signupHashes=await hashesSince(0);if(!signupHashes.length)throw failure('RELEASE_INCLUSION');
     for(const hash of signupHashes)await evidence.require([hash],()=>true,remaining);
+    if(asset==='USDC'&&await provider.getBalance(wallet.address)!==0n)throw failure('RELEASE_GASLESS_FIXTURE');
     await record('signup-'+asset);
     const close=page.getByRole('button',{name:'Close',exact:true});if(await close.count())await close.first().click();
     if(asset==='USDC'){result.proofResponses+=proofs;if(!proofs||pageErrors)throw failure('RELEASE_BROWSER_ERRORS');continue;}
