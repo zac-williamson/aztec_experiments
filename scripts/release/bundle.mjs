@@ -75,10 +75,14 @@ export async function checkPublicAssets(origin,manifest,{fetcher=fetch}={}){
  const base=new URL(origin);if(base.origin!==origin||base.protocol!=='https:'&&!['127.0.0.1','localhost'].includes(base.hostname))throw failure('RELEASE_ORIGIN');
  for(const [url,name]of Object.entries(manifest.publicFiles)){
   // The wallet consumes hash-pinned URLs; a stale edge hash route must block.
+  const expected=manifest.files[name];
+  // Large CRS files need transfer time as well as response latency. Use the
+  // sealed size, never a server-supplied length, and retain one bounded attempt.
+  const timeoutMs=expected.bytes>=32*1024*1024?60000:15000;
   const requestUrl=origin+url+(/^\/(wallet|crs)\//.test(url)?'?sha256='+manifest.files[name].sha256:'');
-  const response=await fetcher(requestUrl,{redirect:'error',cache:'no-store',signal:AbortSignal.timeout(15000)});
+  const response=await fetcher(requestUrl,{redirect:'error',cache:'no-store',signal:AbortSignal.timeout(timeoutMs)});
   if(!response.ok)throw failure('RELEASE_ASSET_UNAVAILABLE');
-  const expected=manifest.files[name];let size=0;const hash=createHash('sha256');
+  let size=0;const hash=createHash('sha256');
   for await(const part of response.body){size+=part.length;if(size>expected.bytes)throw failure('RELEASE_ASSET_BYTES');hash.update(part);}
   if(size!==expected.bytes||hash.digest('hex')!==expected.sha256)throw failure('RELEASE_ASSET_BYTES');
  }

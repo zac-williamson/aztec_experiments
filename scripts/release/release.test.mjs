@@ -98,6 +98,35 @@ test('HTTP verification rejects wrong bytes and missing assets rather than a gre
  const server=http.createServer((req,res)=>{res.writeHead(200);res.end(wrong?'wrong':'candidate');});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>server.close());const origin='http://127.0.0.1:'+server.address().port;
  await assert.rejects(checkPublicAssets(origin,m),{code:'RELEASE_ASSET_BYTES'});wrong=false;assert.equal((await checkPublicAssets(origin,m)).assetCount,1);
 });
+test('asset body deadlines use sealed size and abort one stalled attempt at the exact bound',async t=>{
+ for(const bytes of [32*1024*1024-1,32*1024*1024,72*1024*1024])await t.test(String(bytes),async t=>{
+  t.mock.timers.enable({apis:['setTimeout']});
+  t.mock.method(AbortSignal,'timeout',ms=>{const controller=new AbortController();setTimeout(()=>controller.abort(new DOMException('deadline','TimeoutError')),ms);return controller.signal;});
+  const manifest={publicFiles:{'/':'asset'},files:{asset:{bytes,sha256:'0'.repeat(64)}}};
+  let signal,calls=0,started;const bodyStarted=new Promise(resolve=>{started=resolve;});
+  const fetcher=async(_url,options)=>{calls++;signal=options.signal;return {ok:true,body:(async function*(){started();await new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(signal.reason),{once:true}));})()};};
+  const rejected=assert.rejects(checkPublicAssets('https://stage.example',manifest,{fetcher}),{name:'TimeoutError'});await bodyStarted;
+  const budget=bytes>=32*1024*1024?60000:15000;t.mock.timers.tick(budget-1);assert.equal(signal.aborted,false);t.mock.timers.tick(1);assert.equal(signal.aborted,true);
+  await rejected;assert.equal(calls,1);
+ });
+});
+test('large assets can complete beyond fifteen seconds only with their exact sealed bytes',async t=>{
+ t.mock.timers.enable({apis:['setTimeout']});
+ t.mock.method(AbortSignal,'timeout',ms=>{const controller=new AbortController();setTimeout(()=>controller.abort(new DOMException('deadline','TimeoutError')),ms);return controller.signal;});
+ const bytes=Buffer.alloc(32*1024*1024),manifest={publicFiles:{'/crs/large.dat':'asset'},files:{asset:{bytes:bytes.length,sha256:sha256(bytes)}}};
+ let signal,calls=0,started,finish;const bodyStarted=new Promise(resolve=>{started=resolve;});
+ const fetcher=async(url,options)=>{calls++;assert.equal(url,'https://stage.example/crs/large.dat?sha256='+manifest.files.asset.sha256);signal=options.signal;return {ok:true,body:(async function*(){await new Promise((resolve,reject)=>{finish=resolve;signal.addEventListener('abort',()=>reject(signal.reason),{once:true});started();});yield bytes;})()};};
+ const result=checkPublicAssets('https://stage.example',manifest,{fetcher});await bodyStarted;t.mock.timers.tick(20000);assert.equal(signal.aborted,false);finish();assert.deepEqual(await result,{assetCount:1});assert.equal(calls,1);
+ bytes[0]=1;await assert.rejects(checkPublicAssets('https://stage.example',manifest,{fetcher:async()=>({ok:true,body:[bytes]})}),{code:'RELEASE_ASSET_BYTES'});
+ await assert.rejects(checkPublicAssets('https://stage.example',manifest,{fetcher:async()=>({ok:true,body:[bytes,new Uint8Array([0])]})}),{code:'RELEASE_ASSET_BYTES'});
+});
+test('runtime API body keeps the fifteen-second deadline',async t=>{
+ t.mock.timers.enable({apis:['setTimeout']});
+ t.mock.method(AbortSignal,'timeout',ms=>{const controller=new AbortController();setTimeout(()=>controller.abort(new DOMException('deadline','TimeoutError')),ms);return controller.signal;});
+ let signal,calls=0,started;const bodyStarted=new Promise(resolve=>{started=resolve;});
+ const fetcher=async(_url,options)=>{calls++;signal=options.signal;return {ok:true,headers:new Headers({'content-type':'application/json'}),body:(async function*(){started();await new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(signal.reason),{once:true}));})()};};
+ const rejected=assert.rejects(checkRuntime('https://stage.example',{}, {fetcher}),{name:'TimeoutError'});await bodyStarted;t.mock.timers.tick(14999);assert.equal(signal.aborted,false);t.mock.timers.tick(1);await rejected;assert.equal(calls,1);
+});
 test('contract, dependency and prover changes require a different deployment path',()=>{
  for(const name of ['billboard/rolling_contract/src/main.nr','billboard/rolling_contract/src/posting.nr','billboard/rolling_contract/src/another_tests.nr','billboard/rolling_contract/Nargo.toml','billboard/private_fee_contract/src/main.nr','billboard/private_fee_test/Nargo.toml','billboard/private_fee_test/src/other.nr','billboard/owner_delivery_test/src/lib.nr','billboard/Nargo.toml','billboard/portal/src/Router.sol','package-lock.json','prover/application-policy.mjs'])assert.throws(()=>assertCompatibleChanges([name]),{code:'RELEASE_REQUIRES_CONTRACT_OR_RUNTIME_DEPLOYMENT'});
  assert.doesNotThrow(()=>assertCompatibleChanges(['apps/rolling/wallet-panel.mjs','scripts/rolling-public-server.mjs','billboard/private_fee_test/src/lib.nr','billboard/rolling_contract/src/posting_tests.nr']));
