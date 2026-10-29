@@ -76,6 +76,15 @@ export function journeyPostCard(page,id){
  if(typeof id!=='string'||!/^post-[1-9][0-9]{0,76}$/.test(id))throw failure('RELEASE_INCLUSION');
  return page.locator('article.post#'+id);
 }
+export async function waitForJourneyPost(page,message,remaining){
+ // The hidden composer preview can retain this exact text after inclusion.
+ // Observe the published card, then retain its canonical ID across rerenders.
+ const card=page.locator('article.post').filter({has:page.getByText(message,{exact:true})}).first();
+ await card.waitFor({timeout:remaining()});
+ const receipt=await card.evaluate(el=>({hash:el.dataset.txHash,block:el.dataset.blockNumber,blockHash:el.dataset.blockHash,id:el.id}));
+ if(!/^0x[0-9a-f]{64}$/.test(receipt.hash??'')||!/^0x[0-9a-f]{64}$/.test(receipt.blockHash??'')||!(Number(receipt.block)>0))throw failure('RELEASE_INCLUSION');
+ return {card:journeyPostCard(page,receipt.id),receipt};
+}
 export async function openJourneyComposer(page,message,remaining){
  await closeJourneyAccountPanel(page,remaining);
  await page.getByRole('button',{name:'Write a post',exact:true}).first().click({timeout:actionTimeout(remaining)});
@@ -183,19 +192,18 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
      if(buyBokCredit){failureStep='bok-credit';await buyJourneyBokCredit(page,remaining);}
      failureStep=kind+'-submit';await submitJourneyComposer(page,kind,remaining);
      failureStep=kind+'-inclusion';
-     const card=page.locator('article.post').filter({hasText:message}).first();await card.waitFor({timeout:remaining()});
-     const receipt=await card.evaluate(el=>({hash:el.dataset.txHash,block:el.dataset.blockNumber,blockHash:el.dataset.blockHash,id:el.id}));
-     if(!/^0x[0-9a-f]{64}$/.test(receipt.hash??'')||!/^0x[0-9a-f]{64}$/.test(receipt.blockHash??'')||!(Number(receipt.block)>0))throw failure('RELEASE_INCLUSION');
+     const {card,receipt}=await waitForJourneyPost(page,message,remaining);
      const hashes=await hashesSince(start);if(!hashes.includes(receipt.hash))throw failure('RELEASE_INCLUSION');
      const events=await evidence.require([receipt.hash],events=>events.some(e=>e.type==='PostPublished'&&e.payload.id===receipt.id.slice(5)&&e.payload.record.parent==='0'&&e.payload.record.root===e.payload.id&&evidence.text(e.payload)===message)&&events.some(e=>e.type==='PostTipKey'&&e.payload.post===receipt.id.slice(5)),remaining);
-     return {card:journeyPostCard(page,receipt.id),receipt,events};
+     return {card,receipt,events};
     }
     const {card,receipt}=await compose(tag);await record('post');
     failureStep='reply-compose';const replyStart=submissions.length;
     await openJourneyReply(page,card,tag+' reply',remaining);failureStep='reply-submit';await submitJourneyComposer(page,'reply',remaining);
     failureStep='reply-inclusion';
-    await page.getByText(tag+' reply',{exact:true}).waitFor({timeout:remaining()});
-    await evidence.require(await hashesSince(replyStart),events=>events.some(e=>e.type==='PostPublished'&&e.payload.record.parent===receipt.id.slice(5)&&e.payload.record.root===receipt.id.slice(5)&&evidence.text(e.payload)===tag+' reply'),remaining);await record('reply');
+    const reply=await waitForJourneyPost(page,tag+' reply',remaining),replyHashes=await hashesSince(replyStart);
+    if(!replyHashes.includes(reply.receipt.hash))throw failure('RELEASE_INCLUSION');
+    await evidence.require([reply.receipt.hash],events=>events.some(e=>e.type==='PostPublished'&&e.payload.id===reply.receipt.id.slice(5)&&e.payload.record.parent===receipt.id.slice(5)&&e.payload.record.root===receipt.id.slice(5)&&evidence.text(e.payload)===tag+' reply'),remaining);await record('reply');
     failureStep='like';const likeStart=submissions.length;await clickJourneyLike(page,card,remaining);await page.waitForFunction(id=>Number.parseInt(document.querySelector('#'+id+' .likes')?.textContent??'0',10)>0,receipt.id,{timeout:remaining()});
     await evidence.require(await hashesSince(likeStart),events=>events.some(e=>e.type==='LikeChanged'&&e.payload.post===receipt.id.slice(5)&&e.payload.active===true&&BigInt(e.payload.count)>0n),remaining);await record('like');
     failureStep='reload';await reloadJourneyPage(page,remaining);await page.getByText(tag,{exact:true}).waitFor({timeout:remaining()});await record('reload');

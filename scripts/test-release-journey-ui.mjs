@@ -7,7 +7,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
-import {closeJourneyAccountPanel,openJourneyMainBoard,journeyPostCard,openJourneyComposer,submitJourneyComposer,buyJourneyBokCredit,openJourneyReply,clickJourneyLike,reloadJourneyPage} from './release/journey.mjs';
+import {closeJourneyAccountPanel,openJourneyMainBoard,journeyPostCard,waitForJourneyPost,openJourneyComposer,submitJourneyComposer,buyJourneyBokCredit,openJourneyReply,clickJourneyLike,reloadJourneyPage} from './release/journey.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const fixture=`<!doctype html><html><head><meta charset="utf-8"></head><body><nav aria-label="Community"><a href="#/home">Home</a><a href="#/board/0">Main board</a></nav><section id="feed"></section><button id="write">Write a post</button><article id="action-card"><button id="reply">Reply</button><button id="like">Like · 20 credits</button></article>
 <script type="module">
@@ -125,6 +125,39 @@ test('release uses chronological Main board and pins Like to the original receip
  await journeyPostCard(page,'post-1').getByRole('button',{name:'Like · 20 credits',exact:true}).click();
  assert.equal(await page.evaluate(()=>calls.liked),'1');
  assert.throws(()=>journeyPostCard(page,'post-1, article'),{code:'RELEASE_INCLUSION'});
+});
+
+test('reply inclusion ignores the hidden composer preview and binds the exact published card',{timeout:15000},async t=>{
+ const {page,dialog,remaining}=await setup(t,{deferredActions:true}),card=page.locator('#action-card'),message='Release check selector reply';
+ await openJourneyComposer(page,'Release check selector',remaining);await submitJourneyComposer(page,'post',remaining);await page.waitForFunction(()=>window.pendingKind==='post');await page.evaluate(()=>completeAction());
+ await openJourneyReply(page,card,message,remaining);await submitJourneyComposer(page,'reply',remaining);await page.waitForFunction(()=>window.pendingKind==='reply');
+ assert.equal(await dialog.isVisible(),false);
+ assert.equal(await dialog.getByText(message,{exact:true}).count(),1,'actual panel retains the hidden preview while completion is pending');
+ await assert.rejects(waitForJourneyPost(page,message,()=>100),{name:'TimeoutError'},'a composer preview is not public inclusion');
+ const hash='0x'+'2'.repeat(64),blockHash='0x'+'a'.repeat(64);
+ await page.evaluate(async({message,hash,blockHash})=>{
+  // Use the exact production renderer called by reader.postCard; this is only
+  // a public UI fixture, not a native transaction or index acceptance result.
+  const {createMessageContent}=await import('/apps/rolling/model.mjs');
+  for(const [id,text]of [['99',message+' later'],['11',message]]){
+   const article=document.createElement('article');article.className='post';article.id='post-'+id;
+   Object.assign(article.dataset,{txHash:hash,blockNumber:'2',blockHash});article.append(createMessageContent(text));document.querySelector('#feed').append(article);
+  }
+ },{message,hash,blockHash});
+ assert.equal(await page.getByText(message,{exact:true}).count(),2);
+ await assert.rejects(page.getByText(message,{exact:true}).waitFor({timeout:1000}),e=>/strict mode violation/.test(e.message),'the former whole-page locator fails immediately');
+ const published=await waitForJourneyPost(page,message,remaining);
+ assert.deepEqual(published.receipt,{hash,block:'2',blockHash,id:'post-11'});assert.equal(await published.card.getAttribute('id'),'post-11');
+ assert.equal(await page.evaluate(()=>calls.submitted.length),2,'observation never resubmits');
+ for(const [attribute,value]of [['data-tx-hash','invalid'],['data-block-number','0'],['data-block-hash','invalid'],['id','invalid']]){
+  const current=await published.card.getAttribute(attribute);await published.card.evaluate((node,{attribute,value})=>node.setAttribute(attribute,value),{attribute,value});
+  await assert.rejects(waitForJourneyPost(page,message,remaining),{code:'RELEASE_INCLUSION'});
+  await page.locator('article.post').filter({has:page.getByText(message,{exact:true})}).evaluate((node,{attribute,current})=>node.setAttribute(attribute,current),{attribute,current});
+ }
+ const bokMessage='Release check selector @bok reply with ready';
+ await published.card.evaluate(async(node,message)=>{const {createMessageContent}=await import('/apps/rolling/model.mjs');node.querySelector('.post-body').replaceWith(createMessageContent(message));},bokMessage);
+ assert.equal((await waitForJourneyPost(page,bokMessage,remaining)).receipt.id,'post-11','the shared helper accepts production Bok mention markup');
+ await page.evaluate(()=>completeAction());
 });
 
 
