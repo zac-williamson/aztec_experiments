@@ -115,6 +115,14 @@ export async function submitJourneyComposer(page,kind,remaining){
  if(!['post','reply','bok'].includes(kind))throw failure('RELEASE_JOURNEY_STEP');
  await page.locator('dialog.account-dialog').getByRole('button',{name:kind==='reply'?'Reply':'Post',exact:true}).click({timeout:actionTimeout(remaining)});
 }
+export async function selectJourneySignupAsset(page,asset,remaining){
+ if(!['ETH','USDC'].includes(asset))throw failure('RELEASE_JOURNEY_STEP');
+ const dialog=page.locator('dialog.account-dialog');
+ // A fresh gasless wallet cannot obtain the default ETH quote. Select its
+ // funded asset before waiting for that asset's payment confirmation button.
+ await dialog.getByLabel('Pay with',{exact:true}).selectOption(asset,{timeout:actionTimeout(remaining)});
+ await dialog.getByRole('button',{name:'Confirm payment',exact:true}).waitFor({timeout:remaining()});
+}
 export async function buyJourneyBokCredit(page,remaining){
  const dialog=page.locator('dialog.account-dialog'),amount=dialog.getByLabel('Amount (USD)',{exact:true}),connect=dialog.getByRole('button',{name:'Connect CI test wallet',exact:true});
  await dialog.getByRole('button',{name:'Add Bok credit',exact:true}).click({timeout:actionTimeout(remaining)});
@@ -172,8 +180,7 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
     // it is inert. Scope every signup control to that actual dialog.
     const dialog=page.locator('dialog.account-dialog');await dialog.waitFor({state:'visible',timeout:actionTimeout(remaining)});
     await dialog.getByRole('button',{name:'Connect CI test wallet',exact:true}).click({timeout:actionTimeout(remaining)});
-    await dialog.getByRole('button',{name:'Confirm payment',exact:true}).waitFor({timeout:remaining()});
-    await dialog.getByLabel('Pay with',{exact:true}).selectOption(asset);
+    await selectJourneySignupAsset(page,asset,remaining);
     await dialog.getByRole('button',{name:'Confirm payment',exact:true}).click({timeout:actionTimeout(remaining)});
     await dialog.getByText(/Your posting balance is (ready|set up)/).waitFor({timeout:remaining()});
     const signupHashes=await hashesSince(0);if(!signupHashes.length)throw failure('RELEASE_SUBMISSION_MISSING');

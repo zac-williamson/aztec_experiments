@@ -7,14 +7,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
-import {closeJourneyAccountPanel,openJourneyMainBoard,journeyPostCard,waitForJourneyPost,openJourneyComposer,submitJourneyComposer,buyJourneyBokCredit,openJourneyReply,clickJourneyLike,reloadJourneyPage} from './release/journey.mjs';
+import {closeJourneyAccountPanel,openJourneyMainBoard,journeyPostCard,waitForJourneyPost,selectJourneySignupAsset,openJourneyComposer,submitJourneyComposer,buyJourneyBokCredit,openJourneyReply,clickJourneyLike,reloadJourneyPage} from './release/journey.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const fixture=`<!doctype html><html><head><meta charset="utf-8"></head><body><nav aria-label="Community"><a href="#/home">Home</a><a href="#/board/0">Main board</a></nav><section id="feed"></section><button id="write">Write a post</button><article id="action-card"><button id="reply">Reply</button><button id="like">Like · 20 credits</button></article>
 <script type="module">
 import {mountRollingWalletPanel} from '/apps/rolling/wallet-panel.mjs';
 import {executeRollingAction} from '/apps/rolling/wallet-action.mjs';
 import {createFeedRanking} from '/apps/rolling/feed-ranking.mjs';
-window.calls={prepared:[],submitted:[],payments:[],claims:0,signins:0,fundingConnections:0,replyClicks:0,likeClicks:0};
+window.calls={fundingQuotes:[],fundingConfirms:0,prepared:[],submitted:[],payments:[],claims:0,signins:0,fundingConnections:0,replyClicks:0,likeClicks:0};
 window.documentId=crypto.randomUUID();
 const params=new URL(location.href).searchParams;
 let progress;
@@ -42,8 +42,16 @@ const application={
  }
 };
 application.executeAction=(action,options)=>executeRollingAction(application,structuredClone(action),options);
-const session={application,busy:false,ordinaryPostingFeeLimit:'1000000000000000',postingFeeLimit:'1000000000000000',bokConfigured:true,topup:{bok:cap}};
-const runtime={getAccount:()=>account,account:{configure(){}},createSession:async options=>{progress=options.onProgress;return session;},
+const funding={usdcAvailable:true,prepareStarter:async({asset})=>{
+ calls.fundingQuotes.push(asset);
+ if(asset==='ETH'){
+  if(!params.has('funding-eth'))throw Object.assign(Error('Fixture zero ETH balance'),{code:'AGGREGATE_INSUFFICIENT_USER_FUNDS'});
+  return {kind:'rolling-aggregate-eth-v1',privateFeeCap:'1000000000000000',slippageBps:100,breakdown:{collateralWei:'1000000000000000',fee:{amount:'248000000000000000000',maxEth:'1000000000000000'},bok:{amount:'0',maxEth:'0'},gasBudgetWei:'100000000000000',maximumTotalWei:'2100000000000000'}};
+ }
+ return {kind:'rolling-aggregate-usdc-v1',privateFeeCap:'1000000000000000',slippageBps:100,breakdown:{collateral:{amount:'1000000000000000',maxUsdc:'42000000'},fee:{amount:'248000000000000000000',maxUsdc:'5000000'},bokAmount:'0',relayFeeUsdc:'3000000',maximumUsdc:'50000000'}};
+},confirm:async()=>{calls.fundingConfirms++;throw Error('Fixture stops before payment');}};
+const session={...(params.has('funding-signup')?{funding}:{}),application,busy:false,ordinaryPostingFeeLimit:'1000000000000000',postingFeeLimit:'1000000000000000',bokConfigured:true,topup:{bok:cap}};
+const runtime={startingTestAccount:()=>params.has('funding-signup'),startedFreshAccount:()=>params.has('funding-signup'),getAccount:()=>account,account:{configure(){}},createSession:async options=>{progress=options.onProgress;return session;},
  fundingWalletStatus:()=>({connected:fundingConnected,name:fundingConnected?'CI test wallet':null,address:fundingConnected?'0x'+'1'.repeat(40):null}),
  connectFundingWallet:async id=>{if(id!=='test')throw Error('Unexpected wallet');calls.fundingConnections++;fundingConnected=true;},
  fundingWallets:()=>[{id:'test',name:'CI test wallet'}],signInWallet:async()=>{calls.signins++;account={};fundingConnected=true;}};
@@ -61,7 +69,7 @@ document.querySelector('#reply').onclick=()=>{calls.replyClicks++;panel.open({ty
 document.querySelector('#like').onclick=()=>{calls.likeClicks++;void panel.act({type:'like',post:'10'});};
 panel.open({});
 </script></body></html>`;
-async function setup(t,{locked=false,fundingConnected=true,deferredActions=false}={}){
+async function setup(t,{locked=false,fundingConnected=true,deferredActions=false,fundingSignup=false,ethFundingAvailable=false}={}){
  const requests=[];
  const server=http.createServer(async(req,res)=>{
   requests.push(req.method);const url=new URL(req.url,'http://localhost');
@@ -78,7 +86,7 @@ async function setup(t,{locked=false,fundingConnected=true,deferredActions=false
  const page=await browser.newPage(),origin='http://127.0.0.1:'+server.address().port,errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
- page.setDefaultTimeout(5000);const query=new URLSearchParams();if(locked)query.set('locked','');if(!fundingConnected)query.set('funding-disconnected','');if(deferredActions)query.set('deferred-actions','');await page.goto(origin+(query.size?'/?'+query:'/'));
+ page.setDefaultTimeout(5000);const query=new URLSearchParams();if(locked)query.set('locked','');if(!fundingConnected)query.set('funding-disconnected','');if(deferredActions)query.set('deferred-actions','');if(fundingSignup)query.set('funding-signup','');if(ethFundingAvailable)query.set('funding-eth','');await page.goto(origin+(query.size?'/?'+query:'/'));
  await page.locator('dialog.account-dialog[aria-busy="false"]').waitFor();
  t.after(()=>{assert.deepEqual(errors,[]);assert(requests.every(method=>method==='GET'));});
  return {page,remaining:()=>5000,dialog:page.locator('dialog.account-dialog')};
@@ -192,4 +200,28 @@ test('release waits for local completion after included post reply and Like befo
  assert.equal(await dialog.getByLabel('Message',{exact:true}).inputValue(),'composer after reload');
  assert.equal(await dialog.getAttribute('aria-busy'),'false');
  assert.deepEqual(await page.evaluate(()=>calls.submitted),[],'reload and opening a draft do not submit anything');
+});
+
+
+for(const asset of ['USDC','ETH'])test(`release selects ${asset} before awaiting its signup quote confirmation`,{timeout:15000},async t=>{
+ const {page,dialog,remaining}=await setup(t,{locked:true,fundingConnected:false,fundingSignup:true,ethFundingAvailable:asset==='ETH'});
+ await dialog.getByRole('button',{name:'Connect CI test wallet',exact:true}).click();
+ await page.locator('dialog.account-dialog[aria-busy="false"]').waitFor();
+ assert.deepEqual(await page.evaluate(()=>calls.fundingQuotes),['ETH']);
+ assert.equal(await dialog.getByLabel('Pay with',{exact:true}).inputValue(),'ETH');
+ if(asset==='USDC'){
+  assert.equal(await dialog.getByRole('button',{name:'Confirm payment',exact:true}).count(),0);
+  assert.equal(await dialog.getByLabel('Pay with',{exact:true}).isEnabled(),true);
+  await assert.rejects(dialog.getByRole('button',{name:'Confirm payment',exact:true}).waitFor({timeout:100}),{name:'TimeoutError'},'the former order never reaches USDC selection for a zero-ETH wallet');
+  assert.equal(await page.evaluate(()=>calls.fundingConfirms),0,'the failed default quote never submits payment');
+ }
+ await assert.rejects(selectJourneySignupAsset(page,'DAI',remaining),{code:'RELEASE_JOURNEY_STEP'});
+ await selectJourneySignupAsset(page,asset,remaining);
+ assert.equal(await dialog.getByLabel('Pay with',{exact:true}).inputValue(),asset);
+ assert.deepEqual(await page.evaluate(()=>calls.fundingQuotes),['ETH',asset]);
+ assert.equal(await dialog.getByRole('button',{name:'Confirm payment',exact:true}).isVisible(),true);
+ assert.equal(await page.evaluate(()=>calls.fundingConfirms),0,'choosing a quote cannot submit payment');
+ await dialog.getByRole('button',{name:'Confirm payment',exact:true}).click();
+ await page.locator('dialog.account-dialog[aria-busy="false"]').waitFor();
+ assert.equal(await page.evaluate(()=>calls.fundingConfirms),1,'only the explicit confirmation calls payment');
 });
