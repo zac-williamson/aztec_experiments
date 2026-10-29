@@ -7,18 +7,35 @@ visitors have no persistent analytics profile. See the
 
 Slack ALARM and subsequent OK recovery delivery were actually observed on
 28 October using an explicit test alarm and real healthy datapoints, without an
-application outage. Candidate `6233997b` passed its exact full build on
-28 October. Its staged journey passed ETH signup and posting, then blocked at
-reply submission before promotion. A local actual-panel reproduction matched
-a click-before-readiness failure; the harness repair waits for existing readiness.
-The remote inner DOM was not retained, and the separate application fast-click
-issue remains unchanged. Baseline `48c2750f` remains live and automatic release is disabled. Completed
-paired test-liquidity preparation is supporting evidence only. The complete
-genuine journey, promotion, normal pruning and operator rollback remain
-**pending final receipts**; any repaired candidate needs its own exact full CI.
-Fresh off-host restores now verify twenty
-core inputs and four Bok inputs, with both daily timers active; see
-[`backup-verification.json`](../deploy/launch-ops/backup-verification.json).
+application outage. J `03bb6b8d` passed exact full CI `40813556181` and actual
+release `40816605889` attempt 2. All seven native steps passed, including zero-ETH
+USDC signup. J became live at 04:24:52 UTC on 29 October, with B48 retained as the
+previous release. Normal pruning removed 021/aae/I, preserved J/B48/shared
+dependencies and enabled the hourly timer. Disk usage fell to 84.63%, with
+6,220,984,320 bytes free at 04:27:08 UTC.
+
+Explicit J → B48 → J operator rollback passed, returning to J at 04:30:54 UTC.
+Automatic release is enabled. The final state remains truthfully `rolled-back`
+with `operator-rollback`, while the genuine promotion record is retained
+separately. No funded journey was repeated; automatic-failure rollback was not
+exercised. Fresh scheduled observations after the return showed all required
+services and external checks healthy, all six alarms OK and no issues.
+See [`final-verification.json`](../deploy/launch-ops/final-verification.json) and
+[`release-acceptance.json`](../deploy/launch-ops/release-acceptance.json), which
+preserves historical failures and the limits of their diagnoses.
+
+The owner must still set their first dashboard password and authenticator MFA;
+an authenticated owner session has not been verified. Funding balance and
+provider-spend telemetry are unconfigured, and actual incremental billed charges
+remain unknown. Neither broader R04 readiness nor the separate application
+fast-click defect is qualified by this operations acceptance.
+
+Fresh off-host restores verify twenty core inputs and four Bok inputs, with both
+daily timers active. Automatic runs on 29 October again verified restore at
+03:15:52 UTC on core and 03:33:44 UTC on Bok. See the final health receipt above
+and [`backup-verification.json`](../deploy/launch-ops/backup-verification.json).
+Disposable journey allocations remain 0.01 ETH or 75 USDC, with zero ETH for USDC
+signup and unchanged native proof and spending guards.
 
 The public reader now links to Help and privacy. It explains public posting and
 funding, the trusted prover, aggregate analytics, retention and the existing

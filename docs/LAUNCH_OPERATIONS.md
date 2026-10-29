@@ -6,7 +6,7 @@ with a password and authenticator MFA. Each operator has their own login;
 operator accounts have no link to anonymous board activity. The dashboard is
 read-only. Deployment controls stay in GitHub.
 
-## What is verified, and what is pending
+## Verified operations and release
 
 The dashboard and independent monitoring are installed. Slack alert delivery to
 `#rolling-chat-updates` was verified on 28 October: an explicit test ALARM arrived,
@@ -14,27 +14,60 @@ then real healthy datapoints produced an OK recovery message. This tested alert
 and recovery delivery without causing an application outage or restart. See
 [`slack.json`](../deploy/launch-ops/slack.json) for the observed messages.
 
-Fresh encrypted off-host backup and actual restore passed on both hosts on
-28 October: **twenty core inputs and four Bok inputs**. Both daily timers are
-active. See [`backup-verification.json`](../deploy/launch-ops/backup-verification.json)
-for the observed results. Candidate `6233997b`
-[passed its full build](https://github.com/zac-williamson/aztec_experiments/actions/runs/40780669986)
-on 28 October. Its real staged release passed ETH signup and posting, then
-blocked at reply submission before promotion. Baseline `48c2750f` remains live,
-and automatic release was disabled after the failed attempt. A local actual-panel
-reproduction found that clicking Reply while post-completion work is still busy
-can reopen the old Post form. The harness repair waits for existing readiness;
-it does not fix that separate application fast-click issue. The remote inner
-DOM was not retained, so this is a matching reproduction rather than a direct
-trace of the failed run. Earlier attempts remain in the release record.
+Fresh encrypted off-host backup and actual restore verify **twenty core inputs
+and four Bok inputs**. Both daily timers are active; today's automatic runs also
+verified restores at 03:15:52 and 03:33:44 UTC on 29 October. See
+[`backup-verification.json`](../deploy/launch-ops/backup-verification.json) and the
+current release record for the supporting observations.
 
-The paired test-liquidity preparation completed, including eighteen confirmed
-transactions and a native ordered simulation. That supporting work does not
-establish a successful real journey. The complete journey, promotion, normal
-release pruning and two-leg operator rollback remain **pending final receipts**.
-Any repaired candidate needs its own exact full build before acceptance.
-See [`release-acceptance.json`](../deploy/launch-ops/release-acceptance.json) and
-[backup acceptance and procedure](../ops/LAUNCH-ESSENTIALS.md).
+Candidate J `03bb6b8d`
+[passed its full build](https://github.com/zac-williamson/aztec_experiments/actions/runs/40813556181)
+and [its actual staged release](https://github.com/zac-williamson/aztec_experiments/actions/runs/40816605889).
+All seven flows passed: ETH signup, post, reply, like, reload, Bok credit and
+USDC signup. J became live at 04:24:52 UTC; the same source is staged and B48 is
+the previous release. Normal pruning removed only the three obsolete releases,
+kept J/B48 and their shared dependencies, and enabled the existing hourly timer.
+At 04:27:08 UTC, disk usage was 84.63% with 6,220,984,320 bytes free.
+
+The explicit J → B48 → J rollback passed both directions, returning to J at
+04:30:54 UTC. Automatic release is enabled. The latest state truthfully says
+`rolled-back` with `operator-rollback`; the earlier seven-step promotion record
+is preserved separately. This exercised operator rollback without repeating the
+funded journey. Automatic rollback after a failed promotion was not exercised.
+
+The scheduled 04:33 UTC observations, read at 04:34 UTC after the rollback,
+showed all required services and external checks healthy, all six alarms OK and
+no health issues. No probe or alarm override was used. The final receipt is in
+[`final-verification.json`](../deploy/launch-ops/final-verification.json);
+[`release-acceptance.json`](../deploy/launch-ops/release-acceptance.json) retains
+prior failed attempts and the limits of their diagnoses.
+
+The four deliverables are installed and technically verified. The owner still
+needs to complete their first dashboard password change and authenticator MFA;
+an authenticated owner session has not been verified. The separate application
+fast-click defect remains unchanged, and broader production readiness (R04)
+is not qualified by this operations work.
+
+## Handover checklist
+
+- **Analytics and private dashboard:** aggregate-only collection with no persistent
+  visitor profiles. Complete the owner's first password change and MFA enrollment.
+- **Server monitoring and alerts:** server health, external checks and actual
+  Slack ALARM/recovery delivery are verified. Assign who responds to alerts.
+- **Basic CI and deployment:** full CI, all seven real testnet flows, promotion,
+  normal pruning and explicit rollback/return passed for exact J `03bb6b8d`.
+  The hourly prune timer is enabled. Keep the accepted source and sealed bytes
+  distinct from this later documentation-only handover.
+- **Launch safeguards:** public privacy/help/opt-out, existing limits, encrypted
+  backups and restore drills are in place. Assign someone to watch public problem
+  reports; a confidential reporting address remains an optional operator choice.
+
+Funding balance and provider-spend reporting are not configured; those values
+remain unknown. Actual billed incremental charges are also unknown. Review the
+$50 incremental budget and 28 November monitoring end date below. Keep this
+handover on its separate local documentation branch until the next intended
+source release: a docs-only master push would trigger another build and funded
+release under the current workflow.
 
 ## Anonymous analytics
 

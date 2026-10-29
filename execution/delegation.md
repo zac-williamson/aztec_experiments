@@ -463,3 +463,137 @@ Analytics prepares factual records in its isolated checkout, uncommitted. Paired
 liquidity, the exact0.4075SepETH faucet and C89-only cleanup are completed
 supporting work. No complete journey, promotion, normal prune or rollback is
 claimed. Existing F helpers stay held and need rebinding if source changes.
+
+
+### Operations continuation — 29 October 00:12 UTC
+
+Root owns live changes/signing and the next candidate integration. G `9da1c99a`
+passed full CI `40788920809`, but release `40791532231` attempt2 blocked during
+initial staging smoke before any journey action. B48 remains live, G is staged,
+and automatic release is disabled. The guarded read-only diagnostic passed all
+118 assets; its largest download took14,657ms under a15,000ms request deadline.
+The original generic failure cause remains unknown. CI owner prepares a bounded
+asset-deadline correction with independent review; analytics records only facts.
+The earlier readiness harness does not fix the separate application fast-click
+UX defect. No complete journey, promotion, normal prune or rollback is claimed.
+
+
+### Operations continuation — 29 October H failure and bounded diagnostic
+
+Root owns all live mutations and signing; master remains frozen. H `55ca0284`
+passed exact full CI `40794101313`. Actual release `40797592542` attempt 2 passed
+ETH signup/post, then blocked at reply-compose at01:08:43.146Z. B48 remains live,
+H is staged, and root disabled release with hold `cec70766` at01:15:03.486347Z.
+CI and monitoring investigate the actual boundary; no H application cause is
+proven. The earlier separate application fast-click UX issue remains unchanged.
+
+Analytics prepared the isolated one-shot signup/post diagnostic wrapper and
+monitoring independently reviewed it. Root alone executed SSM `67fddc45`; the
+transient unit failed without emitting a closed trace. Native activity remains
+unobserved in the lost trace. Read-only checks then found an unchanged funder
+balance and root0700 diagnostic-directory permissions blocking script access.
+The original claim stays. Analytics prepares a narrow public-directory permission
+correction and distinct v2 claim; monitoring reviews it before any further run. Before/after pointers, application PIDs and release
+state were unchanged. This diagnostic cannot count as journey acceptance.
+
+Root's corrected one-field CAS `d2ed471c` reduced disposable ETH allocation from
+0.12 to0.01 while retaining75USDC, zero-ETH USDC signup, credentials and native
+guards. Initial check and an unintended apply dispatch both failed before writes
+because the helper assumed the wrong operator-config owner; the corrected helper
+binds observed ownership, permissions and exact bytes. Analytics holds the five
+factual documentation changes uncommitted; no master push or host action by agents.
+Complete journey, promotion, normal prune/timer and rollback remain outstanding.
+Scope remains the four launch operations deliverables, not broader R04.
+
+
+### Operations continuation — 29 October candidate I preparation
+
+Root owns source integration, all host changes and signing. H `55ca0284` attempt3
+blocked at reply-inclusion02:22:01.958Z; root held the marker under `5008751b` at
+02:27:52.182471Z. Both public test posts were subsequently confirmed. CI owner
+reproduced the whole-page selector collision with the hidden preview using the
+actual renderer. I `43692498` changes only the journey lookup/native receipt
+binding and its regression; monitoring independently passed44/44 focused checks.
+The original remote exception was not retained. Full CI `40807979434` is pending.
+Root installed the journey-only operator update `12c165b8` without service restarts.
+
+The corrected one-shot diagnostic passed native ETH signup/post, reached Reply
+composition and stopped before sending it; it is not full acceptance. Original
+failed claim/file retained. Root removed only unused G under `c52356a3`, preserving
+services/state/dependencies and leaving4664303616bytes free. Analytics prepares
+the five factual documentation files only, held and uncommitted; no pushes, host
+actions or signing. I's full journey, promotion, normal prune/timer and two-leg
+rollback remain pending. First owner dashboard password/MFA remains manual;
+monitoring ends28 November and incremental forecast25USD/limit50USD has actual
+charges unknown. The application fast-click defect and broader R04 remain open.
+
+
+### Operations continuation — 29 October candidate J preparation
+
+Root owns source integration, host changes and signing. I `43692498` passed full
+CI `40807979434` and six actual staged steps: ETH signup, post, reply, like,
+reload and Bok credit. USDC signup timed out at03:29:11.403Z. The public funding
+receipt shows75USDC arrived03:24:24 with287002ms remaining and the wallet still
+held75USDC/0ETH; this bounds the step, not its exact remote UI action. Root held
+the marker under `eb2eb1f0` at03:31:39.932879Z; B48 remains live and I staged.
+
+CI owner reproduced the actual-panel dead-end: the harness waits for Confirm
+before selecting USDC, but a zero-ETH wallet's default ETH quote hides Confirm.
+J `03bb6b8d` changes only that ordering and its regression. Monitoring approved
+46/46 focused checks; all native, spending, zero-ETH and deadline guards remain.
+J is master; full CI `40813556181` started03:41:25Z and is pending at this
+checkpoint. Root transferred the reviewed packet under `ca55a8f2` and applied
+journey-only CAS `b96a1825` without service restarts; deployment remains held.
+H-only cleanup `ac7806e1` succeeded03:46:38.253519Z, leaving4659662848bytes free
+with services/state/dependencies unchanged.
+
+Analytics holds the five factual files on local branch
+`codex/rolling-ops-final-docs`, uncommitted and unpushed. Fill actual J acceptance,
+promotion, normal prune021/aae/I, timer enablement, two-leg rollback and final
+health only from subsequent receipts. Preserve all previous failures and the
+separate application fast-click/R04 limitations. First operator password/MFA is
+manual; monitor expiry28November and forecast25USD/limit50USD with actual charges
+unknown remain handover items. Do not trigger a separate docs-only deployment.
+
+
+### Operations continuation — 29 October J promotion and pruning
+
+Root completed the exact J full build `40813556181` and genuine release
+`40816605889` attempt2. All seven steps passed, and observation `21121888`
+confirms J live/staged, B48 previous, promotion04:24:52.940Z and idle release job.
+Root's normal prune `2ffa3f69` removed021/aae/I, preservedJ/B48/shared dependencies
+and application PIDs/state, and enabled the existing hourly timer. At04:27:08UTC,
+core disk was84.63% with6220984320bytes free. Scheduled backups had also verified
+core03:15:52 andBok03:33:44 restores that day.
+
+Root owns the explicit J to B48 to J rollback now underway. Analytics prepares
+the final five-doc draft but will await both rollback and fresh final-health
+receipts before independent review and commit. Preserve the original genuine
+promotion record separately from the truthful final rollback state. No pushes,
+extra deployments or source/runtime edits. First owner password/MFA remains
+manual and incomplete; actual costs remain unknown, expiry/budget caveats remain,
+and neither overallR04 nor the application fast-click defect is qualified.
+
+
+### Operations final handover — 29 October 04:34 UTC
+
+Root completed explicit J → B48 → J rollback under `d7364dcd`: first leg finished
+04:30:05.794Z, return finished 04:30:54.305Z. J is serving and automatic release
+is enabled. The actual state remains `rolled-back` / `operator-rollback`; the
+original seven-step promotion record is preserved separately. No funded journey
+was repeated, and automatic-failure rollback was not exercised.
+
+The final scheduled health snapshot at 04:33:02, read at 04:34:01, has fresh host
+and external observations after the rollback, all six alarms OK and no issues.
+Core disk is 84.63%; today's core and Bok encrypted backup restores are verified.
+No probe or alarm override was used. The four launch-operations deliverables are
+technically verified. Owner first password/MFA remains pending; funding balance
+and provider-spend telemetry are unconfigured, actual billed costs are unknown,
+and the USD25 first31day forecast / USD50 limit and 28 November expiry remain.
+The application fast-click defect and broader R04 remain unqualified.
+
+Analytics finalizes only documentation, generated status and sanitized receipts
+on `codex/rolling-ops-final-handover`, directly descended from exact J `03bb6b8d`.
+Monitoring independently reviews the exact local commit. Root runs the normal
+docs integration gate and retains this separate branch until the next intended
+source release; no master push, redundant CI/deployment or agent host action.

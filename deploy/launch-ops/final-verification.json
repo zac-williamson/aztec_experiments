@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "status": "technical-acceptance-passed",
+  "acceptedSourceRevision": "03bb6b8d105927b64bdd3d08b3c8e09521161250",
+  "previousRevision": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+  "recordedAt": "2026-10-29T04:34:01.437686+00:00",
+  "scope": "Four requested launch-operations deliverables and their testnet release exercise. Owner first login/MFA remains manual; broader R04 and the separate fast-click application defect are not qualified.",
+  "fullBuild": {
+    "runId": 40813556181,
+    "conclusion": "success"
+  },
+  "release": {
+    "runId": 40816605889,
+    "attempt": 2,
+    "conclusion": "success",
+    "ssm": "21121888-4ba3-410f-9d3f-93bee73d0b29",
+    "observedAt": "2026-10-29T04:25:39.108604+00:00",
+    "promotion": {
+      "schemaVersion": 1,
+      "status": "live",
+      "revision": "03bb6b8d105927b64bdd3d08b3c8e09521161250",
+      "previousRevision": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+      "startedAt": "2026-10-29T04:17:54.744Z",
+      "updatedAt": "2026-10-29T04:24:52.940Z",
+      "stages": [
+        "staging",
+        "testnet-journey",
+        "promoting",
+        "live"
+      ],
+      "error": null,
+      "journeyCompleted": [
+        "signup-ETH",
+        "post",
+        "reply",
+        "like",
+        "reload",
+        "bok",
+        "signup-USDC"
+      ]
+    }
+  },
+  "prune": {
+    "ssm": "2ffa3f69-e231-4778-9a0e-45abcf2f78f3",
+    "status": "manual-prune-verified-hourly-timer-enabled",
+    "candidate": "03bb6b8d105927b64bdd3d08b3c8e09521161250",
+    "previous": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+    "removedReleases": [
+      "021fd7a6b574367be57c7c97b38d76f1d8daa473",
+      "4369249840053f65761e70b1d38ba95fc238f768",
+      "aae73b012bec660f2ce4c05c2529479208a82b0c"
+    ],
+    "preservedManifestHashes": {
+      "03bb6b8d105927b64bdd3d08b3c8e09521161250": "6652f128af6bcdeb86a02ae4deb3c8e66c54afba99aae5126612be88aa428c60",
+      "48c2750f617b7e8b7c3ed1dbe73fb4263517daca": "fe6be9727c4724570a9c004fd05037767c649f1e57cf8aca7e2fe600f74ce675"
+    },
+    "applicationPidsUnchanged": true,
+    "dependencyUnchanged": true,
+    "releaseStateUnchanged": true,
+    "timer": {
+      "enabled": true,
+      "active": true,
+      "schedule": "hourly",
+      "nextAt": "Thu 2026-10-29 05:00:00 UTC"
+    },
+    "disk": {
+      "availableBytes": 6220984320,
+      "percent": 84.63
+    },
+    "recordedAt": "2026-10-29T04:27:08.083236+00:00"
+  },
+  "operatorRollback": {
+    "ssm": "d7364dcd-1542-4f09-8e9b-1e6d461b04f5",
+    "status": "passed",
+    "acceptedRevision": "03bb6b8d105927b64bdd3d08b3c8e09521161250",
+    "previousRevision": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+    "promotion": {
+      "schemaVersion": 1,
+      "status": "live",
+      "revision": "03bb6b8d105927b64bdd3d08b3c8e09521161250",
+      "previousRevision": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+      "startedAt": "2026-10-29T04:17:54.744Z",
+      "updatedAt": "2026-10-29T04:24:52.940Z",
+      "stages": [
+        "staging",
+        "testnet-journey",
+        "promoting",
+        "live"
+      ],
+      "error": null,
+      "journeyCompleted": [
+        "signup-ETH",
+        "post",
+        "reply",
+        "like",
+        "reload",
+        "bok",
+        "signup-USDC"
+      ]
+    },
+    "rollback": {
+      "schemaVersion": 1,
+      "status": "rolled-back",
+      "revision": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+      "previousRevision": "03bb6b8d105927b64bdd3d08b3c8e09521161250",
+      "startedAt": "2026-10-29T04:29:20.045Z",
+      "updatedAt": "2026-10-29T04:30:05.794Z",
+      "stages": [
+        "operator-rollback"
+      ],
+      "error": null,
+      "journeyCompleted": []
+    },
+    "return": {
+      "schemaVersion": 1,
+      "status": "rolled-back",
+      "revision": "03bb6b8d105927b64bdd3d08b3c8e09521161250",
+      "previousRevision": "48c2750f617b7e8b7c3ed1dbe73fb4263517daca",
+      "startedAt": "2026-10-29T04:30:08.027Z",
+      "updatedAt": "2026-10-29T04:30:54.305Z",
+      "stages": [
+        "operator-rollback"
+      ],
+      "error": null,
+      "journeyCompleted": []
+    },
+    "automaticReleaseEnabled": true,
+    "finalStateStatus": "rolled-back",
+    "acceptedCandidateServing": true,
+    "genuineJourneyRepeated": false,
+    "automaticFailureRollbackExercised": false,
+    "recordedAt": "2026-10-29T04:30:54.330498+00:00"
+  },
+  "finalHealth": {
+    "schemaVersion": 1,
+    "readAt": "2026-10-29T04:34:01.437686+00:00",
+    "readOnly": true,
+    "probeInvoked": false,
+    "snapshotObservedAt": "2026-10-29T04:33:02.727996+00:00",
+    "requiredAfter": "2026-10-29T04:30:54.330498+00:00",
+    "hosts": {
+      "core": {
+        "observedAt": "2026-10-29T04:33:00.507865+00:00",
+        "ageSeconds": 60.93,
+        "services": {
+          "rolling-node": {
+            "active": true,
+            "running": true,
+            "restarts": 0
+          },
+          "rolling-query": {
+            "active": true,
+            "running": true,
+            "restarts": 0
+          },
+          "board-prover": {
+            "active": true,
+            "running": true,
+            "restarts": 0
+          },
+          "board-prover-proxy": {
+            "active": true,
+            "running": true,
+            "restarts": 0
+          },
+          "rolling-application": {
+            "active": true,
+            "running": true,
+            "restarts": 0
+          },
+          "rolling-application-proxy": {
+            "active": true,
+            "running": true,
+            "restarts": 0
+          },
+          "rolling-moderator": {
+            "active": true,
+            "running": true,
+            "restarts": 0
+          }
+        },
+        "metrics": {
+          "cpuPercent": 1.08,
+          "memoryPercent": 13.07,
+          "diskPercent": 84.63
+        },
+        "health": {
+          "prover": {
+            "configured": true,
+            "status": "healthy",
+            "active": 0,
+            "retainedJobs": 0,
+            "completed": 32,
+            "failed": 0
+          },
+          "query": {
+            "configured": true,
+            "status": "healthy"
+          },
+          "moderator": {
+            "configured": true,
+            "status": "healthy",
+            "queued": 0,
+            "ingestAgeSeconds": 7.0
+          },
+          "funding": {
+            "configured": false,
+            "status": "unknown"
+          }
+        },
+        "backup": {
+          "configured": true,
+          "lastOutcome": "verified",
+          "lastSuccessAt": "2026-10-29T03:15:51.841000+00:00",
+          "lastVerifiedRestoreAt": "2026-10-29T03:15:52.151000+00:00"
+        }
+      },
+      "bok": {
+        "observedAt": "2026-10-29T04:33:00.427934+00:00",
+        "ageSeconds": 61.01,
+        "services": {
+          "rolling-bok-testnet": {
+            "active": true,
+            "running": true,
+            "restarts": 0
+          },
+          "rolling-bok-artifact-proxy": {
+            "active": true,
+            "running": true,
+            "restarts": 0
+          }
+        },
+        "metrics": {
+          "cpuPercent": 0.13,
+          "memoryPercent": 9.8,
+          "diskPercent": 17.97
+        },
+        "health": {
+          "bok": {
+            "configured": true,
+            "status": "healthy",
+            "active": 0
+          }
+        },
+        "backup": {
+          "configured": true,
+          "lastOutcome": "verified",
+          "lastSuccessAt": "2026-10-29T03:33:44.400000+00:00",
+          "lastVerifiedRestoreAt": "2026-10-29T03:33:44.625000+00:00"
+        }
+      }
+    },
+    "external": {
+      "observedAt": "2026-10-29T04:33:00.750357+00:00",
+      "website": {
+        "ok": true,
+        "latencyMs": 782
+      },
+      "prover": {
+        "ok": true,
+        "latencyMs": 880
+      },
+      "feed": {
+        "ok": true,
+        "latencyMs": 601
+      }
+    },
+    "alarms": {
+      "BokHost": {
+        "state": "OK",
+        "stateUpdatedAt": "2026-10-28T19:54:03.035000+00:00"
+      },
+      "CoreHost": {
+        "state": "OK",
+        "stateUpdatedAt": "2026-10-29T04:30:30.302000+00:00"
+      },
+      "Feed": {
+        "state": "OK",
+        "stateUpdatedAt": "2026-10-28T19:54:21.059000+00:00"
+      },
+      "Heartbeat": {
+        "state": "OK",
+        "stateUpdatedAt": "2026-10-28T11:22:09.335000+00:00"
+      },
+      "Prover": {
+        "state": "OK",
+        "stateUpdatedAt": "2026-10-28T11:22:50.994000+00:00"
+      },
+      "Website": {
+        "state": "OK",
+        "stateUpdatedAt": "2026-10-28T19:54:33.417000+00:00"
+      }
+    },
+    "issues": [],
+    "limitations": [
+      "Optional unconfigured health metrics remain unknown.",
+      "A state-change timestamp need not be recent while an alarm remains OK.",
+      "This read does not establish release, rollback, authenticated operator login or billed spending acceptance."
+    ]
+  },
+  "ownerHandover": {
+    "firstPasswordChangePending": true,
+    "authenticatorMfaEnrollmentPending": true,
+    "authenticatedOwnerSessionVerified": false,
+    "lastOperatorReportedAccountStatus": "FORCE_CHANGE_PASSWORD",
+    "checkedAtMinuteUtc": "2026-10-29T04:09Z",
+    "verificationSource": "integrating operator read-only report"
+  },
+  "limits": [
+    "Only explicit operator rollback was exercised; automatic-failure rollback was not exercised.",
+    "The final state is rolled-back/operator-rollback with J serving; the genuine seven-step promotion record remains separate.",
+    "Funding balance and provider-spend telemetry are not configured; actual billed incremental charges remain unknown.",
+    "The incremental first31day forecast is USD25 within the USD50 authorization; monitoring ends2026-11-28T11:12:00Z.",
+    "No broader R04 readiness or application fast-click fix is claimed."
+  ],
+  "sourceEvidenceSha256": {
+    "rolling-j-release-observe-3.json": "e358d0fb6e244daee16646ebf5826e9d8ac9a75ef6db23075c4495e501d46c1e",
+    "rolling-j-release-gh-result.json": "209b5378e01abefba4b9ef02adfb10d8a2ca5fb5a39c84aa0249b0a378420b03",
+    "rolling-j-prune-apply-result.json": "273ff61de8a86a06ac13df7ca7e673c8b395f322ced422ecdc2e47ad9d4d18ab",
+    "rolling-j-rollback-result-2.json": "971003eb6ffd4bc9269b10fb4b97df50d52b7dc01e3f91b3dad876c8ffbf469a",
+    "rolling-j-final-health.json": "79f3ab91d3084b05cb0f062581af5af08f9c203fc56bde90768d5e3dd9ea5604"
+  }
+}
