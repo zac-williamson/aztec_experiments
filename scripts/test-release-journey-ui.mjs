@@ -19,6 +19,7 @@ window.documentId=crypto.randomUUID();
 const params=new URL(location.href).searchParams;
 let progress;
 let account=params.has('locked')?null:{},fundingConnected=!params.has('funding-disconnected'),fundingInput,prepared,credit='0';
+window.replaceAccount=()=>{account={};};
 const cap={defaultPrivateFeeCap:'1000000000000000',ethAvailable:true,usdcAvailable:true,
  prepare:async input=>{if(!fundingConnected)throw Error('Funding wallet disconnected');fundingInput=structuredClone(input);return {phase:'deposit',...input,maximumSwapWei:'1000000000000000'};},
  confirm:async()=>{if(!fundingConnected)throw Error('Funding wallet disconnected');calls.payments.push({asset:fundingInput.asset,amount:fundingInput.amount});return {pending:false};},
@@ -35,8 +36,10 @@ const application={
   if(params.has('deferred-actions')){
    window.pendingKind=action.type;
    progress({stage:'included',intentId:id,txHash,blockHash:'0x'+'a'.repeat(64),blockNumber:1});
-   await new Promise(resolve=>window.completeAction=resolve);
+   const outcome=await new Promise(resolve=>window.completeAction=resolve);
    window.pendingKind=null;
+   if(outcome==='unknown')return {intentId:id,action,status:'unknown',txHash};
+   if(outcome==='error')throw Error('Fixture sender completion failure');
   }
   return {intentId:id,action,status:'confirmed',txHash};
  }
@@ -168,6 +171,54 @@ test('reply inclusion ignores the hidden composer preview and binds the exact pu
  await page.evaluate(()=>completeAction());
 });
 
+
+test('fast Reply retains its target through sender completion without another click or submission',{timeout:15000},async t=>{
+ const {page,dialog,remaining}=await setup(t,{deferredActions:true});
+ await openJourneyComposer(page,'root before fast reply',remaining);
+ await submitJourneyComposer(page,'post',remaining);await dialog.waitFor({state:'hidden'});
+ assert.equal(await dialog.getAttribute('aria-busy'),'true');
+ // Click directly, without the release harness's readiness wait.
+ await page.locator('#reply').click();
+ await dialog.getByText('Opening reply…',{exact:true}).waitFor();
+ assert.equal(await dialog.getByLabel('Message',{exact:true}).count(),0,'never reopen stale Post editor');
+ await page.evaluate(()=>completeAction());
+ await dialog.getByRole('button',{name:'Reply',exact:true}).waitFor();
+ assert.equal(await dialog.getByLabel('Message',{exact:true}).inputValue(),'');
+ assert.equal(await page.evaluate(()=>calls.submitted.length),1,'navigation does not send a transaction');
+ await dialog.getByLabel('Message',{exact:true}).fill('reply to the captured post');
+ await submitJourneyComposer(page,'reply',remaining);await dialog.waitFor({state:'hidden'});
+ assert.deepEqual(await page.evaluate(()=>({type:calls.prepared[1].type,parent:calls.prepared[1].parent,root:calls.prepared[1].root,subboard:calls.prepared[1].subboard})),{type:'reply',parent:'10',root:'10',subboard:'0'});
+ await page.evaluate(()=>completeAction());
+ await page.locator('dialog[aria-busy="false"]').waitFor({state:'attached'});
+});
+for(const ending of ['dismiss','replace-account','unknown','error','newer-target'])test('pending reply handles '+ending,{timeout:15000},async t=>{
+ const {page,dialog,remaining}=await setup(t,{deferredActions:true});
+ await openJourneyComposer(page,'root before pending reply',remaining);
+ await submitJourneyComposer(page,'post',remaining);await dialog.waitFor({state:'hidden'});
+ await page.locator('#reply').click();await dialog.getByText('Opening reply…',{exact:true}).waitFor();
+ if(ending==='dismiss')await dialog.getByRole('button',{name:'Close account panel',exact:true}).click();
+ if(ending==='replace-account')await page.evaluate(()=>replaceAccount());
+ if(ending==='newer-target')await page.evaluate(()=>{
+  const target={type:'reply',parent:'20',root:'15',subboard:'0'};
+  panel.open(target);target.parent='99';
+ });
+ await page.evaluate(ending=>completeAction(['unknown','error'].includes(ending)?ending:undefined),ending);
+ await page.locator('dialog[aria-busy="false"]').waitFor({state:'attached'});
+ if(ending==='dismiss')assert.equal(await dialog.isVisible(),false);
+ else if(ending==='newer-target'){
+  await dialog.getByRole('button',{name:'Reply',exact:true}).waitFor();
+  await dialog.getByLabel('Message',{exact:true}).fill('newest target');
+  await submitJourneyComposer(page,'reply',remaining);await dialog.waitFor({state:'hidden'});
+  assert.deepEqual(await page.evaluate(()=>({parent:calls.prepared[1].parent,root:calls.prepared[1].root})),{parent:'20',root:'15'});
+  await page.evaluate(()=>completeAction());
+  await page.locator('dialog[aria-busy="false"]').waitFor({state:'attached'});
+ }else{
+  assert.equal(await dialog.getByRole('button',{name:'Reply',exact:true}).count(),0);
+  if(ending==='unknown')await dialog.getByText('The transaction is still unconfirmed or unknown. Check later; do not resend.',{exact:true}).waitFor();
+  if(ending==='error')await dialog.getByRole('alert').waitFor();
+ }
+ assert.equal(await page.evaluate(()=>calls.submitted.length),ending==='newer-target'?2:1);
+});
 
 test('release waits for local completion after included post reply and Like before the next action',{timeout:15000},async t=>{
  const {page,dialog,remaining}=await setup(t,{deferredActions:true}),card=page.locator('#action-card');

@@ -1,10 +1,10 @@
 # Rolling Chat: start here
 
-Current handover: 28 October 2026. The owner's current request takes precedence over historical task records. Credentials and private account material stay outside Git.
+Current handover: 29 October 2026. The owner's current request takes precedence over historical task records. Credentials and private account material stay outside Git.
 
 ## Live work and next action
 
-Latest owner task: compact Board gas optimization is **published and real-proof browser acceptance passed** on 29 October. Fresh Board `0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5`, matching SDK/readers/prover/moderator/Bok, one funding router, refund 40,000/512. Source 48c2750f is pushed to master. Fresh signup, a 29-byte post, two 20-FEE self-tips with count 2 and exact fee accounting, and a 44-byte post passed. The 29-byte post used 998,470 L2 gas and paid 2.760553580939 FEE at its inclusion-block price. Old test posts/accounts were not migrated. [Deployment and boundaries](docs/COMPACT_DEPLOYMENT_20261029.md). Operations now owns fresh baseline sealing and verifier rebinding; keep automatic release disabled until its new baseline is coherent. Performance remains paused.
+Latest owner task: compact Board gas optimization is **published and real-proof browser acceptance passed** on 29 October. Fresh Board `0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5`, matching SDK/readers/prover/moderator/Bok, one funding router, refund 40,000/512. Source 48c2750f is pushed to master. Fresh signup, a 29-byte post, two 20-FEE self-tips with count 2 and exact fee accounting, and a 44-byte post passed. The 29-byte post used 998,470 L2 gas and paid 2.760553580939 FEE at its inclusion-block price. Old test posts/accounts were not migrated. [Deployment and boundaries](docs/COMPACT_DEPLOYMENT_20261029.md). Operations acceptance is complete: J `03bb6b8d` passed all seven real flows and explicit rollback/return. Automatic release is enabled. Use the installed GitHub CI route for compatible app updates, not legacy manual replacement. See [operations handover](docs/LAUNCH_OPERATIONS.md). Performance remains paused.
 
 **Performance work remains paused by the owner.** Harry feedback wallet/account/payment UX and Home ranking are published. Images and the moderation-information item were dropped. MetaMask’s official hostname scanner returns BLOCK for the current CloudFront hostname; manual classification review is needed. See docs/METAMASK_ALERT_20261028.md. No external report has been sent. [Current release report](docs/HARRY_FEEDBACK_20261028.md).
 
@@ -56,22 +56,23 @@ Repository: https://github.com/zac-williamson/aztec_experiments — default bran
 
 Network: Aztec stable6.0.0, rollup `0x1f435a7f2da358caf887a470faeee7d5d5f4efba`, version679261766, Ethereum Sepolia11155111. No mainnet work.
 
-| Component | Installed source or publication status |
+| Component | Current deployment reference |
 | --- | --- |
-| Browser UI | `/opt/rolling-ui/releases/24f707f659d8f5b6bbb83614dfbf4a28767885c9` |
-| Configured next application source | `/opt/rolling-app/releases/ui-24f707f659d8` |
-| Application and moderator | `/opt/rolling-app/releases/86be52150de16ad6fe628000404e44e3592705bb` |
-| Prover | `/opt/board-prover/releases/fresh-board-86be52150de16ad6fe628000404e44e3592705bb` |
-| Bok | `/opt/rolling-bok/releases/86be52150de16ad6fe628000404e44e3592705bb` |
+| Live application/UI | `/opt/rolling-release-live/current` (accepted J `03bb6b8d` before the fast-click Reply release) |
+| Stage | `/opt/rolling-stage/current` |
+| Releases / retained rollback | `/opt/rolling-releases`; B48 is the retained baseline |
+| Shared dependencies — retain | `/opt/rolling-app/releases/86be52150de16ad6fe628000404e44e3592705bb/node_modules` |
+| Private runtime configuration — retain | `/var/lib/rolling-bootstrap-private/rolling-tips-48c2750f617b/config` |
+| Prover, moderator and Bok | Coherent compact-deployment services; see [deployment record](docs/COMPACT_DEPLOYMENT_20261029.md) |
 
 | Contract | Current address |
 | --- | --- |
-| Board | `0x2d6210a94af00fadeb5c69c20ed9fce3e20a8feca7d2b190354307ef0d235bee` |
+| Board | `0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5` |
 | Private fee contract | `0x2d71392cfb41aa25a62c5ecc510400167dda9f3669676d2b539413a4fa0bcbb7` |
-| Bok | `0x204a501c723939244387d75b4c8f67a851f21018102c308ceef006f70ef6f534` |
-| Posting deposit portal | `0x0c81b38be26619dd8587455ff400ec9c6ab6a0a7` |
-| Single funding router | `0x0547e56ac6fdb8952a3435090c8a01f10893b0fe` |
-| Bok portal | `0x6183c511c8057a0e4462a9ffb13c37b6c0ab8789` |
+| Bok | `0x18eb9f9de94df31b450930e8b97c7f661cd69af7a992f1e076ec6c0d852208f7` |
+| Posting deposit portal | `0xb1b393e696c1ceb744ad47325dd18e5c96f5c073` |
+| Single funding router | `0x4036f93a035433b704fc60d52fdba4aa813ab2b3` |
+| Bok portal | `0x487dc0ac4984ef830307044bad577713bee62392` |
 
 Canonical Bok plugin ID is `0x0000000000000000000000000000000000000000000000000000000000626f6b`. This fresh contract scope has replaced the old test board; previous performance results are historical until repeated on the current scope.
 

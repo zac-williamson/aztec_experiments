@@ -1,3 +1,7 @@
+# Fast-click Reply — 29 October 2026
+
+Root owns UI change and CI publication. `fast_reply_review` approved the application/fixture change after read-only review of cancellation/account lifetime, unknown outcomes, and no automatic submission. All 15 current release UI tests pass, including direct fast Reply, exact parent/root, dismiss, account replacement, unknown/rejected sender completion and latest-target snapshots. The primary test failed on original code. Legacy panel tests (not in current CI) still expect removed UI; baseline reproduces those failures and they are not treated as new regressions. Operations handover is complete; no other chat coordination is required.
+
 # Compact gas deployment —29 October2026
 
 Root completed publication and real-proof browser signup/post/tip/tip/post acceptance. deployment_review independently reviewed active storage consumers, coherent configuration, smoke preparation and test-pool refill. cutover_review reviewed service cutover, delta transfer, explicit host-role selection and timer-driven snapshot invariants. Both bounded reviews are complete. Operations chat now owns service/signing changes, fresh baseline seal and stage/public verifier rebinding. Root only records public evidence and cleans owned transfer/browser files. Old state disposable; latency campaign remains paused.

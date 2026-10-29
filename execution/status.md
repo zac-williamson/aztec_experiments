@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 29 October compact Board deployment48c2750f is published with coherent SDK/app/prover/moderator/Bok. Fresh real-proof browser signup/post/two20-FEE tips/post passed;2likes and exact tip fee conservation verified.29-bytepost998470 billedL2gas. Source CI40753383089 passed. Test pool replenished after no-payment liquidity refusal. Operations now owns resealing/verifier rebinding; performance remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 29 October: accepted J deployment is live. Owner requests fix and publish for fast-click Reply losing its target after post inclusion while sender completion remains busy. Implementation underway; no contract changes.
 
 ## Ready internal work
 

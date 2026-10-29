@@ -9402,13 +9402,13 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "29 October compact Board deployment48c2750f is published with coherent SDK/app/prover/moderator/Bok. Fresh real-proof browser signup/post/two20-FEE tips/post passed;2likes and exact tip fee conservation verified.29-bytepost998470 billedL2gas. Source CI40753383089 passed. Test pool replenished after no-payment liquidity refusal. Operations now owns resealing/verifier rebinding; performance remains paused.",
-      "execution_lane": "root coherent testnet deployment and real posting acceptance; independent storage-reader/deployment review",
+      "checkpoint": "29 October: accepted J deployment is live. Owner requests fix and publish for fast-click Reply losing its target after post inclusion while sender completion remains busy. Implementation underway; no contract changes.",
+      "execution_lane": "root UI implementation and existing CI publication; independent fast_reply_review",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",
       "verification_method": "Native claim/cancel exclusion, Solidity custody/refund proofs, client and browser checks, coherent artifact verification, independent review, then fresh testnet signup and publication.",
       "priority": 0,
-      "next_action": "Operations chat completes new baseline seal and staged release controls. Application owner request is delivered; preserve explicit acceptance boundaries in docs/COMPACT_DEPLOYMENT_20261029.md. Do not restart paused performance campaigns."
+      "next_action": "Retain reply target across local sender completion; test rapid clicks, dismissal, account changes and unresolved outcomes; independent review, integration gate, push and verify deployed release. Performance campaigns remain paused."
     }
   ],
   "specification": {
