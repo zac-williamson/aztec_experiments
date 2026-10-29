@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 29 October: accepted J deployment is live. Owner requests fix and publish for fast-click Reply losing its target after post inclusion while sender completion remains busy. Implementation underway; no contract changes.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 29 October: fast-click Reply fixed and published as 6e5f02ab at 08:49 UTC. 15 UI regressions, independent review, full CI 40829093129 and release 40831905862 attempt 3 passed all seven real flows. Public file matches source. See docs/FAST_REPLY_20261029.md; performance remains paused.
 
 ## Ready internal work
 

@@ -4,7 +4,9 @@ Current handover: 29 October 2026. The owner's current request takes precedence 
 
 ## Live work and next action
 
-Latest owner task: compact Board gas optimization is **published and real-proof browser acceptance passed** on 29 October. Fresh Board `0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5`, matching SDK/readers/prover/moderator/Bok, one funding router, refund 40,000/512. Source 48c2750f is pushed to master. Fresh signup, a 29-byte post, two 20-FEE self-tips with count 2 and exact fee accounting, and a 44-byte post passed. The 29-byte post used 998,470 L2 gas and paid 2.760553580939 FEE at its inclusion-block price. Old test posts/accounts were not migrated. [Deployment and boundaries](docs/COMPACT_DEPLOYMENT_20261029.md). Operations acceptance is complete: J `03bb6b8d` passed all seven real flows and explicit rollback/return. Automatic release is enabled. Use the installed GitHub CI route for compatible app updates, not legacy manual replacement. See [operations handover](docs/LAUNCH_OPERATIONS.md). Performance remains paused.
+Fast-click Reply is fixed and published: `6e5f02ab`, promoted 29 October at 08:49 UTC, all seven real release flows passed. [Exact evidence and limits](docs/FAST_REPLY_20261029.md). This supersedes the earlier operations handover statement that the defect remained unchanged. Performance work remains paused.
+
+Compact deployment background: compact Board gas optimization is **published and real-proof browser acceptance passed** on 29 October. Fresh Board `0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5`, matching SDK/readers/prover/moderator/Bok, one funding router, refund 40,000/512. Source 48c2750f is pushed to master. Fresh signup, a 29-byte post, two 20-FEE self-tips with count 2 and exact fee accounting, and a 44-byte post passed. The 29-byte post used 998,470 L2 gas and paid 2.760553580939 FEE at its inclusion-block price. Old test posts/accounts were not migrated. [Deployment and boundaries](docs/COMPACT_DEPLOYMENT_20261029.md). Operations acceptance is complete: J `03bb6b8d` passed all seven real flows and explicit rollback/return. Automatic release is enabled. Use the installed GitHub CI route for compatible app updates, not legacy manual replacement. See [operations handover](docs/LAUNCH_OPERATIONS.md). Performance remains paused.
 
 **Performance work remains paused by the owner.** Harry feedback wallet/account/payment UX and Home ranking are published. Images and the moderation-information item were dropped. MetaMask’s official hostname scanner returns BLOCK for the current CloudFront hostname; manual classification review is needed. See docs/METAMASK_ALERT_20261028.md. No external report has been sent. [Current release report](docs/HARRY_FEEDBACK_20261028.md).
 
@@ -58,9 +60,9 @@ Network: Aztec stable6.0.0, rollup `0x1f435a7f2da358caf887a470faeee7d5d5f4efba`,
 
 | Component | Current deployment reference |
 | --- | --- |
-| Live application/UI | `/opt/rolling-release-live/current` (accepted J `03bb6b8d` before the fast-click Reply release) |
+| Live application/UI | `/opt/rolling-release-live/current` (`6e5f02ab`, fast-click Reply fix) |
 | Stage | `/opt/rolling-stage/current` |
-| Releases / retained rollback | `/opt/rolling-releases`; B48 is the retained baseline |
+| Releases / retained rollback | `/opt/rolling-releases`; J `03bb6b8d` is the previous release |
 | Shared dependencies — retain | `/opt/rolling-app/releases/86be52150de16ad6fe628000404e44e3592705bb/node_modules` |
 | Private runtime configuration — retain | `/var/lib/rolling-bootstrap-private/rolling-tips-48c2750f617b/config` |
 | Prover, moderator and Bok | Coherent compact-deployment services; see [deployment record](docs/COMPACT_DEPLOYMENT_20261029.md) |
