@@ -77,3 +77,30 @@ No application/server changes were deployed during this diagnosis.
 The same four CDN addresses accepted16/16 direct TCP probes from the core server
 in91.994–92.447ms. This comparison suggests a path-dependent failure; it does
 not establish which network component dropped the client connection attempts.
+
+## Fresh browser and control-site investigation
+
+On the unchanged deployment,12 independent browser contexts created fresh
+connections successfully; fee reads took219.66–333.41ms. Another20 fresh contexts
+were captured with Chromium's network log: all20 TCP connections succeeded on
+their first attempt in110–128ms, including all four CDN addresses. There was no
+hidden connection racing or retry masking a timeout in these samples. Fee reads
+were217.28–359.21ms (mean235.86ms). Every response was valid. All owned browsers
+and contexts were closed.
+
+Interleaved raw TCP probes recorded2/20 timeouts for the main distribution,0/20
+for stage, and3/20 for unrelated aws.amazon.com. The prior server-originated
+comparison had0/16 timeouts against the main distribution's same four addresses.
+This does not establish a faulty application distribution or permanently broken
+CDN address. The exact network component dropping intermittent connections is
+not identified.
+
+The15/25-second waits belong to the Python diagnostic's per-connection timeout,
+not a CloudFront response setting or the browser application's flow. Python's
+sequential address attempts amplified failed connections into long diagnostic
+wall times. Use actual browser request timings and preserve DNS/connect/TLS/TTFB
+phases when diagnosing latency; do not report an untraced urllib wall time as
+application execution latency. No endpoint, retry policy, node or infrastructure
+configuration was changed based on the unproven CloudFront-fault hypothesis.
+
+[Fresh-browser and control evidence](../execution/evidence/G21/stable6/live-fee-pricing/fresh-browser-and-control-trace.json).

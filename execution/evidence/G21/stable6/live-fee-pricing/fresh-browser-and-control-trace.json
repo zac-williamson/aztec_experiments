@@ -1,0 +1,178 @@
+{
+  "date": "2026-10-30",
+  "deploymentChanged": false,
+  "freshBrowserFirstRun": {
+    "samples": 12,
+    "feeMinMs": 219.65500020980835,
+    "feeMaxMs": 333.4100000858307,
+    "allSuccessful": true
+  },
+  "freshBrowserNetlogRun": {
+    "count": 20,
+    "feeMinMs": 217.27999997138977,
+    "feeMaxMs": 359.210000038147,
+    "feeMeanMs": 235.86424999237062,
+    "navigationMinMs": 481.1713749999999,
+    "navigationMaxMs": 706.603416,
+    "allValid": true,
+    "tcpAttempts": [
+      {
+        "address": "3.175.81.28:443",
+        "ms": 113,
+        "error": null
+      },
+      {
+        "address": "3.175.81.172:443",
+        "ms": 112,
+        "error": null
+      },
+      {
+        "address": "3.175.81.172:443",
+        "ms": 111,
+        "error": null
+      },
+      {
+        "address": "3.175.81.74:443",
+        "ms": 111,
+        "error": null
+      },
+      {
+        "address": "3.175.81.74:443",
+        "ms": 113,
+        "error": null
+      },
+      {
+        "address": "3.175.81.187:443",
+        "ms": 115,
+        "error": null
+      },
+      {
+        "address": "3.175.81.187:443",
+        "ms": 110,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 118,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 114,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 118,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 114,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 111,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 112,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 110,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 112,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 125,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 112,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 113,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 113,
+        "error": null
+      },
+      {
+        "address": "3.175.81.28:443",
+        "ms": 128,
+        "error": null
+      }
+    ],
+    "incompleteAttempts": 0
+  },
+  "controlTcpSummary": [
+    {
+      "host": "aws.amazon.com",
+      "samples": 20,
+      "failures": [
+        {
+          "host": "aws.amazon.com",
+          "ip": "108.158.61.102",
+          "error": "TimeoutError",
+          "ms": 3001.243
+        },
+        {
+          "host": "aws.amazon.com",
+          "ip": "108.158.61.79",
+          "error": "TimeoutError",
+          "ms": 3001.222
+        },
+        {
+          "host": "aws.amazon.com",
+          "ip": "108.158.61.96",
+          "error": "TimeoutError",
+          "ms": 3001.296
+        }
+      ],
+      "minMs": 13.72,
+      "maxMs": 3001.296
+    },
+    {
+      "host": "d1jab0kmgvw5tv.cloudfront.net",
+      "samples": 20,
+      "failures": [],
+      "minMs": 110.242,
+      "maxMs": 136.192
+    },
+    {
+      "host": "d30njln0kead8n.cloudfront.net",
+      "samples": 20,
+      "failures": [
+        {
+          "host": "d30njln0kead8n.cloudfront.net",
+          "ip": "3.175.81.172",
+          "error": "TimeoutError",
+          "ms": 3001.673
+        },
+        {
+          "host": "d30njln0kead8n.cloudfront.net",
+          "ip": "3.175.81.187",
+          "error": "TimeoutError",
+          "ms": 3001.941
+        }
+      ],
+      "minMs": 111.504,
+      "maxMs": 3001.941
+    }
+  ],
+  "interpretation": "Browser netlog confirms20freshconnections firstattemptsuccess acrossall4addresses, nohedgingorhiddenconnecttimeouts. PythonTCPtimeouts alsoaffectedunrelatedaws.amazon.com. LocationoftransientTCPfailureunestablished.15/25s arediagnosticclienttimeouts, notCloudFrontconfiguredresponsewaits. NoCloudFrontchangejustifiedasafixfromthisevidence."
+}
