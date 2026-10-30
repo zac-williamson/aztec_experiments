@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 30 October: urgent signup failure from deployment-time gas prices. Replace static fee prices end to end with current network pricing, preserve approved payment caps, audit related recent gates, qualify and publish with analytics-button removal. Performance campaign remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 30 October: live network fee pricing implemented and independently reviewed. Owner requests immediate app publication. Gateway optimization retained separately; prover stays unchanged. Root preparing exact-revision rebuilt SDK for installed release route, then genuine ETH/USDC signup acceptance.
 
 ## Ready internal work
 

@@ -97,6 +97,35 @@ export async function testInputsToRetain(source,manifest){
  }
  return retained;
 }
+// SDK builds are prepared by the authenticated operator, never downloaded from
+// a candidate-controlled URL. The normal wallet builder validates their complete
+// input/output provenance against the candidate before staging can begin.
+export async function assertSdkBuildOwner(filename,ownerUid=0){
+ const stat=await fs.lstat(filename);
+ if(stat.isSymbolicLink()||stat.uid!==ownerUid||(stat.mode&0o022)||(!stat.isDirectory()&&!stat.isFile()))throw failure('RELEASE_SDK_BUILD_PERMISSIONS');
+ return stat;
+}
+export async function installPreparedSdk(source,destination,ownerUid=0){
+ if(!(await assertSdkBuildOwner(source,ownerUid)).isDirectory())throw failure('RELEASE_SDK_BUILD_PERMISSIONS');
+ const manifestFile=path.join(source,'sdk-manifest.json');await assertSdkBuildOwner(manifestFile,ownerUid);
+ const bytes=await fs.readFile(manifestFile),manifest=JSON.parse(bytes);
+ if(!manifest.outputs||typeof manifest.outputs!=='object'||Array.isArray(manifest.outputs)||!Object.keys(manifest.outputs).length)throw failure('RELEASE_SDK_BUILD');
+ const files=[];
+ for(const [name,digest] of Object.entries(manifest.outputs)){
+  if(!/^[A-Za-z0-9_.-]+$/.test(name)||name==='.'||name==='..'||name==='sdk-manifest.json'||!/^[a-f0-9]{64}$/.test(digest))throw failure('RELEASE_SDK_BUILD');
+  const input=path.join(source,name);if(!(await assertSdkBuildOwner(input,ownerUid)).isFile())throw failure('RELEASE_SDK_BUILD');
+  if(sha256(await fs.readFile(input))!==digest)throw failure('RELEASE_SDK_BUILD');files.push(name);
+ }
+ await fs.rm(destination,{recursive:true,force:true});await fs.mkdir(destination,{recursive:true});
+ for(const name of files)await fs.copyFile(path.join(source,name),path.join(destination,name));
+ await fs.writeFile(path.join(destination,'sdk-manifest.json'),bytes);
+}
+export async function sdkInputsChanged(root,manifest){
+ for(const [name,digest] of Object.entries({...manifest.inputs,'scripts/build-sdk.mjs':manifest.buildScript})){
+  try{if(sha256(await fs.readFile(path.join(root,name)))!==digest)return true;}catch(e){if(e.code==='ENOENT')return true;throw e;}
+ }
+ return false;
+}
 export async function prepareCandidate(source,cfg){
  const revision=execFileSync('git',['rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();
  if(execFileSync('git',['status','--porcelain','--untracked-files=no'],{cwd:source,encoding:'utf8'}).trim())throw failure('RELEASE_DIRTY_SOURCE');
@@ -131,6 +160,10 @@ export async function prepareCandidate(source,cfg){
   const dependencies=await fs.realpath(path.join(baselineRoot,'node_modules'));if(baseline.compatibility.dependencies!==dependencies)throw failure('RELEASE_DEPENDENCIES');
   await fs.symlink(dependencies,path.join(destination,'node_modules'));
   if(sha256(await fs.readFile(path.join(destination,'package-lock.json')))!==baseline.compatibility.lockSha256)throw failure('RELEASE_DEPENDENCIES');
+  if(await sdkInputsChanged(destination,sdk)){
+   await assertSdkBuildOwner('/opt');await assertSdkBuildOwner('/opt/rolling-sdk-builds');
+   await installPreparedSdk(path.join('/opt/rolling-sdk-builds',revision),path.join(destination,'.build/sdk'));
+  }
   // This is the actual repository asset builder and its provenance checks. A
   // build failure blocks before staging; stdout stays in private host journals.
   execFileSync(cfg.nodeBinary,['scripts/rolling-wallet-assets.mjs'],{cwd:destination,stdio:'pipe',timeout:300000,maxBuffer:1024*1024});

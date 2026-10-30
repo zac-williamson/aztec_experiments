@@ -9402,7 +9402,7 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "30 October: urgent signup failure from deployment-time gas prices. Replace static fee prices end to end with current network pricing, preserve approved payment caps, audit related recent gates, qualify and publish with analytics-button removal. Performance campaign remains paused.",
+      "checkpoint": "30 October: live network fee pricing implemented and independently reviewed. Owner requests immediate app publication. Gateway optimization retained separately; prover stays unchanged. Root preparing exact-revision rebuilt SDK for installed release route, then genuine ETH/USDC signup acceptance.",
       "execution_lane": "root UI implementation and existing CI publication; independent fast_reply_review",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",

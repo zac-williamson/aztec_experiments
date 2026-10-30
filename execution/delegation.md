@@ -620,3 +620,10 @@ identified installed release preparation's copied-SDK limitation and protected
 prover admission requirement. Root measured native, old gateway and public route
 latencies;15.46s outlier remains unattributed. See docs/LIVE_FEE_PRICING_20261030.md.
 No live changes or new contracts; publication and browser measurement pending.
+
+## Dynamic-fee app publication — 30 October
+
+Root owns publication. Gateway source restored to live bytes; optional optimization
+retained on codex/fee-gateway-fast-path-20261030. deployment_review approved the
+exact-revision root-prepared SDK importer and its focused tests. Existing wallet
+provenance, protected paths, full build and real release gate remain unchanged.
