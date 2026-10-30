@@ -1,0 +1,1281 @@
+{
+  "date": "2026-10-30",
+  "deploymentChanged": false,
+  "method": "Public read-only requests; sequential Python urllib fresh connections; one isolated Chromium context reused HTTP2 connections. No wallet or transactions.",
+  "initialProbe": {
+    "count": 30,
+    "outliers": [
+      {
+        "sample": 19,
+        "utc": "2026-10-30T10:54:18.290279+00:00",
+        "status": 200,
+        "bytes": 84,
+        "headersMs": 25454.698,
+        "readMs": 0.336,
+        "requestId": "-J2IgKlPgh6OMXeTORpbW-36ANpTrcCdJdJBDujO3f3OrfwzafJntg==",
+        "pop": "MRS53-P4",
+        "serverTiming": null,
+        "responseDate": "Fri, 30 Oct 2026 10:54:43 GMT",
+        "totalMs": 25455.122,
+        "phases": [
+          {
+            "phase": "getaddrinfo",
+            "ms": 3.436
+          },
+          {
+            "phase": "connect",
+            "ms": 25000.534
+          },
+          {
+            "phase": "connect",
+            "ms": 111.822
+          },
+          {
+            "phase": "wrap_socket",
+            "ms": 120.759
+          },
+          {
+            "phase": "connect",
+            "ms": 25237.246
+          },
+          {
+            "phase": "send",
+            "ms": 25237.429
+          },
+          {
+            "phase": "send",
+            "ms": 0.029
+          },
+          {
+            "phase": "getresponse",
+            "ms": 216.698
+          }
+        ]
+      },
+      {
+        "sample": 22,
+        "utc": "2026-10-30T10:54:44.676720+00:00",
+        "status": 200,
+        "bytes": 84,
+        "headersMs": 25557.497,
+        "readMs": 0.174,
+        "requestId": "4mu9oinOk66L07IPRpAQRFj1HJUvcPPdteKZ8OCf7xkIpecldw11dw==",
+        "pop": "MRS53-P4",
+        "serverTiming": null,
+        "responseDate": "Fri, 30 Oct 2026 10:55:10 GMT",
+        "totalMs": 25557.687,
+        "phases": [
+          {
+            "phase": "getaddrinfo",
+            "ms": 3.254
+          },
+          {
+            "phase": "connect",
+            "ms": 25001.506
+          },
+          {
+            "phase": "connect",
+            "ms": 112.297
+          },
+          {
+            "phase": "wrap_socket",
+            "ms": 115.579
+          },
+          {
+            "phase": "connect",
+            "ms": 25233.1
+          },
+          {
+            "phase": "send",
+            "ms": 25233.194
+          },
+          {
+            "phase": "send",
+            "ms": 0.039
+          },
+          {
+            "phase": "getresponse",
+            "ms": 324.018
+          }
+        ]
+      }
+    ]
+  },
+  "addressProbe": {
+    "count": 48,
+    "outliers": [
+      {
+        "sample": 0,
+        "utc": "2026-10-30T10:57:03.540830+00:00",
+        "status": 200,
+        "bytes": 83,
+        "headersMs": 30473.375,
+        "readMs": 0.575,
+        "requestId": "jHVebycAaSLeQxLxARVnFbBJ0aeZuXsOeLDDUCcqxj1tSNAfAx5fBg==",
+        "pop": "MRS53-P4",
+        "serverTiming": null,
+        "responseDate": "Fri, 30 Oct 2026 10:57:33 GMT",
+        "totalMs": 30473.992,
+        "phases": [
+          {
+            "phase": "urllib.request.getproxies",
+            "address": null,
+            "ms": 3.519
+          },
+          {
+            "phase": "socket.getaddrinfo",
+            "address": null,
+            "ms": 5.63
+          },
+          {
+            "phase": "socket.connect",
+            "address": "('3.175.81.187', 443)",
+            "ms": 15001.498
+          },
+          {
+            "phase": "socket.connect",
+            "address": "('3.175.81.28', 443)",
+            "ms": 15001.054
+          },
+          {
+            "phase": "socket.connect",
+            "address": "('3.175.81.172', 443)",
+            "ms": 112.92
+          },
+          {
+            "phase": "SSLContext.wrap_socket",
+            "address": null,
+            "ms": 116.821
+          },
+          {
+            "phase": "HTTPSConnection.connect",
+            "address": null,
+            "ms": 30238.74
+          },
+          {
+            "phase": "HTTPConnection.send",
+            "address": null,
+            "ms": 30238.92
+          },
+          {
+            "phase": "HTTPConnection.send",
+            "address": null,
+            "ms": 0.076
+          },
+          {
+            "phase": "HTTPConnection.getresponse",
+            "address": null,
+            "ms": 222.174
+          }
+        ]
+      }
+    ]
+  },
+  "tcpProbes": [
+    {
+      "ip": "3.175.81.172",
+      "ok": true,
+      "ms": 111.561
+    },
+    {
+      "ip": "3.175.81.187",
+      "ok": true,
+      "ms": 111.135
+    },
+    {
+      "ip": "3.175.81.28",
+      "ok": true,
+      "ms": 109.948
+    },
+    {
+      "ip": "3.175.81.74",
+      "ok": true,
+      "ms": 109.685
+    },
+    {
+      "ip": "3.175.81.172",
+      "ok": true,
+      "ms": 114.029
+    },
+    {
+      "ip": "3.175.81.187",
+      "ok": true,
+      "ms": 111.756
+    },
+    {
+      "ip": "3.175.81.28",
+      "ok": true,
+      "ms": 111.911
+    },
+    {
+      "ip": "3.175.81.74",
+      "ok": true,
+      "ms": 122.827
+    },
+    {
+      "ip": "3.175.81.172",
+      "ok": true,
+      "ms": 112.835
+    },
+    {
+      "ip": "3.175.81.187",
+      "ok": true,
+      "ms": 112.821
+    },
+    {
+      "ip": "3.175.81.28",
+      "ok": true,
+      "ms": 124.259
+    },
+    {
+      "ip": "3.175.81.74",
+      "ok": true,
+      "ms": 133.958
+    },
+    {
+      "ip": "3.175.81.172",
+      "ok": true,
+      "ms": 110.749
+    },
+    {
+      "ip": "3.175.81.187",
+      "ok": true,
+      "ms": 110.791
+    },
+    {
+      "ip": "3.175.81.28",
+      "ok": true,
+      "ms": 120.219
+    },
+    {
+      "ip": "3.175.81.74",
+      "ok": true,
+      "ms": 113.162
+    },
+    {
+      "ip": "3.175.81.172",
+      "ok": true,
+      "ms": 125.539
+    },
+    {
+      "ip": "3.175.81.187",
+      "ok": true,
+      "ms": 124.886
+    },
+    {
+      "ip": "3.175.81.28",
+      "error": "TimeoutError",
+      "ms": 3001.68
+    },
+    {
+      "ip": "3.175.81.74",
+      "ok": true,
+      "ms": 110.365
+    },
+    {
+      "ip": "3.175.81.172",
+      "ok": true,
+      "ms": 115.413
+    },
+    {
+      "ip": "3.175.81.187",
+      "ok": true,
+      "ms": 112.274
+    },
+    {
+      "ip": "3.175.81.28",
+      "ok": true,
+      "ms": 111.767
+    },
+    {
+      "ip": "3.175.81.74",
+      "ok": true,
+      "ms": 111.548
+    },
+    {
+      "ip": "3.175.81.172",
+      "ok": true,
+      "ms": 109.495
+    },
+    {
+      "ip": "3.175.81.187",
+      "error": "TimeoutError",
+      "ms": 3001.518
+    },
+    {
+      "ip": "3.175.81.28",
+      "ok": true,
+      "ms": 113.989
+    },
+    {
+      "ip": "3.175.81.74",
+      "ok": true,
+      "ms": 113.224
+    },
+    {
+      "ip": "3.175.81.172",
+      "ok": true,
+      "ms": 110.194
+    },
+    {
+      "ip": "3.175.81.187",
+      "ok": true,
+      "ms": 110.258
+    },
+    {
+      "ip": "3.175.81.28",
+      "ok": true,
+      "ms": 111.826
+    },
+    {
+      "ip": "3.175.81.74",
+      "ok": true,
+      "ms": 110.732
+    }
+  ],
+  "browser": {
+    "samples": [
+      {
+        "ms": 393.1800000667572,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 282.49000000953674,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 450.5,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 523.914999961853,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 359.3949999809265,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 315.085000038147,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 226.9800000190735,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 217.64999985694885,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 218.8550000190735,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 218.54999995231628,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 261.8599998950958,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 316.6400001049042,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 315.7849998474121,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 219.4099998474121,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 219.2300000190735,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 227.1449999809265,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 219.02999997138977,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 217.54999995231628,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 216.00999999046326,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 219.65499997138977,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 217.2149999141693,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 316.11500000953674,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 313.32999992370605,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 225.74000000953674,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 218.0899999141693,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 218.38500022888184,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 216.6100001335144,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 215.84999990463257,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 359.77999997138977,
+        "status": 200,
+        "valid": true
+      },
+      {
+        "ms": 347.57499980926514,
+        "status": 200,
+        "valid": true
+      }
+    ],
+    "responses": [
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230807.781876,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.153,
+          "sendEnd": 0.253,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 385.95,
+          "receiveHeadersEnd": 386.067
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230808.173226,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.538,
+          "sendEnd": 0.772,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 279.701,
+          "receiveHeadersEnd": 279.86
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230808.458591,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.363,
+          "sendEnd": 0.566,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 445.586,
+          "receiveHeadersEnd": 445.711
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230808.906024,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.398,
+          "sendEnd": 0.685,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 518.966,
+          "receiveHeadersEnd": 519.218
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230809.430576,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.611,
+          "sendEnd": 0.908,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 356.606,
+          "receiveHeadersEnd": 356.742
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230809.789537,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.341,
+          "sendEnd": 0.566,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 313.13,
+          "receiveHeadersEnd": 313.267
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230810.104347,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.219,
+          "sendEnd": 0.569,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 225.724,
+          "receiveHeadersEnd": 225.8
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230810.331662,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.232,
+          "sendEnd": 0.414,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 214.951,
+          "receiveHeadersEnd": 215.135
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230810.549431,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.644,
+          "sendEnd": 0.867,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 216.42,
+          "receiveHeadersEnd": 216.553
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230810.768202,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.323,
+          "sendEnd": 0.536,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 216.7,
+          "receiveHeadersEnd": 216.954
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230810.986434,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.246,
+          "sendEnd": 0.419,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 260.067,
+          "receiveHeadersEnd": 260.213
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230811.248449,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.284,
+          "sendEnd": 0.487,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 314.52,
+          "receiveHeadersEnd": 314.656
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230811.565411,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.819,
+          "sendEnd": 1.044,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 314.024,
+          "receiveHeadersEnd": 314.078
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230811.880573,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.119,
+          "sendEnd": 0.207,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 217.098,
+          "receiveHeadersEnd": 217.276
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230812.100696,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.35,
+          "sendEnd": 0.572,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 216.296,
+          "receiveHeadersEnd": 216.477
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230812.319906,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.479,
+          "sendEnd": 0.778,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 224.35,
+          "receiveHeadersEnd": 224.525
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230812.547019,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.393,
+          "sendEnd": 0.636,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 216.963,
+          "receiveHeadersEnd": 217.047
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230812.765804,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.595,
+          "sendEnd": 0.8,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 215.565,
+          "receiveHeadersEnd": 215.685
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230812.983485,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.258,
+          "sendEnd": 0.392,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 213.132,
+          "receiveHeadersEnd": 213.322
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230813.199901,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.437,
+          "sendEnd": 0.708,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 216.578,
+          "receiveHeadersEnd": 216.754
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230813.419155,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.334,
+          "sendEnd": 0.555,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 214.61,
+          "receiveHeadersEnd": 214.793
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230813.636537,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.353,
+          "sendEnd": 0.588,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 313.206,
+          "receiveHeadersEnd": 313.341
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230813.952607,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.862,
+          "sendEnd": 1.094,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 310.522,
+          "receiveHeadersEnd": 310.705
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230814.265868,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.34,
+          "sendEnd": 0.57,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 222.991,
+          "receiveHeadersEnd": 223.165
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230814.491761,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.3,
+          "sendEnd": 0.505,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 215.212,
+          "receiveHeadersEnd": 215.454
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230814.709749,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.322,
+          "sendEnd": 0.55,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 215.625,
+          "receiveHeadersEnd": 215.805
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230814.928012,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.348,
+          "sendEnd": 0.633,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 214.223,
+          "receiveHeadersEnd": 214.383
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230815.14486,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.741,
+          "sendEnd": 0.95,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 213.07,
+          "receiveHeadersEnd": 213.255
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230815.360606,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.333,
+          "sendEnd": 0.542,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 356.973,
+          "receiveHeadersEnd": 357.155
+        }
+      },
+      {
+        "ip": "3.175.81.74",
+        "reused": true,
+        "protocol": "h2",
+        "timing": {
+          "requestTime": 1230815.720765,
+          "proxyStart": -1,
+          "proxyEnd": -1,
+          "dnsStart": -1,
+          "dnsEnd": -1,
+          "connectStart": -1,
+          "connectEnd": -1,
+          "sslStart": -1,
+          "sslEnd": -1,
+          "workerStart": -1,
+          "workerReady": -1,
+          "workerFetchStart": -1,
+          "workerRespondWithSettled": -1,
+          "sendStart": 0.35,
+          "sendEnd": 0.576,
+          "pushStart": 0,
+          "pushEnd": 0,
+          "receiveHeadersStart": 344.54,
+          "receiveHeadersEnd": 344.722
+        }
+      }
+    ]
+  },
+  "conclusion": "Reproduced stalls are TCP connect timeouts before HTTP. Original untraced15463ms sample is consistent with one15s connect timeout but cannot be definitively attributed retrospectively. Underlying network fault location not established.",
+  "independentReviewer": "flow_scope_efficiency",
+  "serverTcpComparison": {
+    "samples": 16,
+    "failures": 0,
+    "minMs": 91.994,
+    "maxMs": 92.447,
+    "sameFourCdnAddresses": true
+  }
+}

@@ -44,3 +44,36 @@ the baseline SDK and does not rebuild changed SDK source; its existing release
 policy also requires separately qualifying prover changes. Resolve these actual
 publication dependencies without weakening source/provenance checks or changing
 contracts. No runtime or infrastructure mutation was made during this diagnosis.
+
+## Follow-up: reproduced long stalls traced before HTTP
+
+An instrumented Python urllib probe separates DNS, individual socket connections,
+TLS, HTTP response waiting and body reading. Two of30 fresh requests took25.455
+and25.558seconds: each spent25seconds timing out on a TCP connection before
+trying another address successfully. No HTTP request was sent during that wait.
+
+With a15-second connection timeout, a subsequent30.474-second request spent
+15.001seconds connecting to3.175.81.187, another15.001seconds to3.175.81.28, then
+connected to3.175.81.172 in112.9ms. TLS took116.8ms and HTTP response waiting
+222.2ms. Independent raw TCP probes reproduced timeouts on the first two
+addresses. This proves the reproduced stalls occurred before application handling,
+not during gas-price computation or readiness inspection. It does not locate the
+network fault within the client, intervening network or CDN edge.
+
+The original untraced15.463-second observation is consistent with one15-second
+connection timeout plus the normal request time; it cannot be definitively
+attributed retrospectively. Earlier assertions that readiness caused it were
+unsubstantiated and are withdrawn.
+
+Thirty browser requests all succeeded over an existing HTTP/2 connection to
+3.175.81.74: minimum215.850ms, average276.253ms, maximum523.915ms.29/30 were
+below500ms. This is not a guarantee of the strict500ms target and does not
+measure fresh-browser connection establishment. The owned browser was closed.
+
+[Sanitized phase evidence](../execution/evidence/G21/stable6/live-fee-pricing/connection-trace.json).
+Read-only independent review confirmed the phase attribution and these limits.
+No application/server changes were deployed during this diagnosis.
+
+The same four CDN addresses accepted16/16 direct TCP probes from the core server
+in91.994–92.447ms. This comparison suggests a path-dependent failure; it does
+not establish which network component dropped the client connection attempts.
