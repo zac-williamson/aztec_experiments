@@ -1,3 +1,4 @@
+import {pricePrivateFeeGasSettings} from './network-fee-pricing.mjs';
 import { Contract } from '@aztec-labs/aztec.js/contracts';
 import { Fr } from '@aztec-labs/foundation/curves/bn254';
 import { poseidon2HashWithSeparator } from '@aztec-labs/foundation/crypto/poseidon';
@@ -100,16 +101,17 @@ export function normalizePrivateFeeGasSettings(value) {
  * Reserves the selected maximum fee; public teardown refunds the difference from the protocol fee privately.
  */
 export async function preparePrivateFeePayment(input) {
-  try{return await prepare(input);}catch(error){if(error instanceof PrivateFeePreparationError)throw error;throw new PrivateFeePreparationError('PRIVATE_FEE_PREPARATION_FAILED');}
+  try{return await prepare(input);}catch(error){if(error instanceof PrivateFeePreparationError||error?.code==='ROLLING_FEE_CHANGED'||error?.code==='PRIVATE_FEE_INVALID_GAS')throw error;throw new PrivateFeePreparationError('PRIVATE_FEE_PREPARATION_FAILED');}
 }
-async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,expectedChainId,expectedVersion,gasSettings,claim,creditScope,paidLike,creditCheck='read-balance',measure=(_stage,operation)=>operation()}={}) {
+async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,expectedChainId,expectedVersion,gasSettings,feePricing='fixed',maximumFee,claim,creditScope,paidLike,creditCheck='read-balance',measure=(_stage,operation)=>operation()}={}) {
   check(['read-balance','deferred-balance'].includes(creditCheck)&&!(claim&&paidLike)&&!(creditCheck==='deferred-balance'&&(claim||paidLike)),'PRIVATE_FEE_CONFIGURATION_REQUIRED');
   check(wallet?.getChainInfo&&wallet?.registerContract&&node?.getNodeInfo&&node?.getContract,'PRIVATE_FEE_PROVIDER_REQUIRED');
   check(privateFeeAddress&&privateFeeArtifact,'PRIVATE_FEE_CONFIGURATION_REQUIRED');
   const paymentPXE=wallet.pxe;
   const author=address(owner),payer=address(privateFeeAddress),chainId=uint(expectedChainId,64),version=uint(expectedVersion,32);
   check(!author.equals(payer),'PRIVATE_FEE_OWNER_IS_PAYER');
-  const fixed=normalizePrivateFeeGasSettings(gasSettings);
+  let fixed=normalizePrivateFeeGasSettings(gasSettings);
+  check(['fixed','network'].includes(feePricing)&&(maximumFee===undefined||feePricing==='network'),'PRIVATE_FEE_CONFIGURATION_REQUIRED');
   const artifact=artifactOf(privateFeeArtifact);
   // Network identity, prices, publication and artifact derivation are independent.
   // Drain every read before releasing the caller's account lease on failure.
@@ -119,6 +121,17 @@ async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,e
   const failure=observations.find(value=>value.status==='rejected');if(failure)throw failure.reason;
   const [walletChain,nodeInfo,minimum,canonical,published]=observations.map(value=>value.value);
   check(uint(walletChain.chainId,64)===chainId&&uint(walletChain.version,32)===version&&uint(nodeInfo.l1ChainId,64)===chainId&&uint(nodeInfo.rollupVersion,32)===version,'PRIVATE_FEE_CHAIN_MISMATCH');
+  if(feePricing==='network'){
+    let priced;
+    try{priced=pricePrivateFeeGasSettings(gasSettings,minimum,{maximumFee});}
+    catch(error){
+      if(error?.code!=='ROLLING_FEE_CHANGED'||maximumFee===undefined)throw error;
+      // Preparation may return a new quote above an earlier approval. The caller
+      // must review that new maximum; this helper never signs or submits.
+      priced=pricePrivateFeeGasSettings(gasSettings,minimum);
+    }
+    fixed=normalizePrivateFeeGasSettings(priced.gasSettings);
+  }
   check(['feePerDaGas','feePerL2Gas'].every(key=>fixed.gasSettings.maxFeesPerGas[key]>=uint(minimum[key],128)),'PRIVATE_FEE_CAP_TOO_LOW');
   check(equal(canonical.address,payer),'PRIVATE_FEE_NONCANONICAL_ADDRESS');
   const binding=await measure('action.fee-binding',()=>Promise.allSettled([checkPublishedPrivateFee(published,canonical),privateFeeRegistered(wallet,canonical)]));
@@ -170,7 +183,7 @@ async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,e
   // at the caller's held account anchor, after private discovery has completed.
   return {...prepared,withAvailableCredit:async like=>{
     try{return {...prepared,...await selectPayment(like),creditCheck:'read-balance'};}
-    catch(error){if(error instanceof PrivateFeePreparationError)throw error;throw new PrivateFeePreparationError(error?.code==='PRIVATE_FEE_BALANCE_INSUFFICIENT'?error.code:'PRIVATE_FEE_PREPARATION_FAILED');}
+    catch(error){if(error instanceof PrivateFeePreparationError||error?.code==='ROLLING_FEE_CHANGED'||error?.code==='PRIVATE_FEE_INVALID_GAS')throw error;throw new PrivateFeePreparationError(error?.code==='PRIVATE_FEE_BALANCE_INSUFFICIENT'?error.code:'PRIVATE_FEE_PREPARATION_FAILED');}
   }};
 }
 

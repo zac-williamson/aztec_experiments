@@ -683,3 +683,26 @@ test('gzip negotiation cannot bypass final canonical rejection or decoded upstre
  const huge=await fixture(t,{upstreamReply:(_req,res)=>{res.setHeader('content-type','application/json');res.end(' '.repeat(QUERY_LIMITS.responseBytes+1));}});
  const rejected=await rawNodePost(huge.url,call(),'gzip');assert.equal(rejected.headers['content-encoding'],undefined);const value=JSON.parse(rejected.body.toString());assert(value.error);assert(!Object.hasOwn(value,'result'));assert.equal(huge.received.length,1);
 });
+
+
+test('fee-only reads use current native fee cache without state inspection',async t=>{
+ let inspections=0,price=12;
+ const f=await fixture(t,{inspect:async()=>{inspections++;throw Error('state is synchronizing');},upstreamReply:(_req,res,body)=>{
+  res.setHeader('x-aztec-l1ChainId','31337');res.setHeader('x-aztec-rollupVersion','1');res.setHeader('x-aztec-l1RollupAddress',rollupAddress);
+  res.end(JSON.stringify(body.map(c=>({jsonrpc:'2.0',id:c.id,result:{feePerDaGas:'0',feePerL2Gas:String(price)}}))));
+ }});
+ for(const expected of [12,29]){price=expected;const r=await f.post(call('node_getCurrentMinFees'));assert.equal(r.status,200);assert.equal((await r.json()).result.feePerL2Gas,String(expected));}
+ assert.equal(inspections,0);assert.equal(f.received.length,2);
+ const mixed=await f.post([call('node_getCurrentMinFees'),{...call(),id:2}]);
+ assert.equal(mixed.status,503);assert.equal(inspections,1);assert.equal(f.received.length,2);
+ const invalid=await f.post(call('node_getCurrentMinFees',[42]));assert.equal(invalid.status,400);assert.equal(f.received.length,2);
+});
+test('fee-only reads reject missing or mismatched response network identity',async t=>{
+ for(const bad of ['missing','l1ChainId','rollupVersion','l1RollupAddress']){
+  const f=await fixture(t,{inspect:async()=>{throw Error('must not inspect');},upstreamReply:(_req,res,body)=>{
+   if(bad!=='missing')for(const [k,v] of Object.entries({l1ChainId:'31337',rollupVersion:'1',l1RollupAddress:rollupAddress}))res.setHeader('x-aztec-'+k,k===bad?'wrong':v);
+   res.end(JSON.stringify(body.map(c=>({jsonrpc:'2.0',id:c.id,result:{feePerDaGas:'0',feePerL2Gas:'12'}}))));
+  }});
+  const result=await(await f.post(call('node_getCurrentMinFees'))).json();assert(result.error);assert.equal(f.received.length,1);
+ }
+});

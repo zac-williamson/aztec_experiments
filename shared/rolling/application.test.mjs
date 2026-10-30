@@ -1,3 +1,4 @@
+import {Gas,GasFees,GasSettings} from '@aztec-labs/stdlib/gas';
 import {deriveMasterNullifierHidingSecretKey,computeAppNullifierHidingKey} from '@aztec-labs/stdlib/keys';
 // Development fakes: no proving, network, funding or real transaction acceptance.
 // Real pinned ABI encoding and encrypted CAS journal are exercised below.
@@ -90,7 +91,7 @@ function fixture(){
       await state.beforeFeeBalance?.();if(state.feeReadError)throw state.feeReadError;
       return state.feeCredit??100n;
     },
-    prefetchBokClaimWitnesses:async input=>{(state.bokClaimWitnessPrefetches??=[]).push(input);},prefetchBoardClaimWitnesses:async input=>{(state.claimWitnessPrefetches??=[]).push(input);},prefetchOrdinaryPostWitnesses:async input=>{(state.witnessPrefetches??=[]).push(input);},likeFeeBudget:()=>({maximumFee:100n}),ordinaryPostFeeBudget:()=>({maximumFee:100n}),normalizePrivateFeeGasSettings:()=>({maximumFee:100n}),preparePrivateFeePayment:async()=>({availableCredit:100n}),estimatePrivateFeeTransaction:async input=>{
+    prefetchBokClaimWitnesses:async input=>{(state.bokClaimWitnessPrefetches??=[]).push(input);},prefetchBoardClaimWitnesses:async input=>{(state.claimWitnessPrefetches??=[]).push(input);},prefetchOrdinaryPostWitnesses:async input=>{(state.witnessPrefetches??=[]).push(input);},likeFeeBudget:()=>({maximumFee:100n}),ordinaryPostFeeBudget:()=>({maximumFee:100n}),normalizePrivateFeeGasSettings:()=>({maximumFee:100n}),preparePrivateFeePayment:async()=>({availableCredit:100n,metadata:{maximumFee:'100'}}),estimatePrivateFeeTransaction:async input=>{
       await input.guard();state.estimates++;state.calls.push(input.interaction);
       if(input.interaction.name==='screen'&&state.screenError)throw state.screenError;
       if(['set_bio','set_avatar'].includes(input.interaction.name)){assert.equal(input.interaction.args[1],state.profileVersion??0,'stale profile version');assert((state.profileVersion??0)<0xffffffff,'profile version exhausted');}
@@ -138,7 +139,7 @@ test('funding recovery mints private fee credit in the same collateral transacti
   assert.deepEqual(input.scope,{...f.options.deployment.network,portal:'0x'+'55'.repeat(20),token:'0x'+'66'.repeat(20),recipient:hex(2)});
   return {status:'claim-ready',claim:{contract:hex(2),kind:'private-fee-bridge',bridgeClaim}};
  };
- f.options.sdk.preparePrivateFeePayment=async input=>{payments.push(input);return {availableCredit:200n};};
+ f.options.sdk.preparePrivateFeePayment=async input=>{payments.push(input);return {availableCredit:200n,metadata:{maximumFee:'100'}};};
  const prepared=await f.restart().prepare({type:'claim-deposit',receipt:f.receipt,feeReceipt});
  assert(!JSON.stringify(prepared).includes(bridgeClaim.salt));assert.equal(f.state.sends,0);
  assert.equal((await f.restart().submitPrepared(prepared.intentId)).status,'confirmed');
@@ -161,7 +162,7 @@ function aggregateClaimFixture(usdc=false){
   assert.deepEqual(input.secrets,{recipientSalt:hex(91),bridgeSecret:hex(92)});assert.deepEqual(input.scope,retained.bokScope);
   return {status:f.state.bokClaimStatus??'claim-ready',claim:{contract:hex(5),method:'claim',args:['300',hex(91),f.state.changedClaim?hex(93):hex(92),'4']}};
  };
- f.state.payments=[];f.options.sdk.preparePrivateFeePayment=async input=>{f.state.payments.push(input);return {availableCredit:200n};};
+ f.state.payments=[];f.options.sdk.preparePrivateFeePayment=async input=>{f.state.payments.push(input);return {availableCredit:200n,metadata:{maximumFee:'100'}};};
  return {...f,retained,action:{type:'claim-deposit',receipt:f.receipt,feeReceipt,bokReceipt}};
 }
 for(const usdc of [false,true])test(`${usdc?'USDC':'ETH'} aggregate recovery batches collateral and Bok claims with bridged fees; encrypted reload never pays again`,async()=>{
@@ -1030,7 +1031,7 @@ function topUpFixture(kind='private-fee'){
   assert.equal(input.kind,'bok');assert.deepEqual(input.secrets,{recipientSalt:hex(91),bridgeSecret:hex(92)});assert.deepEqual(input.scope,retained.bokScope);
   return {status:f.state.claimStatus??'claim-ready',claim:{contract:hex(5),method:'claim',args:['300',hex(91),f.state.changedClaim?hex(99):hex(92),'4']}};
  };
- f.state.payments=[];f.options.sdk.preparePrivateFeePayment=async input=>{f.state.payments.push(input);return {availableCredit:200n};};
+ f.state.payments=[];f.options.sdk.preparePrivateFeePayment=async input=>{f.state.payments.push(input);return {availableCredit:200n,metadata:{maximumFee:'100'}};};
  return {...f,retained,bridge,action:{type:kind==='bok'?'claim-bok':'claim-private-fee',receipt:f.receipt}};
 }
 for(const kind of ['private-fee','bok'])test(`top-up ${kind} prepares separately with active collateral and one confirmed private journal send`,async()=>{
@@ -1939,7 +1940,7 @@ for(const bok of [false,true])test(`immediate ${bok?'Bok':'post'} overlaps fee p
  const hints=Promise.withResolvers(),payment=Promise.withResolvers(),both=Promise.withResolvers();let entered=0,payments=0;
  const arrive=()=>{if(++entered===2)both.resolve();};
  f.state.beforeHintsRead=async()=>{arrive();await hints.promise;};
- f.options.sdk.preparePrivateFeePayment=async()=>{payments++;arrive();await payment.promise;return {availableCredit:100n};};
+ f.options.sdk.preparePrivateFeePayment=async()=>{payments++;arrive();await payment.promise;return {availableCredit:100n,metadata:{maximumFee:'100'}};};
  const app=f.restart(),action=bok?bokAction():{type:'post',deposit:'9',content:'Overlapping independent reads'};
  const pending=app.prepare(action,{immediate:true});await both.promise;
  assert.equal(entered,2);assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
@@ -1952,7 +1953,7 @@ for(const failAt of ['arguments','payment'])test(`concurrent preparation drains 
  const started=Promise.withResolvers(),sibling=Promise.withResolvers();let entered=0,settled=false;
  const arrive=()=>{if(++entered===2)started.resolve();};const failure=Error(failAt);
  f.state.beforeHintsRead=async()=>{arrive();if(failAt==='arguments')throw failure;await sibling.promise;};
- f.options.sdk.preparePrivateFeePayment=async()=>{arrive();if(failAt==='payment')throw failure;await sibling.promise;return {availableCredit:100n};};
+ f.options.sdk.preparePrivateFeePayment=async()=>{arrive();if(failAt==='payment')throw failure;await sibling.promise;return {availableCredit:100n,metadata:{maximumFee:'100'}};};
  const app=f.restart(),pending=app.prepare({type:'post',deposit:'9',content:'Drain failures'},{immediate:true});
  const checked=assert.rejects(pending,error=>error===failure).then(()=>{settled=true;});
  await started.promise;await Promise.resolve();assert.equal(settled,false);assert.equal(f.values.size,0);
@@ -1960,7 +1961,7 @@ for(const failAt of ['arguments','payment'])test(`concurrent preparation drains 
 });
 for(const boundary of ['scope','application'])test(`prepared payment is not reused across a different ${boundary}`,async()=>{
  const f=fixture();let scope={},payments=0;f.options.accountSession.operationScope=()=>scope;
- f.options.sdk.preparePrivateFeePayment=async()=>{payments++;return {availableCredit:100n};};
+ f.options.sdk.preparePrivateFeePayment=async()=>{payments++;return {availableCredit:100n,metadata:{maximumFee:'100'}};};
  let app=f.restart();const intent=await app.prepare({type:'post',deposit:'9',content:'Fresh boundary'},{immediate:true});
  assert.equal(payments,1);if(boundary==='scope')scope={};else app=f.restart();
  await app.submitPrepared(intent.intentId);assert.equal(payments,2);assert.equal(f.state.sends,1);
@@ -1968,7 +1969,7 @@ for(const boundary of ['scope','application'])test(`prepared payment is not reus
 test('concurrent fee preparation rejects a replaced flow after draining reads',async()=>{
  const f=fixture();let scope={};f.options.accountSession.operationScope=()=>scope;
  const entered=Promise.withResolvers(),gate=Promise.withResolvers();
- f.options.sdk.preparePrivateFeePayment=async()=>{entered.resolve();await gate.promise;return {availableCredit:100n};};
+ f.options.sdk.preparePrivateFeePayment=async()=>{entered.resolve();await gate.promise;return {availableCredit:100n,metadata:{maximumFee:'100'}};};
  const app=f.restart(),pending=app.prepare({type:'post',deposit:'9',content:'Flow identity'},{immediate:true});
  await entered.promise;scope={};gate.resolve();await assert.rejects(pending,{code:'ROLLING_CONTEXT_CHANGED'});
  assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
@@ -1977,14 +1978,14 @@ test('concurrent fee preparation rejects a replaced flow after draining reads',a
 test('concurrent fee preparation cannot relabel an old PXE result after replacement',async()=>{
  const f=fixture(),scope={};f.options.accountSession.operationScope=()=>scope;
  const entered=Promise.withResolvers(),gate=Promise.withResolvers();
- f.options.sdk.preparePrivateFeePayment=async()=>{entered.resolve();await gate.promise;return {availableCredit:100n};};
+ f.options.sdk.preparePrivateFeePayment=async()=>{entered.resolve();await gate.promise;return {availableCredit:100n,metadata:{maximumFee:'100'}};};
  const app=f.restart(),pending=app.prepare({type:'post',deposit:'9',content:'PXE identity'},{immediate:true});
  await entered.promise;const old=f.options.accountSession.wallet.pxe;f.options.accountSession.wallet.pxe={...old};
  gate.resolve();await assert.rejects(pending,{code:'ROLLING_CONTEXT_CHANGED'});assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
 });
 test('a rewritten encrypted intent does not inherit its previous fee preparation',async()=>{
  const f=fixture();const flow={};let payments=0;f.options.accountSession.operationScope=()=>flow;
- f.options.sdk.preparePrivateFeePayment=async()=>{payments++;return {availableCredit:100n};};
+ f.options.sdk.preparePrivateFeePayment=async()=>{payments++;return {availableCredit:100n,metadata:{maximumFee:'100'}};};
  const app=f.restart(),intent=await app.prepare({type:'post',deposit:'9',content:'Record identity'},{immediate:true});
  const scope={account:hex(3),chainId:'31337',version:'1',rollup:'0x'+'11'.repeat(20),board:hex(1),portal:'0x'+'22'.repeat(20)};
  const slot=await createEncryptedJournalSlot({storage:f.options.privateStore,walletSecret:hex(8),walletSalt:'0',scopeText:JSON.stringify(['ROLLING_WORKFLOW_V1',l2JournalScopeText(scope)]),keyDomain:'ROLLING_WORKFLOW_V1'});
@@ -2012,7 +2013,7 @@ test('main-board policy anchor precedes private utilities and its public read ov
  };
  f.state.beforeHintsRead=async()=>{arrive();await readsGate.promise;};
  f.state.beforePolicyRead=async()=>{arrive();await readsGate.promise;};
- f.options.sdk.preparePrivateFeePayment=async()=>{arrive();await readsGate.promise;return {availableCredit:100n};};
+ f.options.sdk.preparePrivateFeePayment=async()=>{arrive();await readsGate.promise;return {availableCredit:100n,metadata:{maximumFee:'100'}};};
  const app=f.restart(),pending=app.prepare({type:'post',deposit:'9',content:'One anchor, concurrent reads'},{immediate:true});
  await headerEntered.promise;assert.equal(started,0);headerGate.resolve();await readsEntered.promise;
  assert.equal(f.values.size,0);readsGate.resolve();assert.equal((await pending).status,'prepared');
@@ -2024,7 +2025,7 @@ for(const replacement of ['scope','pxe'])test(`main-board anchor rejects ${repla
  const entered=Promise.withResolvers(),gate=Promise.withResolvers();let payments=0;
  const originalHeader=f.options.accountSession.wallet.pxe.getSyncedBlockHeader;
  f.options.accountSession.wallet.pxe.getSyncedBlockHeader=async()=>{entered.resolve();await gate.promise;return originalHeader();};
- f.options.sdk.preparePrivateFeePayment=async()=>{payments++;return {availableCredit:100n};};
+ f.options.sdk.preparePrivateFeePayment=async()=>{payments++;return {availableCredit:100n,metadata:{maximumFee:'100'}};};
  const app=f.restart(),pending=app.prepare({type:'post',deposit:'9',content:'Exact anchor owner'},{immediate:true});
  const rejected=assert.rejects(pending,{code:'ROLLING_CONTEXT_CHANGED'});await entered.promise;
  if(replacement==='scope')scope={};else f.options.accountSession.wallet.pxe={...f.options.accountSession.wallet.pxe};
@@ -2161,7 +2162,7 @@ for(const kind of ['post','like'])for(const replaceScope of [false,true])test(`$
  let started=0,payments=0;const gate=Promise.withResolvers(),entered=Promise.withResolvers(),inspect=f.options.sdk.inspectTrustedNode;
  const arrive=async()=>{if(++started===2)entered.resolve();await gate.promise;};
  f.options.sdk.inspectTrustedNode=async(...args)=>{await arrive();return inspect(...args);};
- f.options.sdk.preparePrivateFeePayment=async input=>{payments++;assert.equal(input.creditCheck,payments===1?'deferred-balance':undefined);await arrive();if(input.creditCheck===undefined){assert.equal(Boolean(input.paidLike),kind==='like');return {creditCheck:'read-balance',availableCredit:100n};}return {creditCheck:input.creditCheck,withAvailableCredit:async paid=>{assert.equal(Boolean(paid),kind==='like');return {creditCheck:'read-balance',availableCredit:100n};}};};f.app=f.restart();
+ f.options.sdk.preparePrivateFeePayment=async input=>{payments++;assert.equal(input.creditCheck,payments===1?'deferred-balance':undefined);await arrive();if(input.creditCheck===undefined){assert.equal(Boolean(input.paidLike),kind==='like');return {creditCheck:'read-balance',availableCredit:100n,metadata:{maximumFee:'100'}};}return {creditCheck:input.creditCheck,withAvailableCredit:async paid=>{assert.equal(Boolean(paid),kind==='like');return {creditCheck:'read-balance',availableCredit:100n,metadata:{maximumFee:'100'}};}};};f.app=f.restart();
  const reading=f.app.prefetchContext(kind==='post'?{ordinaryPayment:true}:{likePayment:true});await entered.promise;assert.equal(payments,1);assert.equal(f.state.privateReads.length,0);gate.resolve();await reading;
  if(replaceScope)scope={preparationReads:[]};
  const prepared=await f.app.prepare(kind==='post'?{type:'post',deposit:'9',content:'Early ordinary payment'}:paidLike('42'),{immediate:true});await f.app.submitPrepared(prepared.intentId);
@@ -2171,13 +2172,13 @@ for(const kind of ['post','like'])for(const failure of ['readiness','payment'])t
  const f=fixture(),scope={preparationReads:[]};f.options.accountSession.operationScope=()=>scope;
  const gate=Promise.withResolvers(),entered=Promise.withResolvers();let settled=false;
  f.options.sdk.inspectTrustedNode=async()=>{if(failure==='readiness')throw Error(failure);entered.resolve();await gate.promise;};
- f.options.sdk.preparePrivateFeePayment=async()=>{if(failure==='payment')throw Error(failure);entered.resolve();await gate.promise;return {};};f.app=f.restart();
+ f.options.sdk.preparePrivateFeePayment=async()=>{if(failure==='payment')throw Error(failure);entered.resolve();await gate.promise;return {metadata:{maximumFee:'100'}};};f.app=f.restart();
  const work=f.app.prefetchContext(kind==='post'?{ordinaryPayment:true}:{likePayment:true}).finally(()=>settled=true),observed=assert.rejects(work,new RegExp(failure));
  await entered.promise;await new Promise(r=>setImmediate(r));assert.equal(settled,false);gate.resolve();await observed;assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
 });
 for(const kind of ['post','like'])for(const replacement of ['scope','pxe'])test(`early ${kind} payment rejects ${replacement} replacement before publishing its owned result`,async()=>{
  const f=fixture();let scope={preparationReads:[]};f.options.accountSession.operationScope=()=>scope;
- const entered=Promise.withResolvers(),gate=Promise.withResolvers();f.options.sdk.preparePrivateFeePayment=async()=>{entered.resolve();await gate.promise;return {};};f.app=f.restart();
+ const entered=Promise.withResolvers(),gate=Promise.withResolvers();f.options.sdk.preparePrivateFeePayment=async()=>{entered.resolve();await gate.promise;return {metadata:{maximumFee:'100'}};};f.app=f.restart();
  const work=f.app.prefetchContext(kind==='post'?{ordinaryPayment:true}:{likePayment:true}),rejected=assert.rejects(work,{code:'ROLLING_CONTEXT_CHANGED'});await entered.promise;
  if(replacement==='scope')scope={};else f.options.accountSession.wallet.pxe={...f.options.accountSession.wallet.pxe};gate.resolve();await rejected;assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
 });
@@ -2366,7 +2367,7 @@ for(const change of ['receipt','owner'])test(`same-operation claim payment reuse
 
 for(const action of [paidLike('8'),{type:'subboard',slug:'new-board',name:'New',description:'Exact',rules:''},{type:'screen',deposit:'9'},{type:'withdraw',deposit:'9'},...moderatorActions])test('generic action '+action.type+' reuses exactly owned generic payment once',async()=>{
  const f=moderatorActions.includes(action)?moderatorFixture():fixture(),scope={synchronized:true};let payments=0;
- f.options.accountSession.operationScope=()=>scope;f.options.sdk.preparePrivateFeePayment=async input=>{payments++;assert.equal(input.creditCheck,undefined,'Action payment reads current private credit');return {availableCredit:100n};};f.app=f.restart();
+ f.options.accountSession.operationScope=()=>scope;f.options.sdk.preparePrivateFeePayment=async input=>{payments++;assert.equal(input.creditCheck,undefined,'Action payment reads current private credit');return {availableCredit:100n,metadata:{maximumFee:'100'}};};f.app=f.restart();
  const prepared=await f.app.prepare(action,{immediate:true});assert.equal(payments,1);assert.equal(f.state.estimates,0);assert.equal(prepared.maximumFee,'100');
  assert.equal((await f.app.submitPrepared(prepared.intentId)).status,'confirmed');assert.equal(payments,1);assert.equal(f.state.estimates,1);assert.equal(f.state.sends,1);
 });
@@ -2375,14 +2376,14 @@ for(const failed of [null,'authority','payment'])test('generic moderation author
  f.options.accountSession.operationScope=()=>scope;const arrive=()=>{if(++calls===2)entered.resolve();};
  const read=f.options.accountSession.node.getPublicStorageAt;
  f.options.accountSession.node.getPublicStorageAt=async(...args)=>{arrive();if(failed==='authority')throw Error('authority');await release.promise;return read(...args);};
- f.options.sdk.preparePrivateFeePayment=async()=>{arrive();if(failed==='payment')throw Error('payment');await release.promise;return {availableCredit:100n};};f.app=f.restart();
+ f.options.sdk.preparePrivateFeePayment=async()=>{arrive();if(failed==='payment')throw Error('payment');await release.promise;return {availableCredit:100n,metadata:{maximumFee:'100'}};};f.app=f.restart();
  const work=f.app.prepare(moderatorActions[0],{immediate:true}).finally(()=>settled=true),observed=failed?assert.rejects(work,new RegExp(failed)):work;
  await entered.promise;assert.equal(calls,2);assert.equal(settled,false);assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
  release.resolve();await observed;if(failed)assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
 });
 for(const change of ['scope','pxe'])test('generic payment preparation rejects changed '+change+' before intent',async()=>{
  const f=moderatorFixture();let scope={synchronized:true};const entered=Promise.withResolvers(),release=Promise.withResolvers();
- f.options.accountSession.operationScope=()=>scope;f.options.sdk.preparePrivateFeePayment=async()=>{entered.resolve();await release.promise;return {availableCredit:100n};};f.app=f.restart();
+ f.options.accountSession.operationScope=()=>scope;f.options.sdk.preparePrivateFeePayment=async()=>{entered.resolve();await release.promise;return {availableCredit:100n,metadata:{maximumFee:'100'}};};f.app=f.restart();
  const work=f.app.prepare(moderatorActions[0],{immediate:true}),observed=assert.rejects(work,{code:'ROLLING_CONTEXT_CHANGED'});await entered.promise;
  if(change==='scope')scope={synchronized:true};else f.options.accountSession.wallet.pxe={...f.options.accountSession.wallet.pxe};release.resolve();await observed;assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
 });
@@ -2438,7 +2439,7 @@ for(const change of ['cached-node','route'])test(`claim refuses native membershi
 test('paid likes and other actions use native estimation under the configured cap',async()=>{
  for(const [type,immediate]of [['like',true],['like',false],['bio',true]]){
   const f=fixture(),scope={synchronized:true},seen=[];f.options.accountSession.operationScope=()=>scope;
-  f.options.sdk.preparePrivateFeePayment=async input=>{seen.push(input.creditCheck);return input.creditCheck?{creditCheck:input.creditCheck}:{availableCredit:100n};};
+  f.options.sdk.preparePrivateFeePayment=async input=>{seen.push(input.creditCheck);return input.creditCheck?{creditCheck:input.creditCheck}:{availableCredit:100n,metadata:{maximumFee:'100'}};};
   const estimate=f.options.sdk.estimatePrivateFeeTransaction;let requested;
   f.options.sdk.estimatePrivateFeeTransaction=async input=>{requested=input;return estimate(input);};
   const app=f.restart(),action=type==='bio'?{type,name:'5',expectedVersion:'0',content:'Profile'}:paidLike('42');
@@ -2456,9 +2457,9 @@ test('paid like credit failure cannot save a workflow or begin a proof',async()=
 
 test('early metadata reuse must bind paid-like arguments during the current credit read',async()=>{
  const f=fixture(),scope={preparationReads:[]},seen=[];f.options.accountSession.operationScope=()=>scope;
- f.options.sdk.preparePrivateFeePayment=async input=>{seen.push(input.creditCheck);assert.equal(input.paidLike,undefined);return {creditCheck:'deferred-balance',withAvailableCredit:async paid=>{
+ f.options.sdk.preparePrivateFeePayment=async input=>{seen.push(input.creditCheck);assert.equal(input.paidLike,undefined);return {metadata:{maximumFee:'100'},creditCheck:'deferred-balance',withAvailableCredit:async paid=>{
   assert.equal(String(paid.board),hex(1));assert.equal(String(paid.post),hex(42));assert.deepEqual({x:String(paid.key.x),y:String(paid.key.y)},tipKey());
-  return {creditCheck:'read-balance',availableCredit:100n};
+  return {creditCheck:'read-balance',availableCredit:100n,metadata:{maximumFee:'100'}};
  }};};f.app=f.restart();
  await f.app.prefetchContext({ordinaryPayment:true});const prepared=await f.app.prepare(paidLike('42'),{immediate:true});await f.app.submitPrepared(prepared.intentId);
  assert.deepEqual(seen,['deferred-balance']);assert.equal(f.state.sends,1);
@@ -2747,7 +2748,7 @@ test('withdrawal observation cannot survive operation replacement while predeces
 
 for(const type of ['withdraw-bok','cancel-bok-request','expire-bok-request'])for(const changeScope of [false,true])test(`Bok fee wave: ${type} ${changeScope?'new operation refreshes':'same operation reuses'} metadata`,async()=>{
  const f=bokAccountingFixture();let scope={synchronized:true},payments=0;f.options.accountSession.operationScope=()=>scope;
- f.options.sdk.preparePrivateFeePayment=async()=>{payments++;return {availableCredit:100n};};f.app=f.restart();
+ f.options.sdk.preparePrivateFeePayment=async()=>{payments++;return {availableCredit:100n,metadata:{maximumFee:'100'}};};f.app=f.restart();
  if(type!=='withdraw-bok'){f.pages[0].requests[0].available='60';f.pages[0].requests[0].reserved='0';await finishBokAccounting(f);}
  const action=type==='withdraw-bok'?{type,amount:'500',recipient:'0x'+'33'.repeat(20)}:{type,requestId:hex(11)};
  const intent=await f.app.prepare(action,{immediate:true});assert.equal(payments,1);assert.equal(f.state.estimates,0);
@@ -2759,7 +2760,7 @@ for(const failure of [null,'balance','portal','payment','owner'])test(`Bok fee w
  const wait=async name=>{seen.add(name);if(seen.size===3)entered.resolve();if(name===failure)throw error;await held.promise;};
  const native=f.options.sdk.Contract.at,resolve=f.options.funding.resolveBokWithdrawal;
  f.options.sdk.Contract.at=async(...args)=>{const contract=await native(...args);if(String(args[0])!==hex(5))return contract;return {methods:new Proxy(contract.methods,{get:(methods,key)=>key!=='balance_of'?methods[key]:(...values)=>({simulate:async()=>{await wait('balance');return methods.balance_of(...values).simulate();}})})};};
- f.options.funding.resolveBokWithdrawal=async()=>{await wait('portal');return resolve();};f.options.sdk.preparePrivateFeePayment=async()=>{await wait('payment');return {availableCredit:100n};};f.app=f.restart();
+ f.options.funding.resolveBokWithdrawal=async()=>{await wait('portal');return resolve();};f.options.sdk.preparePrivateFeePayment=async()=>{await wait('payment');return {availableCredit:100n,metadata:{maximumFee:'100'}};};f.app=f.restart();
  const pending=f.app.prepare({type:'withdraw-bok',amount:'500',recipient:'0x'+'33'.repeat(20)},{immediate:true}).finally(()=>done=true),result=failure?assert.rejects(pending,failure==='owner'?{code:'ROLLING_CONTEXT_CHANGED'}:e=>e===error):pending;
  await entered.promise;await new Promise(setImmediate);assert.equal(done,false);assert.equal(f.values.size,0);assert.equal(f.state.sends,0);if(failure==='owner')scope={synchronized:true};held.resolve();await result;if(failure)assert.equal(f.values.size,0);
 });
@@ -2770,7 +2771,7 @@ for(const type of ['cancel-bok-request','expire-bok-request'])for(const failure 
  const before=new Map(f.values),gate=Promise.withResolvers(),entered=Promise.withResolvers(),seen=new Set(),error=Error('release wave failed');let done=false;
  const wait=async name=>{seen.add(name);if(seen.size===2)entered.resolve();if(name===failure)throw error;await gate.promise;};
  const block=f.options.accountSession.node.getBlockData;f.options.accountSession.node.getBlockData=async(...args)=>{await wait('anchor');return block(...args);};
- f.options.sdk.preparePrivateFeePayment=async()=>{await wait('payment');return {availableCredit:100n};};
+ f.options.sdk.preparePrivateFeePayment=async()=>{await wait('payment');return {availableCredit:100n,metadata:{maximumFee:'100'}};};
  const pending=f.app.prepare({type,requestId:hex(11)},{immediate:true}).finally(()=>done=true),rejected=assert.rejects(pending);
  await entered.promise;await new Promise(setImmediate);assert.equal(done,false);assert.deepEqual(f.values,before);assert.equal(f.state.sends,0);gate.resolve();await rejected;assert.deepEqual(f.values,before);
 });
@@ -2778,7 +2779,7 @@ for(const type of ['cancel-bok-request','expire-bok-request'])for(const failure 
 for(const mode of ['success','payment','availability','both','taken','fork','owner','scope','input-mutation'])test('name read wave overlaps and drains '+mode,{timeout:5000},async()=>{
  const f=fixture(),entered=Promise.withResolvers(),gate=Promise.withResolvers();let scope={synchronized:true},starts=0,payments=0,settled=false;
  const arrive=()=>{if(++starts===2)entered.resolve();};f.options.accountSession.operationScope=()=>scope;
- f.options.sdk.preparePrivateFeePayment=()=>{payments++;arrive();if(['payment','both'].includes(mode))throw Error('payment unavailable');return gate.promise.then(()=>({availableCredit:100n}));};
+ f.options.sdk.preparePrivateFeePayment=()=>{payments++;arrive();if(['payment','both'].includes(mode))throw Error('payment unavailable');return gate.promise.then(()=>({availableCredit:100n,metadata:{maximumFee:'100'}}));};
  f.state.beforeNameRead=async()=>{arrive();if(['availability','both'].includes(mode))throw Error('availability unavailable');await gate.promise;};
  const app=f.restart(),input={type:'name',first:'River',last:'Lane'};
  const work=app.prepare(input,{immediate:true}).finally(()=>settled=true);
@@ -3558,7 +3559,7 @@ for(const action of deferredMetadataActions)test(`${action.type} public fee meta
  const f=fixture(),scope={preparationReads:[]};f.options.accountSession.operationScope=()=>scope;
  const discovery=Promise.withResolvers();scope.contractStateReady=discovery.promise;
  let metadata=0,credit=0,ready=false;
- f.options.sdk.preparePrivateFeePayment=async input=>{assert.equal(input.creditCheck,'deferred-balance');metadata++;return {creditCheck:input.creditCheck,withAvailableCredit:async()=>{assert.equal(ready,true);credit++;return {creditCheck:'read-balance',availableCredit:100n};}};};
+ f.options.sdk.preparePrivateFeePayment=async input=>{assert.equal(input.creditCheck,'deferred-balance');metadata++;return {creditCheck:input.creditCheck,withAvailableCredit:async()=>{assert.equal(ready,true);credit++;return {creditCheck:'read-balance',availableCredit:100n,metadata:{maximumFee:'100'}};}};};
  f.app=f.restart();await f.app.prefetchContext({deferredPayment:true});assert.equal(metadata,1);assert.equal(credit,0);
  let done=false;const preparing=f.app.prepare(action,{immediate:true}).finally(()=>done=true);
  await new Promise(resolve=>setImmediate(resolve));assert.equal(done,false);assert.equal(credit,0);
@@ -3569,21 +3570,21 @@ for(const failure of ['readiness','payment'])test(`deferred payment prefetch ${f
  const f=fixture(),scope={preparationReads:[]};f.options.accountSession.operationScope=()=>scope;
  const gate=Promise.withResolvers(),entered=Promise.withResolvers();let settled=false;
  f.options.sdk.inspectTrustedNode=async()=>{if(failure==='readiness')throw Error(failure);entered.resolve();await gate.promise;};
- f.options.sdk.preparePrivateFeePayment=async()=>{if(failure==='payment')throw Error(failure);entered.resolve();await gate.promise;return {};};f.app=f.restart();
+ f.options.sdk.preparePrivateFeePayment=async()=>{if(failure==='payment')throw Error(failure);entered.resolve();await gate.promise;return {metadata:{maximumFee:'100'}};};f.app=f.restart();
  const work=f.app.prefetchContext({deferredPayment:true}).finally(()=>settled=true),observed=assert.rejects(work,new RegExp(failure));
  await entered.promise;await new Promise(r=>setImmediate(r));assert.equal(settled,false);gate.resolve();await observed;assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
 });
 for(const replacement of ['scope','pxe','node'])test(`deferred payment rejects ${replacement} replacement during fresh credit read`,async()=>{
  const f=fixture();let scope={preparationReads:[]};f.options.accountSession.operationScope=()=>scope;
  const entered=Promise.withResolvers(),gate=Promise.withResolvers();
- f.options.sdk.preparePrivateFeePayment=async()=>({creditCheck:'deferred-balance',withAvailableCredit:async()=>{entered.resolve();await gate.promise;return {creditCheck:'read-balance',availableCredit:100n};}});f.app=f.restart();
+ f.options.sdk.preparePrivateFeePayment=async()=>({metadata:{maximumFee:'100'},creditCheck:'deferred-balance',withAvailableCredit:async()=>{entered.resolve();await gate.promise;return {creditCheck:'read-balance',availableCredit:100n,metadata:{maximumFee:'100'}};}});f.app=f.restart();
  await f.app.prefetchContext({deferredPayment:true});
  const work=f.app.prepare(deferredMetadataActions[0],{immediate:true}),rejected=assert.rejects(work,{code:'ROLLING_CONTEXT_CHANGED'});await entered.promise;
  if(replacement==='scope')scope={};else if(replacement==='pxe')f.options.accountSession.wallet.pxe={...f.options.accountSession.wallet.pxe};else f.options.accountSession.node={...f.options.accountSession.node};gate.resolve();await rejected;assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
 });
 test('deferred fee metadata cannot carry a balance or be consumed by a different operation',async()=>{
  const f=fixture();let scope={preparationReads:[]};f.options.accountSession.operationScope=()=>scope;const seen=[];
- f.options.sdk.preparePrivateFeePayment=async input=>{seen.push(input.creditCheck);return input.creditCheck==='deferred-balance'?{creditCheck:'deferred-balance',withAvailableCredit:()=>assert.fail('old operation credit')}:{creditCheck:'read-balance',availableCredit:100n};};f.app=f.restart();
+ f.options.sdk.preparePrivateFeePayment=async input=>{seen.push(input.creditCheck);return input.creditCheck==='deferred-balance'?{metadata:{maximumFee:'100'},creditCheck:'deferred-balance',withAvailableCredit:()=>assert.fail('old operation credit')}:{creditCheck:'read-balance',availableCredit:100n,metadata:{maximumFee:'100'}};};f.app=f.restart();
  await f.app.prefetchContext({deferredPayment:true});scope={preparationReads:[]};
  const prepared=await f.app.prepare(deferredMetadataActions[0],{immediate:true});await f.app.submitPrepared(prepared.intentId);
  assert.deepEqual(seen,['deferred-balance',undefined]);assert.equal(f.state.sends,1);
@@ -3591,7 +3592,7 @@ test('deferred fee metadata cannot carry a balance or be consumed by a different
 
 test('deferred empty-credit rejection happens before writing an intent or attempting a proof',async()=>{
  const f=fixture(),scope={preparationReads:[]};f.options.accountSession.operationScope=()=>scope;
- let credits=0;f.options.sdk.preparePrivateFeePayment=async()=>({creditCheck:'deferred-balance',withAvailableCredit:async()=>{credits++;throw Object.assign(Error('empty'),{code:'PRIVATE_FEE_BALANCE_INSUFFICIENT'});}});f.app=f.restart();
+ let credits=0;f.options.sdk.preparePrivateFeePayment=async()=>({metadata:{maximumFee:'100'},creditCheck:'deferred-balance',withAvailableCredit:async()=>{credits++;throw Object.assign(Error('empty'),{code:'PRIVATE_FEE_BALANCE_INSUFFICIENT'});}});f.app=f.restart();
  await f.app.prefetchContext({deferredPayment:true});assert.equal(credits,0);
  await assert.rejects(f.app.prepare(deferredMetadataActions[0],{immediate:true}),{code:'PRIVATE_FEE_BALANCE_INSUFFICIENT'});
  assert.equal(credits,1);assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
@@ -3718,4 +3719,11 @@ test('paid like revalidates its published key before submission and retains the 
  const f=fixture(),action=paidLike('9'),prepared=await f.app.prepare(action);action.tipKey.x='0';
  assert.deepEqual(prepared.action,paidLike('9'));f.state.tipKeyHash=Fr.ONE;
  await assert.rejects(f.app.submitPrepared(prepared.intentId),{code:'ROLLING_TIP_KEY_CHANGED'});assert.equal(f.state.sends,0);
+});
+
+test('new immediate action approves the current payment maximum rather than deployment prices',async()=>{
+ const f=fixture();f.state.fee=300n;
+ f.options.sdk.preparePrivateFeePayment=async input=>{assert.equal(input.feePricing,input.gasSettings.maxFeesPerGas?.feePerL2Gas==='3'?'fixed':'network');return {availableCredit:1000n,metadata:{maximumFee:'300'},gasSettings:new GasSettings(new Gas(10,100),new Gas(1,10),new GasFees(0n,3n),new GasFees(0n,0n))};};
+ const app=f.restart();const prepared=await app.prepare({type:'bio',name:'3',expectedVersion:'0',content:'Current fees'},{immediate:true});
+ assert.equal(prepared.maximumFee,'300');await app.submitPrepared(prepared.intentId);assert.equal(f.state.sends,1);
 });

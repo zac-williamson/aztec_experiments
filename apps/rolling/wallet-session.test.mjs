@@ -969,8 +969,8 @@ test('funding admission propagates private credit and context failures instead o
  await assert.rejects(verifyRollingFundingCredit(options),e=>e===failure);
  options.readExistingCredit=async()=>2000n;options.contextGuard=async()=>{throw failure;};await assert.rejects(verifyRollingFundingCredit(options),e=>e===failure);
 });
-test('funding maximum uses native gas limit and rejects stale fee rates before credit reads',async()=>{
- const f=await deploymentFixture();let reads=0;await assert.rejects(verifyRollingFundingCredit({sdk:f.options.sdk,node:{getCurrentMinFees:async()=>({feePerDaGas:2n,feePerL2Gas:1n})},gasSettings:f.options.config.privateFee.gasSettings,incomingAmount:'2000',contextGuard:async()=>{},readExistingCredit:async()=>{reads++;return 2000n;}}),{code:'PRIVATE_FEE_CAP_TOO_LOW'});assert.equal(reads,0);
+test('funding admission uses current rates instead of stale configured prices',async()=>{
+ const f=await deploymentFixture();let reads=0;await assert.rejects(verifyRollingFundingCredit({sdk:f.options.sdk,node:{getCurrentMinFees:async()=>({feePerDaGas:2n,feePerL2Gas:1n})},gasSettings:f.options.config.privateFee.gasSettings,incomingAmount:'2000',contextGuard:async()=>{},readExistingCredit:async()=>{reads++;return 2000n;}}),{code:'ROLLING_FUNDING_FEE_CREDIT_INSUFFICIENT',minimumFeeCredit:'3000'});assert.equal(reads,1);
 });
 test('aggregate session checks funded small credit under its private account lock with native displayed cap',async()=>{
  const f=await aggregateSessionFixture();let calls=0;

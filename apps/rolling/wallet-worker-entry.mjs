@@ -7,7 +7,8 @@ import {APPLICATION_METHODS,FUNDING_METHODS,TOPUP_METHODS,WITHDRAWAL_METHODS,DEP
 
 const sdk=globalThis.__aztec,ethers=globalThis.ethers,routing=globalThis.BillboardPrivateFeeRouting;
 let closed=false,closing=false,settings,warming,cryptoReady,proverReady,pxeArtifactsReady,publicState,account,accountPreparation,funding,opening,session,creating,refundSession,fundingBusy=false,fundingCompletion=Promise.resolve();
-let stopPerformance=()=>{};
+let stopPerformance=()=>{},latestFeeSettings;
+const observeFeePricing=prices=>{latestFeeSettings=structuredClone(prices);};
 let nextCallback=0;const pendingCallbacks=new Map(),operations=new Map();
 const send=value=>globalThis.postMessage(value);
 function localGuard(){if(closed)throw workerFailure('ROLLING_CONTEXT_CHANGED');}
@@ -85,7 +86,7 @@ async function preparePublic(){
  localGuard();
  return publicState;
 }
-function metadata(){return {bokConfigured:settings.config.bok!==undefined,fundingEthAvailable:settings.config.aggregateFunding!==undefined,usdcAvailable:settings.config.aggregateFunding?.usdcRelayAddress!==undefined,privateFeeCap:sdk.normalizePrivateFeeGasSettings(settings.config.privateFee.gasSettings).gasSettings.getFeeLimit().toBigInt().toString(),ordinaryPostingFeeLimit:sdk.ordinaryPostFeeLimit(settings.config.privateFee.gasSettings).toString(),refundOnly:settings.config.refundOnly===true};}
+function metadata(){return {bokConfigured:settings.config.bok!==undefined,fundingEthAvailable:settings.config.aggregateFunding!==undefined,usdcAvailable:settings.config.aggregateFunding?.usdcRelayAddress!==undefined,privateFeeCap:sdk.normalizePrivateFeeGasSettings(latestFeeSettings??settings.config.privateFee.gasSettings).gasSettings.getFeeLimit().toBigInt().toString(),ordinaryPostingFeeLimit:sdk.ordinaryPostFeeLimit(latestFeeSettings??settings.config.privateFee.gasSettings).toString(),refundOnly:settings.config.refundOnly===true};}
 function initialize(value){
  if(settings||!sdk||!ethers||!routing||!globalThis.makeClaimSecretStore||!globalThis.BillboardCRS)throw workerFailure();
  settings=structuredClone(value);
@@ -129,13 +130,13 @@ async function openAccount(raw){
  if(closing)throw workerFailure('ROLLING_CONTEXT_CHANGED');
  if(account)throw workerFailure('ROLLING_BUSY');account=Object.freeze({secretKey:captured.secretKey,salt:String(captured.salt),address:derived.address});accountPreparation=prepared.preparation;
  opening=(async()=>{const state=await warming;await guard();
-  if(settings.config.aggregateFunding&&!settings.config.refundOnly)funding=await createRollingFundingSession({sdk,ethers,config:settings.config,account,deploymentPreparation:state.deploymentPreparation,boardArtifact:state.boardArtifact,privateFeeArtifact:state.privateFeeArtifact,node:state.node,contextGuard:guard,captureWallet,claimStore:globalThis.makeClaimSecretStore(account.secretKey,account.salt),relay:relay(),provider:state.fundingProvider,scopePreparation:state.scopePreparation,onProgress:progress,proofsEnabled:settings.proofsEnabled});
+  if(settings.config.aggregateFunding&&!settings.config.refundOnly)funding=await createRollingFundingSession({onFeePricing:observeFeePricing,sdk,ethers,config:settings.config,account,deploymentPreparation:state.deploymentPreparation,boardArtifact:state.boardArtifact,privateFeeArtifact:state.privateFeeArtifact,node:state.node,contextGuard:guard,captureWallet,claimStore:globalThis.makeClaimSecretStore(account.secretKey,account.salt),relay:relay(),provider:state.fundingProvider,scopePreparation:state.scopePreparation,onProgress:progress,proofsEnabled:settings.proofsEnabled});
   if(!settings.config.refundOnly)startSession();
   return metadata();})();return opening;
 }
 function startSession(){
  if(!account||settings.config.refundOnly)throw workerFailure('ROLLING_SESSION_CONFIG');if(session)return session;if(creating)return creating;
- creating=background('private-session',createRollingWalletSession({proverReady,pxePreparation:publicState.pxePreparation,sdk,routing,ethers,config:settings.config,boardArtifact:publicState.boardArtifact,privateFeeArtifact:publicState.privateFeeArtifact,getBokArtifact,account,accountPreparation,trustedQuery:settings.trustedQuery,remoteProver:settings.remoteProver,contextGuard:guard,claimStore:globalThis.makeClaimSecretStore(account.secretKey,account.salt),captureFundingWallet:captureWallet,fundingRelay:relay(),fundingContext:funding,onProgress:progress,proofsEnabled:settings.proofsEnabled}).then(value=>(session=value)));return creating;
+ creating=background('private-session',createRollingWalletSession({onFeePricing:observeFeePricing,proverReady,pxePreparation:publicState.pxePreparation,sdk,routing,ethers,config:settings.config,boardArtifact:publicState.boardArtifact,privateFeeArtifact:publicState.privateFeeArtifact,getBokArtifact,account,accountPreparation,trustedQuery:settings.trustedQuery,remoteProver:settings.remoteProver,contextGuard:guard,claimStore:globalThis.makeClaimSecretStore(account.secretKey,account.salt),captureFundingWallet:captureWallet,fundingRelay:relay(),fundingContext:funding,onProgress:progress,proofsEnabled:settings.proofsEnabled}).then(value=>(session=value)));return creating;
 }
 async function ensureSession(){await opening;const result=await startSession();await fundingCompletion;return result;}
 async function ensureRefundSession(){
@@ -199,5 +200,5 @@ globalThis.addEventListener('message',event=>{
   const visible=!['initialize','deriveAccount','openAccount','close','observeIncluded','withdrawal.observe','withdrawal.waitUntilReady'].includes(message.method)&&(!message.method.startsWith('funding.')||message.method==='funding.advanceClaim');
   if(visible)foreground++;
   return Promise.resolve().then(()=>invoke(message.method,args)).finally(()=>{if(visible)foreground--;});
- }).then(value=>structuredClone(value)).then(value=>send({type:'result',id:message.id,value}),error=>send({type:'result',id:message.id,error:errorRecord(error)})).finally(()=>operations.delete(message.id));
+ }).then(value=>structuredClone(value)).then(value=>send({type:'result',id:message.id,value,...(settings?{metadata:metadata()}:{})}),error=>send({type:'result',id:message.id,error:errorRecord(error)})).finally(()=>operations.delete(message.id));
 });

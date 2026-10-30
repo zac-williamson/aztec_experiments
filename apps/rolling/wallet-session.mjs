@@ -1,5 +1,5 @@
 import {consumeRollingAccountPreparation} from '../../shared/rolling/account-preparation.mjs';
-import {createRollingFundingSession,verifyRollingTopupClaim,readRollingFundingOperation,invalidateRollingFundingNativeSnapshot} from '../../shared/rolling/funding-session.mjs';
+import {createRollingFundingSession,readRollingFundingFees,verifyRollingTopupClaim,readRollingFundingOperation,invalidateRollingFundingNativeSnapshot} from '../../shared/rolling/funding-session.mjs';
 export {createRollingFundingSession,verifyRollingFundingCredit,verifyRollingAggregateScope,verifyRollingTopupClaim,fundingUsdEstimate} from '../../shared/rolling/funding-session.mjs';
 import {executeRollingAction} from './wallet-action.mjs';
 import {executeAutomaticWithdrawal} from './automatic-withdrawal.mjs';
@@ -379,7 +379,7 @@ export async function createRollingRefundSession({sdk,ethers,config,boardArtifac
 }
 
 export async function createRollingWalletSession({sdk,routing,ethers,config,boardArtifact,privateFeeArtifact,bokArtifact,getBokArtifact,account,accountPreparation,
- trustedQuery,remoteProver,fundingContext,proverReady,pxePreparation,contextGuard,claimStore,captureFundingWallet,fundingRelay,onProgress=()=>{},locks=globalThis.navigator?.locks,proofsEnabled=true}){
+ trustedQuery,remoteProver,fundingContext,proverReady,pxePreparation,contextGuard,claimStore,captureFundingWallet,fundingRelay,onProgress=()=>{},onFeePricing=()=>{},locks=globalThis.navigator?.locks,proofsEnabled=true}){
  if(typeof proofsEnabled!=='boolean'||(!proofsEnabled&&String(config?.network?.chainId)!=='31337')||typeof contextGuard!=='function'||typeof locks?.request!=='function'||!account||!trustedQuery||!routing)throw fail('ROLLING_SESSION_CONFIG');
  const ownsFundingContext=fundingContext==null;
  const nativeChainTip='proposed';
@@ -415,6 +415,8 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
  }
  let initializationStep='account-lock',nestedFailure=null,failedObservation=false;
  let finishInitializationStep=beginRollingMeasure('session-init.account-lock');
+ let latestFeeSettings=selected.privateFee.gasSettings;
+ const observeFeePricing=prices=>{latestFeeSettings=structuredClone(prices);try{onFeePricing(structuredClone(prices));}catch{}};
  const emit=(state,error)=>observeRollingSetup(onProgress,{stage:'session-initialization',step:initializationStep,deploymentStep:null,state,code:state==='failed'?rollingSetupErrorCode(error):null});
  const begin=step=>{finishInitializationStep();emit('complete');initializationStep=step;finishInitializationStep=beginRollingMeasure('session-init.'+step);emit('started');};
  const failed=error=>{finishInitializationStep();if(failedObservation)return;failedObservation=true;if(!nestedFailure)emit('failed',error);};
@@ -512,7 +514,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
     const provider=Object.fromEntries(['getNetwork','getTransactionReceipt','getTransaction','getBlock','getCode','call','send','getTransactionCount','getBlockNumber','estimateGas','getFeeData','waitForTransaction'].map(name=>[name,async(...args)=>{
      await guardRoute();const result=await fundingRead(name,args);await guardRoute();return result;
     }]));
-    fundingContext??=await createRollingFundingSession({sdk,ethers,config:selected,account,deploymentPreparation,boardArtifact,privateFeeArtifact,node,contextGuard:guardRoute,captureWallet:captureFundingWallet,claimStore,relay:fundingRelay,storage:privateStore,provider,locks,proofsEnabled});
+    fundingContext??=await createRollingFundingSession({onFeePricing:observeFeePricing,sdk,ethers,config:selected,account,deploymentPreparation,boardArtifact,privateFeeArtifact,node,contextGuard:guardRoute,captureWallet:captureFundingWallet,claimStore,relay:fundingRelay,storage:privateStore,provider,locks,proofsEnabled});
     await fundingContext.assertContext({config:selected,account,node,proofsEnabled});
     await fundingContext.bindPrivateContext({ensureBok,reconcileClaim:id=>app.reconcile(id),
      // A session-created context already calls its native provider facade.
@@ -528,7 +530,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
      }}:{}),
      readExistingCredit:async()=>{
      await pxe.sync();await initializeAccount();await guardRoute();
-     try{return (await sdk.preparePrivateFeePayment({wallet,node,owner:instance.address,privateFeeAddress:deployment.privateFee.address.toString(),privateFeeArtifact,creditScope:{board:deployment.board.address,artifact:deployment.board.artifact},expectedChainId:network.chainId,expectedVersion:network.version,gasSettings:selected.privateFee.gasSettings})).availableCredit;}
+     try{return (await sdk.preparePrivateFeePayment({wallet,node,owner:instance.address,privateFeeAddress:deployment.privateFee.address.toString(),privateFeeArtifact,creditScope:{board:deployment.board.address,artifact:deployment.board.artifact},expectedChainId:network.chainId,expectedVersion:network.version,gasSettings:selected.privateFee.gasSettings,feePricing:'network'})).availableCredit;}
      catch(error){if(error?.code==='PRIVATE_FEE_BALANCE_INSUFFICIENT')return 0n;throw error;}
     }});
     aggregate=fundingContext.aggregate;prepareStarter=options=>fundingContext.prepareStarter(options);
@@ -547,7 +549,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
    // Funding completion reconciliation uses this raw application's fresh
    // signed-journal receipt check. It needs neither note synchronization nor the signing capsule; the later
    // native credit read still enters the ordinary synchronized application.
-   await guard();app=createRollingApplication({sdk:{...sdk,isPrivateWalletForNode:routing.isPrivateWalletForNode},deployment,resolveBok:ensureBok,contextGuard:guard,privateStore,funding,onProgress,measure:measureRollingStage,readBokAccountingPage:createUniformBokAccountingReader(),
+   await guard();app=createRollingApplication({sdk:{...sdk,isPrivateWalletForNode:routing.isPrivateWalletForNode},deployment,resolveBok:ensureBok,contextGuard:guard,privateStore,funding,onProgress,onFeePricing:observeFeePricing,measure:measureRollingStage,readBokAccountingPage:createUniformBokAccountingReader(),
     accountSession:{proposedTransactions:true,operationScope:()=>operationScope,owner:instance.address,wallet,node,journal,walletSecret:captured.secretKey,walletSalt:captured.salt,
      ...(typeof routing.createPreproofRecovery==='function'?{preproofRecovery:routing.createPreproofRecovery(wallet,node,journal)}:{})}});
    withdrawal=createCollateralWithdrawal({sdk,ethers,provider:funding.provider,node,application:app,scope:{account:captured.address,...network,board:selected.board.contractAddress,portal:selected.board.portalAddress},storage:privateStore,walletSecret:captured.secretKey,walletSalt:captured.salt,captureWallet:captureFundingWallet??(async()=>{throw fail('ROLLING_FUNDING_UNAVAILABLE');}),contextGuard:guardRoute,resolveBokScope:funding.resolveBokWithdrawal});
@@ -623,9 +625,9 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
    }
   }));},
 });
- const privateFeeCap=sdk.normalizePrivateFeeGasSettings(selected.privateFee.gasSettings).gasSettings.getFeeLimit().toBigInt().toString();
+ const privateFeeCap=()=>sdk.normalizePrivateFeeGasSettings(latestFeeSettings).gasSettings.getFeeLimit().toBigInt().toString();
  const continuation=funding=>createFundingContinuation({application:synchronized,funding,sdk,node:privateNode,contextGuard:guardRoute,locked,onProgress,confirmationTier:'proposed',bridgeChainTip:nativeChainTip,invalidateSnapshot:()=>{operationScope=invalidateRollingFundingNativeSnapshot(operationScope);}});
- const topup=topups?Object.freeze(Object.fromEntries(Object.entries(topups).map(([kind,cap])=>[kind,Object.freeze({ethAvailable:selected.aggregateFunding!==undefined,usdcAvailable:kind==='bok'||selected.aggregateFunding?.usdcRelayAddress!==undefined,defaultPrivateFeeCap:privateFeeCap,...continuation(cap),...Object.fromEntries(['prepare','confirm','recover','inspect','checkpointClaim','reviewRevertedClaim'].map(name=>[name,(...args)=>locked(()=>cap[name](...args))]))})]))):null;
+ const topup=topups?Object.freeze(Object.fromEntries(Object.entries(topups).map(([kind,cap])=>[kind,Object.freeze({ethAvailable:selected.aggregateFunding!==undefined,usdcAvailable:kind==='bok'||selected.aggregateFunding?.usdcRelayAddress!==undefined,get defaultPrivateFeeCap(){return fundingContext?.defaultPrivateFeeCap??privateFeeCap();},...continuation(cap),...Object.fromEntries(['prepare','confirm','recover','inspect','checkpointClaim','reviewRevertedClaim'].map(name=>[name,(...args)=>{const captured=name==='prepare'?structuredClone(args):args;return locked(async()=>{if(name==='prepare'&&kind==='bok'){const fees=await readRollingFundingFees({node:privateNode,gasSettings:selected.privateFee.gasSettings,contextGuard:guardRoute});observeFeePricing(fees.gasSettings);captured[0]={...captured[0],privateFeeCap:fees.maximumFee.toString()};}return cap[name](...captured);});}]))})]))):null;
  const refunds = Object.freeze({
   list: options => locked(() => depositRefunds.list(options)),
   request: id => locked(() => depositRefunds.request(id)),
@@ -660,7 +662,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
   // It never changes payment readiness; Post still validates its own payment.
   if(refreshFeeCredit){const credit=await app.readPrivateFeeCredit();await guardRoute();return credit;}
  });}
- return Object.freeze({application,prepareOpening:fundingContext?(options,openingPreparation)=>{const captured=structuredClone(options);return locked(()=>fundingContext.prepareOpening(()=>synchronized.readAccountStatus({opening:true}),captured,openingPreparation));}:undefined,preparePostingState,observeIncluded:input=>observeIncludedTransaction({sdk,node:privateNode,contextGuard:guardRoute},input),ordinaryPostingFeeLimit:privateFeeCap,postingFeeLimit:privateFeeCap,bokConfigured:selected.bok!==undefined,depositRefunds:refunds,withdrawal:Object.freeze({observe:()=>withdrawal.observe(),waitUntilReady:options=>withdrawal.waitUntilReady(options),...Object.fromEntries(['prepare','prepareSaved','confirm','recover','cancel'].map(name=>[name,async(...args)=>{const captured=structuredClone(args);return locked(()=>withdrawal[name](...captured));}]))}),topup,funding:aggregate?Object.freeze({prepareStarter:options=>locked(()=>prepareStarter(options)),usdcAvailable:selected.aggregateFunding.usdcRelayAddress!==undefined,...continuation(aggregate),defaultPrivateFeeCap:privateFeeCap,...Object.fromEntries(['prepare','confirm','recover','inspect','checkpointClaim','reviewRevertedClaim'].map(name=>[name,(...args)=>locked(()=>aggregate[name](...args))]))}):null,get busy(){return busy;},close(){
+ return Object.freeze({application,prepareOpening:fundingContext?(options,openingPreparation)=>{const captured=structuredClone(options);return locked(()=>fundingContext.prepareOpening(()=>synchronized.readAccountStatus({opening:true}),captured,openingPreparation));}:undefined,preparePostingState,observeIncluded:input=>observeIncludedTransaction({sdk,node:privateNode,contextGuard:guardRoute},input),get ordinaryPostingFeeLimit(){return sdk.ordinaryPostFeeLimit(latestFeeSettings).toString();},get postingFeeLimit(){return privateFeeCap();},bokConfigured:selected.bok!==undefined,depositRefunds:refunds,withdrawal:Object.freeze({observe:()=>withdrawal.observe(),waitUntilReady:options=>withdrawal.waitUntilReady(options),...Object.fromEntries(['prepare','prepareSaved','confirm','recover','cancel'].map(name=>[name,async(...args)=>{const captured=structuredClone(args);return locked(()=>withdrawal[name](...captured));}]))}),topup,funding:aggregate?Object.freeze({prepareStarter:options=>locked(()=>prepareStarter(options)),usdcAvailable:selected.aggregateFunding.usdcRelayAddress!==undefined,...continuation(aggregate),get defaultPrivateFeeCap(){return fundingContext?.defaultPrivateFeeCap??privateFeeCap();},...Object.fromEntries(['prepare','confirm','recover','inspect','checkpointClaim','reviewRevertedClaim'].map(name=>[name,(...args)=>locked(()=>aggregate[name](...args))]))}):null,get busy(){return busy;},close(){
   if(closing)return closing;
   if(busy)return Promise.reject(fail('ROLLING_BUSY'));
   if(closed&&!pxe&&!store)return Promise.resolve();

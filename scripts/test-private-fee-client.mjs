@@ -274,3 +274,17 @@ test('deferred-balance enrichment retains the original empty-credit preparation 
  const prepared=await preparePrivateFeePayment(input);assert.equal(state.reads,0);
  await assert.rejects(prepared.withAvailableCredit(),{code:'PRIVATE_FEE_BALANCE_INSUFFICIENT'});assert.equal(state.reads,1);
 });
+
+test('network pricing prepares above the stale deployment ceiling without private execution',async()=>{
+ const {input,state}=fixture();input.feePricing='network';input.creditCheck='deferred-balance';
+ input.node.getCurrentMinFees=async()=>new GasFees(30n,50n);
+ const before=input.gasSettings.toBuffer();const result=await preparePrivateFeePayment(input);
+ assert.equal(result.gasSettings.maxFeesPerGas.feePerDaGas,61n);assert.equal(result.gasSettings.maxFeesPerGas.feePerL2Gas,102n);
+ assert.equal(result.metadata.maximumFee,'26500');assert.equal(state.reads,0);assert.deepEqual(input.gasSettings.toBuffer(),before);
+});
+test('network pricing keeps a claim quote inside its approved buffer or returns a new reviewable maximum',async()=>{
+ const {input,state}=fixture();input.feePricing='network';input.creditCheck='deferred-balance';input.maximumFee='20000';
+ input.node.getCurrentMinFees=async()=>new GasFees(30n,50n);
+ const within=await preparePrivateFeePayment(input);assert.equal(within.metadata.maximumFee,'13500');assert.equal(state.reads,0);
+ input.maximumFee='10000';const review=await preparePrivateFeePayment(input);assert.equal(review.metadata.maximumFee,'26500');assert(BigInt(review.metadata.maximumFee)>BigInt(input.maximumFee));assert.equal(state.reads,0);
+});

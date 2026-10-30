@@ -179,7 +179,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
   return freeze({kind:quote.kind,breakdown:clone(quote.breakdown),deadline:quote.plan.deadline,beneficiary:wallet.address,router:s.router,walletName:wallet.name,privateFeeCap,slippageBps:values.slippageBps,relayer:terms.relayer,relayGasBudgetWei:terms.gasBudgetWei});
  }
  async function confirmUsdc({wallet,quote,saved,recheckScope,feeAmount},onSubmitted){
-  await read(wallet.guard);await read(()=>verifyFeeCredit(feeAmount));await read(()=>sdk.validateAggregateFundingQuote(quote));
+  await read(wallet.guard);await read(()=>verifyFeeCredit(feeAmount,saved.value.privateFeeCap));await read(()=>sdk.validateAggregateFundingQuote(quote));
   const consent=(quote.plan.collateral?.amount??quote.plan.collateral)==='0'?'0x':await signConsent(wallet,quote.consent);
   await read(()=>sdk.validateAggregateFundingQuote(quote));
   const authorization=await signConsent(wallet,quote.authorization);
@@ -189,7 +189,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
   sdk.validateAggregateFundingIntent(request);await read(wallet.guard);await predecessor(saved.value);
   // This checkpoint is deliberately before the sole POST. Even a crash before
   // the request reaches the relay is status-only recovery, never an auto-retry.
-  await read(()=>verifyFeeCredit(feeAmount));
+  await read(()=>verifyFeeCredit(feeAmount,saved.value.privateFeeCap));
   await read(()=>sdk.validateAggregateFundingQuote(quote));
   const start=await read(()=>provider.getBlock('latest'));check(Number.isSafeInteger(start?.number)&&start.number>=0,'PENDING');
   await read(()=>slot.write(saved,{...saved.value,relay:{planHash:tx.planHash,submitted:true,request,startBlock:start.number}}));
@@ -257,7 +257,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
    check(typeof verifyFeeCredit==='function','UNAVAILABLE');check(typeof values.bokAmount==='string'&&/^(0|[1-9][0-9]{0,38})$/.test(values.bokAmount),'INVALID');
    return timeFundingPreparation(onProgress,'qualification',async()=>{
    const qualification=await Promise.allSettled([
-    ()=>read(()=>verifyFeeCredit(values.feeAmount)),
+    ()=>read(()=>verifyFeeCredit(values.feeAmount,values.privateFeeCap)),
     ()=>read(()=>verifyScope({includeBok:BigInt(values.bokAmount)>0n,asset:values.asset})),
    ].map(qualify=>Promise.resolve().then(qualify)));
    const failure=qualification.find(result=>result.status==='rejected');if(failure)throw failure.reason;
@@ -352,7 +352,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
   async confirm({onSubmitted}={}){
    const current=prepared;prepared=null;check(current,'QUOTE_REQUIRED');
    if(current.kind==='usdc')return confirmUsdc(current,onSubmitted);
-   const {wallet,quote,nonce}=current;await read(wallet.guard);await read(()=>verifyFeeCredit(current.feeAmount));await read(()=>sdk.validateAggregateFundingQuote(quote));
+   const {wallet,quote,nonce}=current;await read(wallet.guard);await read(()=>verifyFeeCredit(current.feeAmount,current.saved.value.privateFeeCap));await read(()=>sdk.validateAggregateFundingQuote(quote));
    // Signature is requested only after explicit review. It is narrowly bound to
    // the captured portal consent nonce, which is NOT the derivation nonce.
    const consent=(quote.plan.collateral?.amount??quote.plan.collateral)==='0'?'0x':await signConsent(wallet,quote.consent);
@@ -378,7 +378,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
     await wallet.guard();check(ethereumNonce===nonce,'NONCE_CHANGED');await predecessor(current.saved.value);
     // Validate deadline again after any wallet consent interaction, before both
     // encrypted intent writes and the journal's one broadcast.
-    await read(()=>verifyFeeCredit(current.feeAmount));
+    await read(()=>verifyFeeCredit(current.feeAmount,current.saved.value.privateFeeCap));
     const verified=await read(()=>sdk.aggregateFundingTransaction(quote,consent));
     check(['from','to','chainId','data','value','planHash'].every(key=>verified[key]===tx[key]),'MISMATCH');
     const intent={from:tx.from,to:tx.to,chainId:tx.chainId,nonce:ethereumNonce,data:tx.data.toLowerCase(),value:tx.value,expected};
@@ -553,11 +553,11 @@ export async function advanceAggregateClaim({application,funding,contextGuard=as
      // This is only scheduling: preparation still verifies native message
      // membership and root at a fresh anchor. Generic paths also recheck L1.
      if(waits?.bridge)await read('prepare',()=>waits.bridge(receipts),'bridge');
-     try{next=await read('prepare',()=>application.prepare({type:claimAction,...receipts},{immediate:true}));}
+     try{next=await read('prepare',()=>application.prepare({type:claimAction,...receipts},{immediate:true,maximumFee:saved.privateFeeCap}));}
      catch(error){
       if(errorValue(error,'code')!=='ROLLING_FUNDING_NOT_READY'||!waits||errorValue(error,'reason')!=='l2-delivery')throw error;
       await read('prepare',()=>waits.bridge(receipts,errorValue(error,'reason')),'bridge');
-      next=await read('prepare',()=>application.prepare({type:claimAction,...receipts},{immediate:true}));
+      next=await read('prepare',()=>application.prepare({type:claimAction,...receipts},{immediate:true,maximumFee:saved.privateFeeCap}));
      }
     }
    }catch(error){const d=error==null?null:Object.getOwnPropertyDescriptor(error,'code');if(d&&'value' in d&&d.value==='ROLLING_FUNDING_NOT_READY')return {state:'waiting',phase:'bridge'};throw error;}

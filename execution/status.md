@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 30 October: owner requests removal of the usage-analytics opt-out button. Remove the navigation control and obsolete help instructions; keep analytics collection and browser privacy-signal behavior unchanged. Review, commit and publish through the installed release route. Performance remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 30 October: urgent signup failure from deployment-time gas prices. Replace static fee prices end to end with current network pricing, preserve approved payment caps, audit related recent gates, qualify and publish with analytics-button removal. Performance campaign remains paused.
 
 ## Ready internal work
 

@@ -144,7 +144,7 @@ function durableClaimApplication(f,funding,{proposed=false}={}){
  const sdk={Fr,AztecAddress,encodeArguments,normalizePrivateFeeGasSettings,isTrustedPrivateNode:n=>n===node,isPrivateWalletForNode:(w,n)=>w===wallet&&n===node,isPrivatePXEForNode:(p,n)=>p===wallet.pxe&&n===node,inspectTrustedNode:async()=>{},
   Contract:{at:()=>({methods:new Proxy({},{get:(_,name)=>(...args)=>({name,args,simulate:async()=>({result:[0n,...Array(9).fill(0n)]})})})})},
   BatchCall:class{constructor(_wallet,interactions){this.interactions=interactions;}},
-  preparePrivateFeePayment:async()=>({availableCredit:100n}),estimatePrivateFeeTransaction:async({interaction})=>{state.prepares++;return {maximumFee:10n,payload:interaction,gasSettings:{}};},
+  preparePrivateFeePayment:async()=>({availableCredit:100n,metadata:{maximumFee:'100'}}),estimatePrivateFeeTransaction:async({interaction})=>{state.prepares++;return {maximumFee:10n,payload:interaction,gasSettings:{}};},
   prepareFundingClaim:async input=>({status:'claim-ready',claim:input.kind==='collateral'?{contract:f.options.board,method:'claim_deposit',args:[input.receipt.sender,input.receipt.amount,h(80),input.receipt.leafIndex]}:input.kind==='private-fee'?{contract:f.options.scope.privateFpc,kind:'private-fee-bridge',bridgeClaim:{amount:input.receipt.amount,salt:h(81),leafIndex:input.receipt.leafIndex}}:{contract:f.options.bok,method:'claim',args:[input.receipt.amount,input.secrets.recipientSalt,input.secrets.bridgeSecret,input.receipt.leafIndex]}})};
  const options={sdk,deployment:{board:{address:f.options.board,artifact:boardArtifact},network:f.options.network,portal:f.options.scope.collateralPortal,
   privateFee:{address:f.options.scope.privateFpc,artifact:{},gasSettings:{gasLimits:{daGas:5,l2Gas:5},teardownGasLimits:{daGas:0,l2Gas:1},maxFeesPerGas:{feePerDaGas:1,feePerL2Gas:1},maxPriorityFeesPerGas:{feePerDaGas:0,feePerL2Gas:0}}},bok:{address:f.options.bok,operator:h(16),pluginId:h(17),artifact:bokArtifact}},
@@ -709,7 +709,7 @@ test('automatic funding prepares directly for submission, including after bridge
  };
  f.input.waits={bridge:async()=>{bridgeWaits++;},claim:()=>assert.fail('Already confirmed')};
  assert.equal((await advanceAggregateClaim(f.input)).state,'complete');assert.equal(bridgeWaits,2);assert.equal(calls.length,2);
- for(const call of calls)assert.deepEqual(call,{action:{type:'claim-deposit',receipt:{private:'SECRET_RECEIPT'}},options:{immediate:true}});
+ for(const call of calls)assert.deepEqual(call,{action:{type:'claim-deposit',receipt:{private:'SECRET_RECEIPT'}},options:{immediate:true,maximumFee:'10'}});
  assert.equal(f.calls.filter(call=>call==='submit').length,1);
 });
 test('automatic ETH topup fee refresh accepts current gas price at wallet confirmation',async()=>{

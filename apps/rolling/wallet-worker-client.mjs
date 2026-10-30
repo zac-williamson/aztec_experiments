@@ -42,7 +42,7 @@ export function createRollingWorkerClient({worker,contextGuard=()=>{},captureFun
    }else if(callback){try{Promise.resolve(callback(...message.args)).catch(()=>{});}catch{}}
    return;
   }
-  if(message.type!=='result')return;requests.delete(message.id);active--;if(request.blocking)blocking--;request.cleanup();
+  if(message.type!=='result')return;if(message.metadata)metadata={...metadata,...message.metadata};requests.delete(message.id);active--;if(request.blocking)blocking--;request.cleanup();
   Promise.resolve().then(check).then(()=>message.error?request.reject(restoreError(message.error)):request.resolve(message.value),request.reject);
  });
  function invoke(method,args=[]){

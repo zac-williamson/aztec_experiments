@@ -609,3 +609,14 @@ Root implemented and integrated the fix; fast_reply_review independently reviewe
 ## Analytics toggle removal — 30 October
 
 Root owns the narrow reader UI change. fast_reply_review reviews the diff independently; no contract or analytics collection changes. Publish through the installed release route after focused checks.
+
+## Live fee pricing and lookup — 30 October
+
+Root implements. fast_reply_review approved the current pricing/gateway diff after
+explicit real GasSettings serialization and immutable approval-cap fixes.
+flow_scope_efficiency reviewed native fee caching and identified SDK batching
+coupling; fee-only reads now use a separate client queue. deployment_review
+identified installed release preparation's copied-SDK limitation and protected
+prover admission requirement. Root measured native, old gateway and public route
+latencies;15.46s outlier remains unattributed. See docs/LIVE_FEE_PRICING_20261030.md.
+No live changes or new contracts; publication and browser measurement pending.

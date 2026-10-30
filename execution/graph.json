@@ -9402,7 +9402,7 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "30 October: owner requests removal of the usage-analytics opt-out button. Remove the navigation control and obsolete help instructions; keep analytics collection and browser privacy-signal behavior unchanged. Review, commit and publish through the installed release route. Performance remains paused.",
+      "checkpoint": "30 October: urgent signup failure from deployment-time gas prices. Replace static fee prices end to end with current network pricing, preserve approved payment caps, audit related recent gates, qualify and publish with analytics-button removal. Performance campaign remains paused.",
       "execution_lane": "root UI implementation and existing CI publication; independent fast_reply_review",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",

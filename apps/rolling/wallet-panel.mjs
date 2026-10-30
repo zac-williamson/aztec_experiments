@@ -114,7 +114,7 @@ function fundingFailureText(failure){
     return 'Posting costs have changed. Review the cost again to get an updated price. No payment was sent.';
   }
   const messages={
-   PRIVATE_FEE_CAP_TOO_LOW:'Network fees have changed. This step is temporarily unavailable until the site updates its prices.',
+   PRIVATE_FEE_CAP_TOO_LOW:'Network fees changed. Refresh the price to continue. No payment was sent.',
    ROLLING_FUNDING_TOKEN_BALANCE:'Your connected wallet does not have enough USDC. Choose Pay with ETH, or add USDC to that wallet.',
    ROLLING_FUNDING_FEE_TOKEN_BALANCE:'Your connected wallet does not have enough posting fee tokens. Add fee tokens to that wallet before buying posting credit.',
    ROLLING_FUNDING_SWAP_UNAVAILABLE:'ETH payment is unavailable for this credit. Choose USDC.',
@@ -1505,7 +1505,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   const cap=session?.topup?.[topupKind],isBok=topupKind==='bok';
   if(!cap)return null;
   const input={amount:units(topupInputs.amount,isBok?6:18),asset:topupInputs.asset,privateFeeCap:cap.defaultPrivateFeeCap};
-  return {cap,input,key:JSON.stringify([accountEpoch,topupKind,input])};
+  return {cap,input,key:JSON.stringify([accountEpoch,topupKind,{amount:input.amount,asset:input.asset}])};
  }
  function requestTopupQuote(){
   if(busy||initializing||blocked||intent||fundingAutomatic||topupSaved?.paymentSaved&&!topupSaved?.completed||view!=='topup'||!dialog.open||topupQuotePending)return;

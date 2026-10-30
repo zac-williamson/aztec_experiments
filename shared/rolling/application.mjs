@@ -1,3 +1,4 @@
+import {serializePrivateFeeGasSettings} from '../network-fee-pricing.mjs';
 import {postMetadataDeadline} from './post-metadata.mjs';
 import {captureThreadAction,linkThreadDrafts,MAX_THREAD_POSTS} from './thread-action.mjs';
 import {createEncryptedJournalSlot} from '../journal-record.mjs';
@@ -163,7 +164,7 @@ export function createPendingWithdrawalSlot({storage,walletSecret,walletSalt,sco
   return createEncryptedJournalSlot({storage,walletSecret,walletSalt,
     scopeText:JSON.stringify(['ROLLING_PENDING_EXIT_V1',l2JournalScopeText(scope)]),keyDomain:'ROLLING_PENDING_EXIT_V1'});
 }
-export function createRollingApplication({sdk,deployment,accountSession,privateStore,publicReader,readBokAccountingPage,resolveBok,funding,onProgress=()=>{},contextGuard,measure=(_stage,operation)=>operation()}){
+export function createRollingApplication({sdk,deployment,accountSession,privateStore,publicReader,readBokAccountingPage,resolveBok,funding,onProgress=()=>{},onFeePricing=()=>{},contextGuard,measure=(_stage,operation)=>operation()}){
   void publicReader; // Never route personalized requests through public readers.
   const readAccountingPage=typeof readBokAccountingPage==='function'?readBokAccountingPage:null;
   let busy=false,callScope=null,slotPromise,pendingExitPromise,creditCachePromise,balanceContinuation=null,accountingScan=null,completedAccounting=null;
@@ -394,9 +395,11 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
   async function payment(action,record,{ordinaryProof=false,likeProof=false,deferredBalance=false}={}){
     const claim=await verifiedFeeClaim(action,record);
     const paidLike=action?.type==='like'?await paidLikeArguments(action):undefined;
-    return sdk.preparePrivateFeePayment({wallet:session.wallet,node:session.node,owner:session.owner,
-      privateFeeAddress:fixed.fee,privateFeeArtifact:deployment.privateFee.artifact,expectedChainId:scope.chainId,expectedVersion:scope.version,gasSettings:fixed.gas,measure,
+    const prepared=await sdk.preparePrivateFeePayment({wallet:session.wallet,node:session.node,owner:session.owner,
+      privateFeeAddress:fixed.fee,privateFeeArtifact:deployment.privateFee.artifact,expectedChainId:scope.chainId,expectedVersion:scope.version,gasSettings:record?.feeGasSettings??fixed.gas,feePricing:record?.feeGasSettings&&!record?.fundingFeeCap?'fixed':'network',...(record?.fundingFeeCap?{maximumFee:record.fundingFeeCap}:{}),measure,
       creditScope:{board:deployment.board.address,artifact:deployment.board.artifact,cache:creditCache},...(claim?{claim}:{}),...(paidLike?{paidLike}:{}),...((ordinaryProof||likeProof||deferredBalance)&&!action?{creditCheck:'deferred-balance'}:{})});
+    if(prepared.gasSettings){const prices=serializePrivateFeeGasSettings(prepared.gasSettings);if(record)record.feeGasSettings=prices;try{onFeePricing(prices);}catch{/* Display metadata cannot affect payment. */}}
+    return prepared;
   }
   // Read the native credit at the caller's held PXE anchor. Account status
   // owns Board/FPC class-qualified discovery; full balance views retain their
@@ -1237,9 +1240,10 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       return exclusive(async()=>{
       // Standalone applications allocate their local scope inside exclusive.
       const stateOwner=externalScope?capturedOwner:getOperationScope(),stateReady=externalScope?capturedReady:stateOwner?.contractStateReady;
-      const immediate=options!==undefined;let postingRules;
+      const immediate=options!==undefined;let postingRules,fundingFeeCap;
       if(immediate){
-        const values=exactData(options,Object.hasOwn(options??{},'postingRules')?['immediate','postingRules']:['immediate']);
+        const values=exactData(options,['immediate',...(Object.hasOwn(options??{},'postingRules')?['postingRules']:[]),...(Object.hasOwn(options??{},'maximumFee')?['maximumFee']:[])]);
+        if(Object.hasOwn(values,'maximumFee')){check(['claim-deposit','claim-private-fee','claim-bok'].includes(input?.type));fundingFeeCap=uint128(values.maximumFee).toString();check(BigInt(fundingFeeCap)>0n);}
         check(values.immediate===true&&['post','reply','quote','repost','thread','bok','like','name','bio','avatar','claim-deposit','claim-private-fee','claim-bok','screen','withdraw','subboard','moderate-post','moderate-avatar','reject-subboard','set-main-policy','transfer-moderator','withdraw-bok','cancel-deposit','cancel-bok-request','expire-bok-request'].includes(input?.type));
         if(Object.hasOwn(values,'postingRules')){
           check(['post','reply','quote','repost','thread','bok'].includes(input?.type));
@@ -1301,7 +1305,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       let args,preparedPayment,preparedNameAvailability,preparedFundingBok;
       const claimScope=immediate&&['claim-deposit','claim-private-fee','claim-bok'].includes(action.type)?session.operationScope?.():null;
       const claimOwner=claimScope?.synchronized===true?{wallet:session.wallet,pxe:session.wallet.pxe,node:session.node,cachedNode:session.wallet.pxe.node}:null;
-      const claimFields={};
+      const claimFields=fundingFeeCap?{fundingFeeCap}:{};
       const checkClaimOwner=()=>check(session.operationScope()===claimScope&&session.wallet===claimOwner.wallet&&
         session.wallet.pxe===claimOwner.pxe&&session.node===claimOwner.node&&session.wallet.pxe.node===claimOwner.cachedNode,'ROLLING_CONTEXT_CHANGED');
       const checkPaymentOwner=()=>check(session.operationScope()===paymentScope&&session.wallet===paymentOwner.wallet&&
@@ -1353,6 +1357,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       if(postingRules){const drafts=action.type==='thread'?args[2].slice(0,args[3]):[args[2]];check(drafts.every(draft=>String(draft.expected_main_policy_version)===postingRules.parentVersion&&String(draft.expected_local_policy_version)===postingRules.localVersion),'ROLLING_POSTING_RULES_CHANGED');}
       const record={version:1,id,action,args,method:methods[action.type],nonce,predecessor,status:'prepared',...(moderation?{moderation:moderation.review}:{})};
       if(claimFields.fundingFee)record.fundingFee=claimFields.fundingFee;
+      if(fundingFeeCap)record.fundingFeeCap=fundingFeeCap;
       if(action.type==='name')record.nameAvailability=preparedNameAvailability??await nameAvailability(action);
       if(['withdraw','withdraw-bok','cancel-deposit'].includes(action.type)){const pending=await pendingExit();check(!pending.value||pending.value.paymentStatus==='refunded','ROLLING_WITHDRAWAL_PENDING');if(pending.value){check(verifyWithdrawal&&await verifyWithdrawal(pending.value),'ROLLING_WITHDRAWAL_RECOVERY_REQUIRED');await localGuard();check(await (await pendingExitSlot()).isCurrent(pending.encoded),'ROLLING_CONTEXT_CHANGED');}}
       if(action.type==='withdraw'){const anchor=await balanceAnchor();record.withdrawal=withdrawalObservation&&same(anchor,withdrawalObservation.anchor)?clone(withdrawalObservation.info):await collateralInfo(action.deposit,board,BigInt(anchor.timestamp));check(record.withdrawal.eligible,'ROLLING_WITHDRAWAL_NOT_READY');await checkBalanceAnchor(anchor);}
@@ -1399,13 +1404,14 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
         if(immediate){record.bok.phase='atomic';record.method='post_with_bok';record.args=[...args,bok.pluginId,requestId];}
       }
       const selected=await interaction(await selectedContract(record),record);record.encoded=selected.encoded;
-      // Immediate actions use the application's configured ceiling. Submission
-      // estimates once against current state and must stay within this bound.
+      // Immediate actions obtain a current network-priced maximum. Submission
+      // estimates once against current state and stays within this approval.
       if(immediate){
         // Claim validation retains its exact bridge fee payload even when the
         // separate review simulation is omitted. Submission rechecks it.
         if(!claimOwner&&(action.type==='claim-private-fee'||action.feeReceipt!==undefined))preparedPayment=await payment(action,record);
-        record.maximumFee=(ordinaryPost(record)?sdk.ordinaryPostFeeBudget({wallet:session.wallet,prepared:preparedPayment??await payment(action,record,{ordinaryProof:true}),board:ordinaryPost(record)}).maximumFee:qualifiedLike(record)?sdk.likeFeeBudget({wallet:session.wallet,prepared:preparedPayment??await payment(action,record,{likeProof:true}),board:qualifiedLike(record)}).maximumFee:sdk.normalizePrivateFeeGasSettings(fixed.gas).maximumFee).toString();
+        record.maximumFee=(ordinaryPost(record)?sdk.ordinaryPostFeeBudget({wallet:session.wallet,prepared:preparedPayment??await payment(action,record,{ordinaryProof:true}),board:ordinaryPost(record)}).maximumFee:qualifiedLike(record)?sdk.likeFeeBudget({wallet:session.wallet,prepared:preparedPayment??await payment(action,record,{likeProof:true}),board:qualifiedLike(record)}).maximumFee:BigInt((preparedPayment??=await payment(action,record)).metadata.maximumFee)).toString();
+        if(fundingFeeCap&&BigInt(fundingFeeCap)>BigInt(record.maximumFee))record.maximumFee=fundingFeeCap;
       }
       else {progress('estimating');const estimated=await sdk.estimatePrivateFeeTransaction({wallet:session.wallet,node:session.node,interaction:selected.call,
         prepared:await payment(action,record),from:session.owner,guard});record.maximumFee=estimated.maximumFee.toString();}await guard();
@@ -1418,6 +1424,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       if(moderationAnchor){
         checkPaymentOwner();check(paymentScope.synchronized===true&&same(await balanceAnchor(),moderationAnchor),'ROLLING_CONTEXT_CHANGED');checkPaymentOwner();check(session.wallet.pxe.node===moderationCachedNode,'ROLLING_CONTEXT_CHANGED');
       }
+      if(preparedPayment?.gasSettings)record.feeGasSettings=serializePrivateFeeGasSettings(preparedPayment.gasSettings);
       const saved=await store.write(prior,record);
       // No persistent cache: only the unchanged journal record in the same held
       // operation may use this result. Separate submissions prepare afresh.
@@ -1438,7 +1445,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
         predecessor:{operation:operation(saved.value.id),txHash:saved.value.txHash},bokRequestScope:clone(bok),bokReleaseSource:source,bokReleasePrior:prior};
       const selected=await interaction(await bokContract(),record);record.encoded=selected.encoded;
       progress('estimating');const estimate=await sdk.estimatePrivateFeeTransaction({wallet:session.wallet,node:session.node,interaction:selected.call,
-        prepared:await payment(),from:session.owner,guard});record.maximumFee=estimate.maximumFee.toString();
+        prepared:await payment(undefined,record),from:session.owner,guard});record.maximumFee=estimate.maximumFee.toString();
       await checkBokRelease(source,type);await (await slot()).write(saved,record);return summary(record);
     });},
     async prepareBokPost(id,options){return exclusive(async()=>{
@@ -1462,9 +1469,9 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       // Its proof attempt must not inherit authority bound to the previous ID.
       delete record.preproof;delete record.preproofReview;
       const selected=await interaction(await contract(),record);record.encoded=selected.encoded;
-      if(immediate)record.maximumFee=sdk.normalizePrivateFeeGasSettings(fixed.gas).maximumFee.toString();
+      if(immediate)record.maximumFee=(await payment(undefined,record)).metadata.maximumFee;
       else {progress('estimating');const estimate=await sdk.estimatePrivateFeeTransaction({wallet:session.wallet,node:session.node,interaction:selected.call,
-        prepared:await payment(),from:session.owner,guard});record.maximumFee=estimate.maximumFee.toString();}
+        prepared:await payment(undefined,record),from:session.owner,guard});record.maximumFee=estimate.maximumFee.toString();}
       await waitingBok(record);await guard();await (await slot()).write(saved,record);return summary(record);
     });},
     // Explicit saved-action recovery. Inspection never writes financial records;

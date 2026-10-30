@@ -6,7 +6,7 @@ const tests=[
  'scripts/release/release.test.mjs',
  'shared/rolling/deployment-registration.test.mjs',
  'apps/rolling/feed-ranking.test.mjs','apps/rolling/home-reader.test.mjs',
- 'apps/rolling/analytics.test.mjs',
+ 'apps/rolling/analytics.test.mjs','shared/network-fee-pricing.test.mjs',
  'ops/analytics.test.mjs','ops/auth.test.mjs','ops/server.test.mjs',
  'ops/community.test.mjs','ops/monitor.test.mjs',
  'ops/backup.test.mjs','ops/backup-job.test.mjs',

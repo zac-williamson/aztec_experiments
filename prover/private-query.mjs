@@ -144,7 +144,7 @@ export function createPrivateQueryWithInspector({queryNode, chainId, rollupVersi
     compact=Object.freeze({tier,origins:Object.freeze(origins)});
   }
   const compactFetch=globalThis.fetch.bind(globalThis);
-  const node = createSafeJsonRpcClient(config.url, AztecNodeApiSchema, {
+  const createNode = () => createSafeJsonRpcClient(config.url, AztecNodeApiSchema, {
     namespaceMethods: 'aztec', log: silent, maxBatchSize: QUERY_LIMITS.batch,
     maxRequestBodySize: QUERY_LIMITS.bodyBytes,
     onResponse: getVersioningResponseHandler({l1ChainId: String(chainId), rollupVersion: String(rollupVersion), l1RollupAddress: config.rollupAddress}),
@@ -156,6 +156,15 @@ export function createPrivateQueryWithInspector({queryNode, chainId, rollupVersi
           headers: {'content-type': 'application/json'}, redirect: 'error', credentials: 'omit',
           referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(QUERY_LIMITS.timeoutMs)});
         if (!response.ok) {await response.body?.cancel(); throw unavailable();}
+        // Fee reads need the identity carried by this same response, not a
+        // separate world-state inspection. Unlike the SDK's optional version
+        // check, require all identity headers on this read-only fast path.
+        const requests=Array.isArray(body)?body:[body];
+        if(requests.some(call=>call.method==='aztec_getCurrentMinFees')){
+          for(const [key,value] of Object.entries({l1ChainId:String(chainId),rollupVersion:String(rollupVersion),l1RollupAddress:config.rollupAddress})){
+            if(response.headers.get(`x-aztec-${key}`)!==value){await response.body?.cancel();throw unavailable();}
+          }
+        }
         const chunks = []; let size = 0;
         for await (const chunk of response.body) {
           size += chunk.length;
@@ -166,6 +175,10 @@ export function createPrivateQueryWithInspector({queryNode, chainId, rollupVersi
       } catch { throw unavailable(); }
     },
   });
+  const node=createNode();
+  // A separate SDK queue prevents a fee read from sharing a transport batch
+  // with concurrent slow simulations or state queries.
+  const feeNode=createNode();
   let active = 0;
   // Internal operator diagnostics only: fixed codes, no request correlation or
   // raw errors. At most one notification per category/minute, and at most one
@@ -276,10 +289,14 @@ export function createPrivateQueryWithInspector({queryNode, chainId, rollupVersi
           call.args = await parseWithOptionals(call.params, getSchemaParameters(AztecNodeApiSchema[call.method]));
         }
       } catch {reply(400, errorResponse(null, -32602)); return;}
+      const feesOnly=prepared.every(call=>call.method==='getCurrentMinFees');
       let historical=false,ready,absenceTip,records=[];
       try {
         historical=prepared.every(call=>historicalKind(call));
-        ready=await inspect(historical?anchoredReadTier:undefined);
+        // The native node updates its fee cache from L1 in the background.
+        // Only fee-only batches bypass state readiness; adding any other method
+        // keeps the existing policy for the complete batch.
+        if(!feesOnly)ready=await inspect(historical?anchoredReadTier:undefined);
         if(historical){
           let strict=false;
           for(const call of prepared){
@@ -336,7 +353,7 @@ export function createPrivateQueryWithInspector({queryNode, chainId, rollupVersi
       } catch {reply(503, errorResponse(null)); return;}
       const results = await Promise.all(prepared.map(async ({id, method, args,anchor,cached}) => {
         try {
-          const result = cached?cached.value:await node[method](...args);
+          const result = cached?cached.value:await (feesOnly?feeNode:node)[method](...args);
           if(historical&&anchor&&method==='getBlockData'&&(!result||result.header.globalVariables.blockNumber!==anchor.number||result.blockHash.toString()!==anchor.hash))throw unavailable();
           if(historical&&anchor&&method==='getBlock'&&(!result||result.number!==anchor.number||result.hash.toString()!==anchor.hash))throw unavailable();
           if(anchor&&method==='getTxReceipt'&&(!result?.isMined()||!result.txHash.equals(args[0])||result.blockNumber!==anchor.number||result.blockHash.toString()!==anchor.hash))throw unavailable();

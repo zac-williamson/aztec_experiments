@@ -1,3 +1,4 @@
+import {pricePrivateFeeGasSettings} from '../network-fee-pricing.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {prepareRollingFundingOpening} from './funding-session.mjs';
@@ -60,17 +61,17 @@ const repository=path.resolve(import.meta.dirname,'../..');
 const sourceFile=relative=>fs.readFile(path.join(repository,relative),'utf8');
 async function openingContextFixture(){
  const quote=defer(),rate=defer(),events=[];let valid=true,installed=0;
- const owner='0x'+'1'.repeat(64),node={},sdk={isTrustedPrivateNode:x=>x===node,normalizePrivateFeeGasSettings:()=>({gasSettings:{getFeeLimit:()=>({toBigInt:()=>100n})}}),createBrowserJournalStorage:()=>({})};
- const config={network:{chainId:'11155111',rollupVersion:'1',rollupAddress:'rollup'},board:{contractAddress:'board'},privateFee:{gasSettings:{}},aggregateFunding:{chainId:'11155111',collateralPortal:'portal',privateFpc:'fpc'}};
+ const owner='0x'+'1'.repeat(64),node={getCurrentMinFees:async()=>({feePerDaGas:1n,feePerL2Gas:1n})},sdk={isTrustedPrivateNode:x=>x===node,normalizePrivateFeeGasSettings:()=>({gasSettings:{getFeeLimit:()=>({toBigInt:()=>100n})}}),createBrowserJournalStorage:()=>({})};
+ const config={network:{chainId:'11155111',rollupVersion:'1',rollupAddress:'rollup'},board:{contractAddress:'board'},privateFee:{gasSettings:{gasLimits:{daGas:'25',l2Gas:'25'},teardownGasLimits:{daGas:'1',l2Gas:'1'},maxPriorityFeesPerGas:{feePerDaGas:'0',feePerL2Gas:'0'}}},aggregateFunding:{chainId:'11155111',collateralPortal:'portal',privateFpc:'fpc'}};
  const deployment={portal:'portal',board:{address:{toString:()=> 'board'}},privateFee:{address:{toString:()=> 'fpc'}},proofsEnabled:true,network:{chainId:'11155111',version:'1',rollup:'rollup'},economics:{minDeposit:'1'}};
  const quoteToken={},provider={async getBlock(){events.push('rate');await rate.promise;throw Error('No display rate');}};
  const locks={async request(name,options,work){events.push('lease-enter');try{return await work({name});}finally{events.push('lease-exit');}}};
  const context=vm.createContext({console,structuredClone,Promise,performance});
  const module=new vm.SourceTextModule(await sourceFile('shared/rolling/funding-session.mjs'),{context});
  await module.link(async name=>{
-  const exports=name==='./deployment.mjs'?{assertRollingDeploymentPreparation(){},prepareRollingDeployment:async()=>({deployment}),readRollingDeploymentRegistration:async()=>({deployment})}:{
+  const exports=name==='../network-fee-pricing.mjs'?{pricePrivateFeeGasSettings}:name==='./deployment.mjs'?{assertRollingDeploymentPreparation(){},prepareRollingDeployment:async()=>({deployment}),readRollingDeploymentRegistration:async()=>({deployment})}:{
    createAggregateWallet:async()=>({async prepareReadOnly(){throw Error('No split quote');},async installPreparedQuote(){throw Error('No split install');},async prepare(){events.push('quote-start');await quote.promise;events.push('quote-end');events.push('install');installed++;return {breakdown:{maximumTotalWei:'1'}};}}),
-   starterFundingAllocation:async()=>({asset:'ETH',feeAmount:'200'}),timeFundingPreparation:(_observer,_step,read)=>read(),
+   automaticFundingGasBudget:async()=> '1',starterFundingAllocation:async()=>({asset:'ETH',feeAmount:'200'}),timeFundingPreparation:(_observer,_step,read)=>read(),
   };
   return new vm.SyntheticModule(Object.keys(exports),function(){for(const [key,value]of Object.entries(exports))this.setExport(key,value);},{context});
  });await module.evaluate();
@@ -95,9 +96,9 @@ for(const mode of ['discard','status','owner','funded'])test('early opening cont
 });
 async function workerOpeningFixture({nativeFailure=false}={}){
  const f=await openingContextFixture(),native=defer(),status=defer(),sent=[];let handler,statusCalls=0;
- const context=vm.createContext({console,performance,structuredClone,AbortController,URL,Promise,__aztec:{},ethers:{},BillboardPrivateFeeRouting:{},postMessage:value=>sent.push(value),addEventListener:(_name,fn)=>{handler=fn;}});
+ const context=vm.createContext({console,performance,structuredClone,AbortController,URL,Promise,__aztec:{normalizePrivateFeeGasSettings:()=>({gasSettings:{getFeeLimit:()=>({toBigInt:()=>100n})}}),ordinaryPostFeeLimit:()=>100n},ethers:{},BillboardPrivateFeeRouting:{},postMessage:value=>sent.push(value),addEventListener:(_name,fn)=>{handler=fn;}});
  const source=await sourceFile('apps/rolling/wallet-worker-entry.mjs');
- const module=new vm.SourceTextModule(source+'\nexport function prime(f,ready){account={};funding=f;opening=Promise.resolve();settings={config:{}};creating=ready.then(value=>(session=value));creating.catch(()=>{});}',{context});
+ const module=new vm.SourceTextModule(source+'\nexport function prime(f,ready){account={};funding=f;opening=Promise.resolve();settings={config:{privateFee:{gasSettings:{}}}};creating=ready.then(value=>(session=value));creating.catch(()=>{});}',{context});
  const stubs={'../../shared/rolling/account-preparation.mjs':{prepareRollingAccount(){}},'./performance.mjs':{beginRollingMeasure:()=>()=>{},observeRollingWorkerPerformance:()=>()=>{}},'./wallet-session.mjs':{createRollingWalletSession(){throw Error('Already constructing');},createRollingRefundSession(){}},'../../shared/rolling/deployment.mjs':{createRollingDeploymentPreparation(){},prepareRollingDeployment(){}},'../../shared/rolling/funding-session.mjs':{createRollingFundingSession(){},verifyRollingAggregateScope(){}}};
  await module.link(async name=>{if(name==='./wallet-worker-protocol.mjs')return new vm.SourceTextModule(await sourceFile('apps/rolling/wallet-worker-protocol.mjs'),{context});const exports=stubs[name];assert(exports,name);return new vm.SyntheticModule(Object.keys(exports),function(){for(const [key,value]of Object.entries(exports))this.setExport(key,value);},{context});});await module.evaluate();
  let busy=false;

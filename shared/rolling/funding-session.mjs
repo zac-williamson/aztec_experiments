@@ -1,16 +1,20 @@
+import {pricePrivateFeeGasSettings} from '../network-fee-pricing.mjs';
 import {assertRollingDeploymentPreparation,prepareRollingDeployment,readRollingDeploymentRegistration} from './deployment.mjs';
 import {createAggregateWallet,starterFundingAllocation,automaticFundingGasBudget,timeFundingPreparation} from './aggregate-wallet.mjs';
 const fail=code=>Object.assign(Error('Funding is unavailable.'),{code});
 
-// Admission for a new payment, never a gate on recovery of an existing one.
-// The incoming bridge OR existing private credit must independently fund the
-// configured native maximum; the two payment compositions cannot pool them.
-export async function verifyRollingFundingCredit({sdk,node,gasSettings,incomingAmount,readExistingCredit,contextGuard}){
+export async function readRollingFundingFees({node,gasSettings,contextGuard}){
+ await contextGuard();const minimum=await node.getCurrentMinFees();await contextGuard();
+ return pricePrivateFeeGasSettings(gasSettings,minimum);
+}
+// A new quote follows current prices. Confirmation checks the previously approved
+// cap against today's minimum, without increasing that cap or repeating a payment.
+export async function verifyRollingFundingCredit({sdk,node,gasSettings,incomingAmount,privateFeeCap,readExistingCredit,contextGuard}){
  await contextGuard();
  if(typeof incomingAmount!=='string'||!/^[1-9][0-9]{0,38}$/.test(incomingAmount)||BigInt(incomingAmount)>=1n<<128n)throw fail('ROLLING_FUNDING_INVALID');
- const fixed=sdk.normalizePrivateFeeGasSettings(gasSettings).gasSettings,maximum=fixed.getFeeLimit().toBigInt();
  const minimum=await node.getCurrentMinFees();await contextGuard();
- if(['feePerDaGas','feePerL2Gas'].some(k=>fixed.maxFeesPerGas[k]<BigInt(minimum[k])))throw fail('PRIVATE_FEE_CAP_TOO_LOW');
+ const priced=pricePrivateFeeGasSettings(gasSettings,minimum,{maximumFee:privateFeeCap,buffer:false});
+ const maximum=privateFeeCap===undefined?priced.maximumFee:BigInt(privateFeeCap);
  if(BigInt(incomingAmount)>=maximum)return;
  const existing=await readExistingCredit();await contextGuard();
  if(typeof existing!=='bigint'||existing<0n||existing>=1n<<128n)throw fail('ROLLING_INVALID_RESPONSE');
@@ -181,7 +185,7 @@ export function invalidateRollingFundingNativeSnapshot(scope){
 // Owns the existing payment capability before PXE construction. The caller owns
 // native operation serialization; native callbacks are bound once the private session
 // is ready, never initialized recursively while a funding lease is held.
-export async function createRollingFundingSession({sdk,ethers,config,account,deploymentPreparation,boardArtifact,privateFeeArtifact,node,contextGuard,captureWallet,claimStore,relay,storage,provider,scopePreparation,onProgress,locks=globalThis.navigator?.locks,proofsEnabled=true}){
+export async function createRollingFundingSession({sdk,ethers,config,account,deploymentPreparation,boardArtifact,privateFeeArtifact,node,contextGuard,captureWallet,claimStore,relay,storage,provider,scopePreparation,onProgress,onFeePricing=()=>{},locks=globalThis.navigator?.locks,proofsEnabled=true}){
  const selected=structuredClone(config),captured={secretKey:account.secretKey,salt:String(account.salt),address:String(account.address)};
  const network={chainId:String(selected.network.chainId),version:String(selected.network.rollupVersion),rollup:selected.network.rollupAddress};
  await contextGuard();
@@ -203,11 +207,13 @@ export async function createRollingFundingSession({sdk,ethers,config,account,dep
   await guard();const currentProvider=provider??(ownedProvider??=new ethers.JsonRpcProvider(selected.network.ethRpcUrl));const read=privateContext?.readFunding;const value=await(read?read(currentProvider,name,args):currentProvider[name](...args));await guard();return value;
  }]));
  const requirePrivate=()=>{if(!privateContext)throw fail('ROLLING_FUNDING_PRIVATE_SESSION_REQUIRED');return privateContext;};
- const defaultPrivateFeeCap=sdk.normalizePrivateFeeGasSettings(selected.privateFee.gasSettings).gasSettings.getFeeLimit().toBigInt().toString();
+ let defaultPrivateFeeCap=sdk.normalizePrivateFeeGasSettings(selected.privateFee.gasSettings).gasSettings.getFeeLimit().toBigInt().toString();
+ const currentFees=async()=>{const fees=await readRollingFundingFees({node,gasSettings:selected.privateFee.gasSettings,contextGuard:guard});defaultPrivateFeeCap=fees.maximumFee.toString();try{onFeePricing(structuredClone(fees.gasSettings));}catch{}return fees;};
+ const starter=async asset=>{const fees=await currentFees();return starterFundingAllocation({asset,minDeposit:deployment.economics.minDeposit,privateFeeCap:fees.maximumFee.toString(),provider:fundingProvider});};
  await guard();
  const rawAggregate=await createAggregateWallet({sdk,ethers,scope,network,board:deployment.board.address.toString(),bok:selected.bok?.contractAddress,owner:captured.address,
   walletSecret:captured.secretKey,walletSalt:captured.salt,storage:storage??sdk.createBrowserJournalStorage(),provider:fundingProvider,captureWallet,contextGuard:guard,claimStore,relay,onProgress,
-  verifyFeeCredit:incomingAmount=>verifyRollingFundingCredit({sdk,node,gasSettings:selected.privateFee.gasSettings,incomingAmount,contextGuard:guard,readExistingCredit:()=>requirePrivate().readExistingCredit()}),
+  verifyFeeCredit:(incomingAmount,privateFeeCap)=>verifyRollingFundingCredit({sdk,node,privateFeeCap,gasSettings:selected.privateFee.gasSettings,incomingAmount,contextGuard:guard,readExistingCredit:()=>requirePrivate().readExistingCredit()}),
   verifyScope:async({includeBok,asset})=>{
    if(!includeBok&&asset==='ETH'&&initialScope){
     // Consume once, retaining the original fresh L1 recheck for confirmation.
@@ -227,7 +233,7 @@ export async function createRollingFundingSession({sdk,ethers,config,account,dep
  const postingCredit=Object.freeze({...aggregate,async inspect(){const saved=await aggregate.inspect();return saved?.claimAction==='claim-private-fee'?saved:null;},async prepare(input){
   await guard();
   if(!input||Object.keys(input).sort().join()!=='amount,asset,privateFeeCap'||!['ETH','USDC'].includes(input.asset))throw fail('ROLLING_FUNDING_INVALID');
-  const {amount,asset,privateFeeCap}=structuredClone(input);
+  const {amount,asset}=structuredClone(input),privateFeeCap=(await currentFees()).maximumFee.toString();
   const allocation={asset,collateralWei:'0',feeAmount:amount,bokAmount:'0',feePoolFee:3000,slippageBps:100,privateFeeCap,
    ...(asset==='USDC'?{collateralPoolFee:0}:{bokPoolFee:0,gasBudgetWei:await automaticFundingGasBudget(fundingProvider)})};
   const quote=await aggregate.prepare(allocation);await guard();
@@ -240,11 +246,11 @@ export async function createRollingFundingSession({sdk,ethers,config,account,dep
  };
  function prepareOpening(readStatus,asset){
   return prepareRollingFundingOpening({asset,readStatus,guard,
-   readAllocation:()=>timeFundingPreparation(onProgress,'allocation',()=>starterFundingAllocation({asset,minDeposit:deployment.economics.minDeposit,privateFeeCap:defaultPrivateFeeCap,provider:fundingProvider})),
+   readAllocation:()=>timeFundingPreparation(onProgress,'allocation',()=>starter(asset)),
    readRate:()=>asset==='USDC'?null:fundingUsdRate({ethers,provider:fundingProvider,chainId:network.chainId}),
    prepareQuote:allocation=>aggregate.prepare(allocation)});
  }
- return Object.freeze({aggregate,postingCredit,node,defaultPrivateFeeCap,usdcAvailable:scope.usdcRelayAddress!==undefined,assertContext,
+ return Object.freeze({aggregate,postingCredit,node,get defaultPrivateFeeCap(){return defaultPrivateFeeCap;},currentFees,usdcAvailable:scope.usdcRelayAddress!==undefined,assertContext,
   async registrationDeployment(options){await guard();const result=await readRollingDeploymentRegistration(deploymentPreparation,options);await guard();return result;},
   async bindPrivateContext(context){await guard();if(privateContext||!context||['readExistingCredit','ensureBok','reconcileClaim'].some(key=>typeof context[key]!=='function')||(context.readFunding!==undefined&&typeof context.readFunding!=='function'))throw fail('ROLLING_SESSION_CONFIG');privateContext=Object.freeze({...context});},
   // Internal one-use opening work, never a renderer capability or cached quote.
@@ -275,7 +281,7 @@ export async function createRollingFundingSession({sdk,ethers,config,account,dep
    // The fiat reference does not depend on the payment amount or authorize it.
    // Fetch it while gas/allocation/quote checks run, and drain both branches.
    const results=await Promise.allSettled([
-    async()=>{const allocation=await timeFundingPreparation(onProgress,'allocation',()=>starterFundingAllocation({asset,minDeposit:deployment.economics.minDeposit,privateFeeCap:defaultPrivateFeeCap,provider:fundingProvider}));await guard();return aggregate.prepare(allocation);},
+    async()=>{const allocation=await timeFundingPreparation(onProgress,'allocation',()=>starter(asset));await guard();return aggregate.prepare(allocation);},
     ()=>asset==='USDC'?null:fundingUsdRate({ethers,provider:fundingProvider,chainId:network.chainId}),
    ].map(read=>Promise.resolve().then(read)));
    await guard();const failure=results.find(result=>result.status==='rejected');if(failure)throw failure.reason;
