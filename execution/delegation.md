@@ -605,3 +605,7 @@ source release; no master push, redundant CI/deployment or agent host action.
 ## Fast-click Reply completion — 29 October
 
 Root implemented and integrated the fix; fast_reply_review independently reviewed source and bounded diagnostics. Candidate 6e5f02ab is published, seven native flows passed, and public file hash matches. See docs/FAST_REPLY_20261029.md. No agent work remains active.
+
+## Analytics toggle removal — 30 October
+
+Root owns the narrow reader UI change. fast_reply_review reviews the diff independently; no contract or analytics collection changes. Publish through the installed release route after focused checks.
