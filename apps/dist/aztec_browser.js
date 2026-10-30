@@ -477,29 +477,29 @@ var __aztec = (() => {
     function tripletToBase64(num) {
       return lookup[num >> 18 & 63] + lookup[num >> 12 & 63] + lookup[num >> 6 & 63] + lookup[num & 63];
     }
-    function encodeChunk(uint8, start, end) {
+    function encodeChunk(uint82, start, end) {
       var tmp;
       var output3 = [];
       for (var i2 = start; i2 < end; i2 += 3) {
-        tmp = (uint8[i2] << 16 & 16711680) + (uint8[i2 + 1] << 8 & 65280) + (uint8[i2 + 2] & 255);
+        tmp = (uint82[i2] << 16 & 16711680) + (uint82[i2 + 1] << 8 & 65280) + (uint82[i2 + 2] & 255);
         output3.push(tripletToBase64(tmp));
       }
       return output3.join("");
     }
-    function fromByteArray(uint8) {
+    function fromByteArray(uint82) {
       var tmp;
-      var len2 = uint8.length;
+      var len2 = uint82.length;
       var extraBytes = len2 % 3;
       var parts = [];
       var maxChunkLength = 16383;
       for (var i2 = 0, len22 = len2 - extraBytes; i2 < len22; i2 += maxChunkLength) {
-        parts.push(encodeChunk(uint8, i2, i2 + maxChunkLength > len22 ? len22 : i2 + maxChunkLength));
+        parts.push(encodeChunk(uint82, i2, i2 + maxChunkLength > len22 ? len22 : i2 + maxChunkLength));
       }
       if (extraBytes === 1) {
-        tmp = uint8[len2 - 1];
+        tmp = uint82[len2 - 1];
         parts.push(lookup[tmp >> 2] + lookup[tmp << 4 & 63] + "==");
       } else if (extraBytes === 2) {
-        tmp = (uint8[len2 - 2] << 8) + uint8[len2 - 1];
+        tmp = (uint82[len2 - 2] << 8) + uint82[len2 - 1];
         parts.push(lookup[tmp >> 10] + lookup[tmp >> 4 & 63] + lookup[tmp << 2 & 63] + "=");
       }
       return parts.join("");
@@ -122553,6 +122553,47 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   init_buffer2();
   init_process2();
 
+  // shared/network-fee-pricing.mjs
+  init_dirname();
+  init_buffer2();
+  init_process2();
+  var fail3 = (code) => Object.assign(Error(code), { code });
+  function uint3(value, bits = 128) {
+    if (value?.toBigInt) value = value.toBigInt();
+    if (typeof value === "number") {
+      if (!Number.isSafeInteger(value)) throw fail3("PRIVATE_FEE_INVALID_GAS");
+      value = String(value);
+    }
+    if (typeof value === "string") {
+      if (!/^(0|[1-9][0-9]*)$/.test(value) || value.length > 39) throw fail3("PRIVATE_FEE_INVALID_GAS");
+      value = BigInt(value);
+    }
+    if (typeof value !== "bigint" || value < 0n || value >= 1n << BigInt(bits)) throw fail3("PRIVATE_FEE_INVALID_GAS");
+    return value;
+  }
+  function pricePrivateFeeGasSettings(settings, minimum, { maximumFee, buffer = true } = {}) {
+    const limits = { daGas: uint3(settings?.gasLimits?.daGas, 32), l2Gas: uint3(settings?.gasLimits?.l2Gas, 32) };
+    const teardown = { daGas: uint3(settings?.teardownGasLimits?.daGas, 32), l2Gas: uint3(settings?.teardownGasLimits?.l2Gas, 32) };
+    if (limits.daGas === 0n || limits.l2Gas === 0n || teardown.l2Gas === 0n || teardown.daGas > limits.daGas || teardown.l2Gas > limits.l2Gas) throw fail3("PRIVATE_FEE_INVALID_GAS");
+    const priority = {}, floor = {}, prices = {};
+    for (const key of ["feePerDaGas", "feePerL2Gas"]) {
+      const base = uint3(minimum?.[key]);
+      priority[key] = uint3(settings?.maxPriorityFeesPerGas?.[key]);
+      floor[key] = uint3(base + priority[key]);
+      prices[key] = uint3(base * (buffer ? 2n : 1n) + priority[key]);
+    }
+    const total = (p) => limits.daGas * p.feePerDaGas + limits.l2Gas * p.feePerL2Gas;
+    const cap = maximumFee === void 0 ? void 0 : uint3(maximumFee);
+    if (cap !== void 0 && total(prices) > cap) {
+      if (total(floor) > cap) throw fail3("ROLLING_FEE_CHANGED");
+      Object.assign(prices, floor);
+    }
+    const amount = uint3(total(prices));
+    if (amount === 0n) throw fail3("PRIVATE_FEE_INVALID_GAS");
+    const strings2 = (value) => Object.fromEntries(Object.entries(value).map(([k, v]) => [k, v.toString()]));
+    return { gasSettings: { gasLimits: strings2(limits), teardownGasLimits: strings2(teardown), maxFeesPerGas: strings2(prices), maxPriorityFeesPerGas: strings2(priority) }, maximumFee: amount };
+  }
+
   // node_modules/@aztec-labs/aztec.js/dest/api/contract.js
   init_dirname();
   init_buffer2();
@@ -124323,9 +124364,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   var TIP_TAG = 0x5243544950544950n;
   var MAX_CREDIT_INPUTS = 8;
   var f = (v) => v instanceof Fr ? v : new Fr(BigInt(v));
-  var fail3 = (code) => Object.assign(Error(code), { code });
+  var fail4 = (code) => Object.assign(Error(code), { code });
   var check9 = (ok, code = "PRIVATE_CREDIT_INVALID") => {
-    if (!ok) throw fail3(code);
+    if (!ok) throw fail4(code);
   };
   var eq = (a, b2) => a.toString() === b2.toString();
   function validateTipPoint(value) {
@@ -124386,7 +124427,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     let total = 0n;
     for (const note of [...notes].sort((a, b2) => a.value > b2.value ? -1 : a.value < b2.value ? 1 : 0)) {
       if (total >= required7) break;
-      if (selected.length === MAX_CREDIT_INPUTS) throw fail3("PRIVATE_CREDIT_INPUT_LIMIT");
+      if (selected.length === MAX_CREDIT_INPUTS) throw fail4("PRIVATE_CREDIT_INPUT_LIMIT");
       selected.push(note);
       total += note.value;
     }
@@ -124684,7 +124725,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   var check10 = (ok, code) => {
     if (!ok) throw new PrivateFeePreparationError(code);
   };
-  function uint3(value, bits) {
+  function uint4(value, bits) {
     if (value?.toBigInt) value = value.toBigInt();
     if (typeof value === "number") {
       check10(Number.isSafeInteger(value), "PRIVATE_FEE_INVALID_VALUE");
@@ -124700,7 +124741,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   function field6(value) {
     if (value instanceof Fr) return new Fr(value.toBigInt());
     if (typeof value === "string" && /^0x[0-9a-f]{64}$/.test(value)) return Fr.fromString(value);
-    return new Fr(uint3(value, 254));
+    return new Fr(uint4(value, 254));
   }
   function address5(value) {
     const text = value instanceof AztecAddress ? value.toString() : value;
@@ -124761,10 +124802,10 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   }
   function normalizePrivateFeeGasSettings(value) {
     check10(value, "PRIVATE_FEE_CONFIGURATION_REQUIRED");
-    const da = uint3(value.gasLimits?.daGas, 32), l2 = uint3(value.gasLimits?.l2Gas, 32);
-    const tda = uint3(value.teardownGasLimits?.daGas, 32), tl2 = uint3(value.teardownGasLimits?.l2Gas, 32);
-    const fda = uint3(value.maxFeesPerGas?.feePerDaGas, 128), fl2 = uint3(value.maxFeesPerGas?.feePerL2Gas, 128);
-    const pda = uint3(value.maxPriorityFeesPerGas?.feePerDaGas, 128), pl2 = uint3(value.maxPriorityFeesPerGas?.feePerL2Gas, 128);
+    const da = uint4(value.gasLimits?.daGas, 32), l2 = uint4(value.gasLimits?.l2Gas, 32);
+    const tda = uint4(value.teardownGasLimits?.daGas, 32), tl2 = uint4(value.teardownGasLimits?.l2Gas, 32);
+    const fda = uint4(value.maxFeesPerGas?.feePerDaGas, 128), fl2 = uint4(value.maxFeesPerGas?.feePerL2Gas, 128);
+    const pda = uint4(value.maxPriorityFeesPerGas?.feePerDaGas, 128), pl2 = uint4(value.maxPriorityFeesPerGas?.feePerL2Gas, 128);
     const maximumFee = da * fda + l2 * fl2;
     check10(da > 0n && l2 > 0n && maximumFee > 0n && maximumFee < 1n << 128n && tda <= da && tl2 > 0n && tl2 <= l2 && pda <= fda && pl2 <= fl2, "PRIVATE_FEE_INVALID_GAS");
     return { gasSettings: new GasSettings(new Gas(Number(da), Number(l2)), new Gas(Number(tda), Number(tl2)), new GasFees(fda, fl2), new GasFees(pda, pl2)), maximumFee };
@@ -124773,18 +124814,19 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     try {
       return await prepare(input2);
     } catch (error312) {
-      if (error312 instanceof PrivateFeePreparationError) throw error312;
+      if (error312 instanceof PrivateFeePreparationError || error312?.code === "ROLLING_FEE_CHANGED" || error312?.code === "PRIVATE_FEE_INVALID_GAS") throw error312;
       throw new PrivateFeePreparationError("PRIVATE_FEE_PREPARATION_FAILED");
     }
   }
-  async function prepare({ wallet, node: node2, owner, privateFeeAddress, privateFeeArtifact, expectedChainId, expectedVersion, gasSettings, claim: claim2, creditScope, paidLike, creditCheck = "read-balance", measure = (_stage, operation) => operation() } = {}) {
+  async function prepare({ wallet, node: node2, owner, privateFeeAddress, privateFeeArtifact, expectedChainId, expectedVersion, gasSettings, feePricing = "fixed", maximumFee, claim: claim2, creditScope, paidLike, creditCheck = "read-balance", measure = (_stage, operation) => operation() } = {}) {
     check10(["read-balance", "deferred-balance"].includes(creditCheck) && !(claim2 && paidLike) && !(creditCheck === "deferred-balance" && (claim2 || paidLike)), "PRIVATE_FEE_CONFIGURATION_REQUIRED");
     check10(wallet?.getChainInfo && wallet?.registerContract && node2?.getNodeInfo && node2?.getContract, "PRIVATE_FEE_PROVIDER_REQUIRED");
     check10(privateFeeAddress && privateFeeArtifact, "PRIVATE_FEE_CONFIGURATION_REQUIRED");
     const paymentPXE = wallet.pxe;
-    const author = address5(owner), payer = address5(privateFeeAddress), chainId = uint3(expectedChainId, 64), version11 = uint3(expectedVersion, 32);
+    const author = address5(owner), payer = address5(privateFeeAddress), chainId = uint4(expectedChainId, 64), version11 = uint4(expectedVersion, 32);
     check10(!author.equals(payer), "PRIVATE_FEE_OWNER_IS_PAYER");
-    const fixed = normalizePrivateFeeGasSettings(gasSettings);
+    let fixed = normalizePrivateFeeGasSettings(gasSettings);
+    check10(["fixed", "network"].includes(feePricing) && (maximumFee === void 0 || feePricing === "network"), "PRIVATE_FEE_CONFIGURATION_REQUIRED");
     const artifact = artifactOf(privateFeeArtifact);
     const observations = await measure("action.fee-metadata", () => Promise.allSettled([
       () => wallet.getChainInfo(),
@@ -124796,8 +124838,18 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     const failure4 = observations.find((value) => value.status === "rejected");
     if (failure4) throw failure4.reason;
     const [walletChain, nodeInfo, minimum, canonical2, published] = observations.map((value) => value.value);
-    check10(uint3(walletChain.chainId, 64) === chainId && uint3(walletChain.version, 32) === version11 && uint3(nodeInfo.l1ChainId, 64) === chainId && uint3(nodeInfo.rollupVersion, 32) === version11, "PRIVATE_FEE_CHAIN_MISMATCH");
-    check10(["feePerDaGas", "feePerL2Gas"].every((key) => fixed.gasSettings.maxFeesPerGas[key] >= uint3(minimum[key], 128)), "PRIVATE_FEE_CAP_TOO_LOW");
+    check10(uint4(walletChain.chainId, 64) === chainId && uint4(walletChain.version, 32) === version11 && uint4(nodeInfo.l1ChainId, 64) === chainId && uint4(nodeInfo.rollupVersion, 32) === version11, "PRIVATE_FEE_CHAIN_MISMATCH");
+    if (feePricing === "network") {
+      let priced;
+      try {
+        priced = pricePrivateFeeGasSettings(gasSettings, minimum, { maximumFee });
+      } catch (error312) {
+        if (error312?.code !== "ROLLING_FEE_CHANGED" || maximumFee === void 0) throw error312;
+        priced = pricePrivateFeeGasSettings(gasSettings, minimum);
+      }
+      fixed = normalizePrivateFeeGasSettings(priced.gasSettings);
+    }
+    check10(["feePerDaGas", "feePerL2Gas"].every((key) => fixed.gasSettings.maxFeesPerGas[key] >= uint4(minimum[key], 128)), "PRIVATE_FEE_CAP_TOO_LOW");
     check10(equal2(canonical2.address, payer), "PRIVATE_FEE_NONCANONICAL_ADDRESS");
     const binding2 = await measure("action.fee-binding", () => Promise.allSettled([checkPublishedPrivateFee(published, canonical2), privateFeeRegistered(wallet, canonical2)]));
     const bindingFailure = binding2.find((value) => value.status === "rejected");
@@ -124826,7 +124878,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     };
     if (claim2 !== void 0) {
       check10(claim2 && typeof claim2 === "object" && !Array.isArray(claim2), "PRIVATE_FEE_INVALID_CLAIM");
-      const amount = uint3(claim2.amount, 128), salt = field6(claim2.salt), leafIndex = field6(claim2.leafIndex);
+      const amount = uint4(claim2.amount, 128), salt = field6(claim2.salt), leafIndex = field6(claim2.leafIndex);
       check10(amount > 0n, "PRIVATE_FEE_CLAIM_INSUFFICIENT");
       availableCredit = amount;
       const secret = await derivePrivateFeeBridgeSecret({ salt, owner: author });
@@ -124858,7 +124910,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       try {
         return { ...prepared2, ...await selectPayment(like), creditCheck: "read-balance" };
       } catch (error312) {
-        if (error312 instanceof PrivateFeePreparationError) throw error312;
+        if (error312 instanceof PrivateFeePreparationError || error312?.code === "ROLLING_FEE_CHANGED" || error312?.code === "PRIVATE_FEE_INVALID_GAS") throw error312;
         throw new PrivateFeePreparationError(error312?.code === "PRIVATE_FEE_BALANCE_INSUFFICIENT" ? error312.code : "PRIVATE_FEE_PREPARATION_FAILED");
       }
     } };
@@ -124891,7 +124943,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   var check11 = (ok, code) => {
     if (!ok) throw new PrivateFeeFundingError(code);
   };
-  function uint4(value, bits = 128) {
+  function uint5(value, bits = 128) {
     if (value?.toBigInt) value = value.toBigInt();
     if (typeof value === "number") {
       check11(Number.isSafeInteger(value), "PRIVATE_FEE_FUNDING_INVALID");
@@ -124923,9 +124975,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   }
   async function verifyScope({ node: node2, ethProvider, privateFeeArtifact, privateFeeAddress, expectedChainId, expectedVersion }) {
     check11(node2?.getNodeInfo && ethProvider?.getNetwork, "PRIVATE_FEE_FUNDING_PROVIDER_REQUIRED");
-    const chainId = uint4(expectedChainId, 64), version11 = uint4(expectedVersion, 32);
+    const chainId = uint5(expectedChainId, 64), version11 = uint5(expectedVersion, 32);
     const [info, network, canonical2] = await Promise.all([node2.getNodeInfo(), ethProvider.getNetwork(), derivePrivateFeeInstance(privateFeeArtifact)]);
-    check11(uint4(network.chainId, 64) === chainId && uint4(info.l1ChainId, 64) === chainId && uint4(info.rollupVersion, 32) === version11, "PRIVATE_FEE_FUNDING_CHAIN_MISMATCH");
+    check11(uint5(network.chainId, 64) === chainId && uint5(info.l1ChainId, 64) === chainId && uint5(info.rollupVersion, 32) === version11, "PRIVATE_FEE_FUNDING_CHAIN_MISMATCH");
     check11(eq2(canonical2.address, privateFeeAddress), "PRIVATE_FEE_FUNDING_ADDRESS_MISMATCH");
     await requirePublishedPrivateFee(node2, canonical2);
     const scope = {
@@ -124942,17 +124994,17 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       read(ethProvider, scope.portalAddress, portalAbi2, "VERSION"),
       read(ethProvider, scope.portalAddress, portalAbi2, "L2_TOKEN_ADDRESS")
     ]);
-    check11(eq2(rollup, scope.rollupAddress) && eq2(token, scope.tokenAddress) && uint4(portalVersion, 32) === version11 && eq2(l2Token, ProtocolContractAddress.FeeJuice), "PRIVATE_FEE_FUNDING_PORTAL_MISMATCH");
+    check11(eq2(rollup, scope.rollupAddress) && eq2(token, scope.tokenAddress) && uint5(portalVersion, 32) === version11 && eq2(l2Token, ProtocolContractAddress.FeeJuice), "PRIVATE_FEE_FUNDING_PORTAL_MISMATCH");
     return scope;
   }
   async function claimSecrets({ walletSecret, owner, record: record8 }) {
     const salt = await poseidon2HashWithSeparator([
       secretField(walletSecret),
-      new Fr(uint4(record8.chainId, 64)),
-      new Fr(uint4(record8.version, 32)),
+      new Fr(uint5(record8.chainId, 64)),
+      new Fr(uint5(record8.version, 32)),
       Fr.fromString(record8.privateFeeAddress),
       new Fr(BigInt(record8.sender)),
-      new Fr(uint4(record8.nonce, 64))
+      new Fr(uint5(record8.nonce, 64))
     ], 1111639553);
     const secret = await derivePrivateFeeBridgeSecret({ salt, owner });
     const secretHash = await derivePrivateFeeBridgeSecretHash({ salt, owner });
@@ -125019,8 +125071,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     check11(record8 && record8.schema === SCHEMA, "PRIVATE_FEE_RECOVERY_INVALID");
     const allowed = ["schema", "chainId", "version", "rollupAddress", "portalAddress", "tokenAddress", "privateFeeAddress", "sender", "nonce", "amount", "txHash", "leafIndex"];
     check11(Object.keys(record8).every((key) => allowed.includes(key)), "PRIVATE_FEE_RECOVERY_INVALID");
-    check11(uint4(record8.amount) > 0n, "PRIVATE_FEE_RECOVERY_INVALID");
-    uint4(record8.nonce, 64);
+    check11(uint5(record8.amount) > 0n, "PRIVATE_FEE_RECOVERY_INVALID");
+    uint5(record8.nonce, 64);
     address6(record8.sender);
     if (record8.txHash !== void 0) check11(typeof record8.txHash === "string" && /^0x[0-9a-fA-F]{64}$/.test(record8.txHash), "PRIVATE_FEE_RECOVERY_INVALID");
   }
@@ -125040,7 +125092,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   async function recoverPrivateFeeFunding(input2) {
     const ethProvider = input2.ethProvider;
     const scope = await verifyScope({ ...input2, ethProvider });
-    if (input2.ethSigner) check11(uint4((await input2.ethSigner.provider.getNetwork()).chainId, 64) === uint4(scope.chainId, 64), "PRIVATE_FEE_FUNDING_CHAIN_MISMATCH");
+    if (input2.ethSigner) check11(uint5((await input2.ethSigner.provider.getNetwork()).chainId, 64) === uint5(scope.chainId, 64), "PRIVATE_FEE_FUNDING_CHAIN_MISMATCH");
     const sender = address6(input2.sender ?? await input2.ethSigner?.getAddress());
     const journal = await fundingJournal({ ...input2, ethProvider }, scope, sender);
     const result = await journal.recover({ retry: input2.retry === true });
@@ -125059,11 +125111,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       check11(ethProvider?.getNetwork && ethSigner?.provider && ethSigner?.sendTransaction && typeof saveRecovery === "function", "PRIVATE_FEE_FUNDING_PROVIDER_REQUIRED");
       secretField(walletSecret);
       secretField(owner?.toString());
-      const quantity2 = uint4(amount);
+      const quantity2 = uint5(amount);
       check11(quantity2 > 0n, "PRIVATE_FEE_FUNDING_INVALID");
       phase = "verify-scope";
       const scope = await verifyScope({ node: node2, ethProvider, privateFeeArtifact, privateFeeAddress, expectedChainId, expectedVersion });
-      check11(uint4((await ethSigner.provider.getNetwork()).chainId, 64) === uint4(scope.chainId, 64), "PRIVATE_FEE_FUNDING_CHAIN_MISMATCH");
+      check11(uint5((await ethSigner.provider.getNetwork()).chainId, 64) === uint5(scope.chainId, 64), "PRIVATE_FEE_FUNDING_CHAIN_MISMATCH");
       const sender = address6(await ethSigner.getAddress());
       phase = "journal-preflight";
       const journal = await fundingJournal(input2, scope, sender);
@@ -125084,7 +125136,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         const { secretHash } = await claimSecrets({ walletSecret, owner, record: record8 });
         phase = "save-before-deposit";
         await saveRecovery(copy2(record8));
-        check11(uint4((await ethProvider.getNetwork()).chainId, 64) === uint4(scope.chainId, 64) && eq2(await ethSigner.getAddress(), sender), "PRIVATE_FEE_FUNDING_ACCOUNT_CHANGED");
+        check11(uint5((await ethProvider.getNetwork()).chainId, 64) === uint5(scope.chainId, 64) && eq2(await ethSigner.getAddress(), sender), "PRIVATE_FEE_FUNDING_ACCOUNT_CHANGED");
         phase = "submit-deposit";
         depositAttempted = true;
         return { data: portalAbi2.encodeFunctionData("depositToAztecPublic", [scope.privateFeeAddress, quantity2, secretHash.toString()]), value: "0", expected: { kind: "fee-deposit", amount: quantity2.toString(), secretHash: secretHash.toString(), recipient: scope.privateFeeAddress.toLowerCase() } };
@@ -125145,16 +125197,16 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       check11(!aggregateDescriptor || "value" in aggregateDescriptor, "PRIVATE_FEE_RECOVERY_INVALID");
       const record8 = Object.freeze({
         ...recordData,
-        chainId: uint4(recordData.chainId, 64).toString(),
-        version: uint4(recordData.version, 32).toString(),
+        chainId: uint5(recordData.chainId, 64).toString(),
+        version: uint5(recordData.version, 32).toString(),
         rollupAddress: address6(recordData.rollupAddress),
         portalAddress: address6(recordData.portalAddress),
         tokenAddress: address6(recordData.tokenAddress),
         privateFeeAddress: secretField(recordData.privateFeeAddress).toString(),
         sender: address6(recordData.sender),
-        nonce: uint4(recordData.nonce, 64).toString(),
-        amount: uint4(recordData.amount).toString(),
-        ...recordData.leafIndex === void 0 ? {} : { leafIndex: uint4(recordData.leafIndex, 254).toString() }
+        nonce: uint5(recordData.nonce, 64).toString(),
+        amount: uint5(recordData.amount).toString(),
+        ...recordData.leafIndex === void 0 ? {} : { leafIndex: uint5(recordData.leafIndex, 254).toString() }
       }), aggregateIntent = captureAggregateFundingIntent(aggregateDescriptor?.value);
       const custodyDescriptor = Object.getOwnPropertyDescriptor(input2, "aggregateCustody");
       check11(!custodyDescriptor || "value" in custodyDescriptor, "PRIVATE_FEE_RECOVERY_INVALID");
@@ -125168,17 +125220,17 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       check11(receipt.status === 1, "PRIVATE_FEE_RECOVERY_REVERTED");
       const block2 = await ethProvider.getBlock(receipt.blockNumber);
       check11(block2 && eq2(block2.hash, receipt.blockHash), "PRIVATE_FEE_RECOVERY_REORG");
-      const expectedData = portalAbi2.encodeFunctionData("depositToAztecPublic", [scope.privateFeeAddress, uint4(record8.amount), secretHash.toString()]);
+      const expectedData = portalAbi2.encodeFunctionData("depositToAztecPublic", [scope.privateFeeAddress, uint5(record8.amount), secretHash.toString()]);
       const intent = aggregateIntent ?? {
         from: record8.sender.toLowerCase(),
         to: scope.portalAddress.toLowerCase(),
-        nonce: Number(uint4(record8.nonce, 64)),
+        nonce: Number(uint5(record8.nonce, 64)),
         chainId: scope.chainId,
         data: expectedData.toLowerCase(),
         value: "0",
         expected: { kind: "fee-deposit", recipient: scope.privateFeeAddress.toLowerCase(), amount: String(record8.amount), secretHash: secretHash.toString().toLowerCase() }
       };
-      if (aggregateIntent) check11(aggregateIntent.from === record8.sender.toLowerCase() && aggregateIntent.nonce === Number(uint4(record8.nonce, 64)) && aggregateIntent.chainId === scope.chainId && aggregateIntent.expected.feePortal === scope.portalAddress.toLowerCase() && aggregateIntent.expected.privateFpc === scope.privateFeeAddress.toLowerCase() && (!aggregateIntent.txHash || aggregateIntent.txHash === record8.txHash.toLowerCase()), "PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH");
+      if (aggregateIntent) check11(aggregateIntent.from === record8.sender.toLowerCase() && aggregateIntent.nonce === Number(uint5(record8.nonce, 64)) && aggregateIntent.chainId === scope.chainId && aggregateIntent.expected.feePortal === scope.portalAddress.toLowerCase() && aggregateIntent.expected.privateFpc === scope.privateFeeAddress.toLowerCase() && (!aggregateIntent.txHash || aggregateIntent.txHash === record8.txHash.toLowerCase()), "PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH");
       let verified;
       try {
         verified = await verifyEthereumIntentReceipt(ethProvider, intent, record8.txHash.toLowerCase());
@@ -125189,9 +125241,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       if (aggregateCustody) check11(verified.event.beneficiary === aggregateCustody.beneficiary, "PRIVATE_FEE_RECOVERY_EVENT_MISMATCH");
       const event = aggregateIntent ? { key: verified.event.privateFee.messageKey, index: verified.event.privateFee.leafIndex } : verified.event;
       if (aggregateIntent) check11(verified.event.privateFee.amount === String(record8.amount) && verified.event.privateFee.secretHash === secretHash.toString(), "PRIVATE_FEE_RECOVERY_EVENT_MISMATCH");
-      const leafIndex = new Fr(uint4(event.index, 254));
-      check11(record8.leafIndex === void 0 || uint4(record8.leafIndex, 254) === leafIndex.toBigInt(), "PRIVATE_FEE_RECOVERY_EVENT_MISMATCH");
-      return { amount: uint4(record8.amount), salt, secret, leafIndex, messageKey: event.key };
+      const leafIndex = new Fr(uint5(event.index, 254));
+      check11(record8.leafIndex === void 0 || uint5(record8.leafIndex, 254) === leafIndex.toBigInt(), "PRIVATE_FEE_RECOVERY_EVENT_MISMATCH");
+      return { amount: uint5(record8.amount), salt, secret, leafIndex, messageKey: event.key };
     } catch (error312) {
       if (error312 instanceof PrivateFeeFundingError) throw error312;
       throw new PrivateFeeFundingError("PRIVATE_FEE_RECOVERY_FAILED");
@@ -125240,7 +125292,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     UNSYNCED: "Trusted private node state is incomplete or inconsistent.",
     STALE: "Trusted private node synchronization is stale."
   });
-  function fail4(kind) {
+  function fail5(kind) {
     const error312 = Object.assign(new Error(messages2[kind]), { code: "BB_TRUSTED_NODE_" + kind });
     failures.add(error312);
     return error312;
@@ -125248,32 +125300,32 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   var natural = (value) => Number.isSafeInteger(value) && value >= 0;
   function decimal(value, bits) {
     if (typeof value === "number") {
-      if (!natural(value)) throw fail4("CONFIG");
+      if (!natural(value)) throw fail5("CONFIG");
       value = String(value);
     }
-    if (typeof value !== "string" || !/^[1-9][0-9]{0,19}$/.test(value) || BigInt(value) >= 1n << BigInt(bits)) throw fail4("CONFIG");
-    if (BigInt(value) > BigInt(Number.MAX_SAFE_INTEGER)) throw fail4("CONFIG");
+    if (typeof value !== "string" || !/^[1-9][0-9]{0,19}$/.test(value) || BigInt(value) >= 1n << BigInt(bits)) throw fail5("CONFIG");
+    if (BigInt(value) > BigInt(Number.MAX_SAFE_INTEGER)) throw fail5("CONFIG");
     return value;
   }
   function hex12(value, bytes4) {
     const text = typeof value === "string" ? value : value?.toString();
-    if (typeof text !== "string" || !new RegExp("^0x[0-9a-fA-F]{" + bytes4 * 2 + "}$").test(text)) throw fail4("UNAVAILABLE");
+    if (typeof text !== "string" || !new RegExp("^0x[0-9a-fA-F]{" + bytes4 * 2 + "}$").test(text)) throw fail5("UNAVAILABLE");
     return text.toLowerCase();
   }
   function policy(options) {
     try {
       const { expectedNetworkScope: s, proofsEnabled, maxLagSeconds = 120, readinessTier = "proposed" } = options;
-      if (!["proposed", "checkpointed", "proven", "finalized"].includes(readinessTier)) throw fail4("CONFIG");
+      if (!["proposed", "checkpointed", "proven", "finalized"].includes(readinessTier)) throw fail5("CONFIG");
       const chainId = decimal(s.chainId, 64), version11 = decimal(s.version, 32), rollup = hex12(s.rollup, 20);
-      if (BigInt(rollup) === 0n || typeof proofsEnabled !== "boolean" || !proofsEnabled && chainId !== "31337" || !Number.isSafeInteger(maxLagSeconds) || maxLagSeconds < 1 || maxLagSeconds > 600) throw fail4("CONFIG");
+      if (BigInt(rollup) === 0n || typeof proofsEnabled !== "boolean" || !proofsEnabled && chainId !== "31337" || !Number.isSafeInteger(maxLagSeconds) || maxLagSeconds < 1 || maxLagSeconds > 600) throw fail5("CONFIG");
       return { chainId, version: version11, rollup, proofsEnabled, maxLagSeconds, readinessTier };
     } catch {
-      throw fail4("CONFIG");
+      throw fail5("CONFIG");
     }
   }
   function block(value) {
     const number20 = value?.number, hash14 = value?.hash;
-    if (!natural(number20)) throw fail4("UNAVAILABLE");
+    if (!natural(number20)) throw fail5("UNAVAILABLE");
     return { number: number20, hash: hex12(hash14, 32) };
   }
   async function readTogether(reads) {
@@ -125301,7 +125353,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   async function inspectTrustedNode(node2, options) {
     const p = policy(options), snapshots = [];
     const unsynced = (reason, canonical2 = null) => {
-      const error312 = fail4("UNSYNCED");
+      const error312 = fail5("UNSYNCED");
       diagnostics.set(error312, Object.freeze({ reason, snapshots: Object.freeze([...snapshots]), canonical: canonical2 }));
       return error312;
     };
@@ -125311,8 +125363,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
           async () => {
             const info2 = await node2.getNodeInfo();
             const chainId = info2?.l1ChainId, version11 = info2?.rollupVersion, realProofs = info2?.realProofs, rollup = info2?.l1ContractAddresses?.rollupAddress;
-            if (!natural(chainId) || !natural(version11) || typeof realProofs !== "boolean") throw fail4("UNAVAILABLE");
-            if (String(chainId) !== p.chainId || String(version11) !== p.version || hex12(rollup, 20) !== p.rollup || realProofs !== p.proofsEnabled) throw fail4("IDENTITY");
+            if (!natural(chainId) || !natural(version11) || typeof realProofs !== "boolean") throw fail5("UNAVAILABLE");
+            if (String(chainId) !== p.chainId || String(version11) !== p.version || hex12(rollup, 20) !== p.rollup || realProofs !== p.proofsEnabled) throw fail5("IDENTITY");
             return detachedInfo(info2);
           },
           async () => {
@@ -125338,7 +125390,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
           // then validate canonical anchors after this entire group settles.
           async () => {
             const value = await node2.getSyncedL1Timestamp();
-            if (typeof value !== "bigint" || value < 0n || value > BigInt(Number.MAX_SAFE_INTEGER)) throw fail4("UNAVAILABLE");
+            if (typeof value !== "bigint" || value < 0n || value > BigInt(Number.MAX_SAFE_INTEGER)) throw fail5("UNAVAILABLE");
             return value;
           }
         ]);
@@ -125348,7 +125400,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         const ordered = [finalized, proven, checkpointed, proposed];
         for (let i = 1; i < ordered.length; i++) if (ordered[i - 1].number > ordered[i].number || ordered[i - 1].number === ordered[i].number && ordered[i - 1].hash !== ordered[i].hash) throw unsynced("TIP_ORDER");
         const { latest, latestHash, final, oldest, synced } = state;
-        if (!natural(latest) || !natural(final) || !natural(oldest) || typeof synced !== "boolean") throw fail4("UNAVAILABLE");
+        if (!natural(latest) || !natural(final) || !natural(oldest) || typeof synced !== "boolean") throw fail5("UNAVAILABLE");
         if (!synced) throw unsynced("STATE_NOT_SYNCED");
         if (oldest > checkpointed.number || oldest > selected.number) throw unsynced("CHECKPOINT_PRUNED");
         if (final > latest) throw unsynced("IMPOSSIBLE_FINALITY");
@@ -125359,9 +125411,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         }
         const world = { number: latest, hash: latestHash };
         const suppliedNow = options.nowSeconds, now = suppliedNow === void 0 ? Math.floor(Date.now() / 1e3) : suppliedNow;
-        if (!natural(now)) throw fail4("CONFIG");
+        if (!natural(now)) throw fail5("CONFIG");
         const lag = now - Number(stamp);
-        if (p.proofsEnabled && (lag < 0 || lag > p.maxLagSeconds)) throw fail4("STALE");
+        if (p.proofsEnabled && (lag < 0 || lag > p.maxLagSeconds)) throw fail5("STALE");
         const finalBlocks = await canonicalPhase(node2, historical ? [[selected, "selected"], [world, "world"]] : [[checkpointed, "checkpointed"], [proposed, "proposed"]], unsynced);
         const result = Object.freeze({
           ready: true,
@@ -125383,7 +125435,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         return result;
       }
     } catch (error312) {
-      throw failures.has(error312) ? error312 : fail4("UNAVAILABLE");
+      throw failures.has(error312) ? error312 : fail5("UNAVAILABLE");
     }
   }
   var discard = () => {
@@ -125392,14 +125444,14 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   var MAX_RESPONSE_BYTES = 32 * 1024 * 1024;
   function endpoint(value, allowLocalDev) {
     try {
-      if (typeof value !== "string" || value.length > 2048 || /[\s\\]/.test(value)) throw fail4("CONFIG");
+      if (typeof value !== "string" || value.length > 2048 || /[\s\\]/.test(value)) throw fail5("CONFIG");
       const url7 = new URL(value);
-      if (url7.username || url7.password || url7.search || url7.hash || value.includes("?") || value.includes("#")) throw fail4("CONFIG");
+      if (url7.username || url7.password || url7.search || url7.hash || value.includes("?") || value.includes("#")) throw fail5("CONFIG");
       const local = ["127.0.0.1", "[::1]", "localhost"].includes(url7.hostname);
-      if (url7.protocol !== "https:" && !(allowLocalDev === true && local && url7.protocol === "http:")) throw fail4("CONFIG");
+      if (url7.protocol !== "https:" && !(allowLocalDev === true && local && url7.protocol === "http:")) throw fail5("CONFIG");
       return url7.href;
     } catch {
-      throw fail4("CONFIG");
+      throw fail5("CONFIG");
     }
   }
   var retryableReads = new Set([
@@ -125474,11 +125526,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         }
         if (readOnly && !result.redirected && [502, 503, 504].includes(result.status)) {
           await result.body?.cancel().catch(discard);
-          throw fail4("UNAVAILABLE");
+          throw fail5("UNAVAILABLE");
         }
         return result;
       }, "Private node read", makeBackoff2([0]), silent, true);
-      if (!response.ok || response.redirected || !response.body) throw fail4("UNAVAILABLE");
+      if (!response.ok || response.redirected || !response.body) throw fail5("UNAVAILABLE");
       const reader = response.body.getReader(), chunks = [];
       let size2 = 0;
       try {
@@ -125486,7 +125538,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
           const { done, value } = await reader.read();
           if (done) break;
           size2 += value.byteLength;
-          if (size2 > MAX_RESPONSE_BYTES) throw fail4("UNAVAILABLE");
+          if (size2 > MAX_RESPONSE_BYTES) throw fail5("UNAVAILABLE");
           chunks.push(value);
         }
       } finally {
@@ -125501,11 +125553,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       }
       return { response: JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes4)), headers: response.headers };
     } catch {
-      throw fail4("UNAVAILABLE");
+      throw fail5("UNAVAILABLE");
     }
   }
   async function createTrustedPrivateNode({ url: url7, expectedNetworkScope, proofsEnabled = true, allowLocalDev = false, maxLagSeconds = 120, readinessTier = "proposed", onReady }) {
-    if (onReady !== void 0 && typeof onReady !== "function") throw fail4("CONFIG");
+    if (onReady !== void 0 && typeof onReady !== "function") throw fail5("CONFIG");
     const p = policy({ expectedNetworkScope, proofsEnabled, maxLagSeconds, readinessTier }), host = endpoint(url7, allowLocalDev);
     const rpc = createSafeJsonRpcClient(host, AztecNodeApiSchema, {
       namespaceMethods: "aztec",
@@ -125519,7 +125571,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         try {
           return await rpc[name](...args);
         } catch {
-          throw fail4("UNAVAILABLE");
+          throw fail5("UNAVAILABLE");
         }
       };
       return [name, { enumerable: true, get: () => method }];
@@ -125549,7 +125601,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       throw new Error(`Invalid ${label} fields`);
     }
   }
-  function uint5(value, bits, label) {
+  function uint6(value, bits, label) {
     if (typeof value !== "string" || !/^(0|[1-9][0-9]*)$/.test(value) || value.length > 78 || BigInt(value) >= 1n << BigInt(bits)) throw new Error(`Invalid ${label}`);
     return value;
   }
@@ -125571,8 +125623,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   }
   function validateScope(scope) {
     exact(scope, ["l1ChainId", "rollupAddress", "rollupVersion", "boardAddress", "portalAddress"], "network scope");
-    uint5(scope.l1ChainId, 64, "L1 chain ID");
-    uint5(scope.rollupVersion, 32, "rollup version");
+    uint6(scope.l1ChainId, 64, "L1 chain ID");
+    uint6(scope.rollupVersion, 32, "rollup version");
     hex13(scope.rollupAddress, 20, "rollup address");
     hex13(scope.portalAddress, 20, "portal address");
     field7(scope.boardAddress, "board address");
@@ -125690,15 +125742,15 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   var MODULUS2 = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
   var failures2 = /* @__PURE__ */ new WeakSet();
   var operationClaims = /* @__PURE__ */ new WeakMap();
-  function fail5(code) {
+  function fail6(code) {
     const error312 = Object.assign(new Error("Funding receipt could not be verified."), { code: "ROLLING_FUNDING_" + code });
     failures2.add(error312);
     return error312;
   }
   function requireThat(value, code = "MISMATCH") {
-    if (!value) throw fail5(code);
+    if (!value) throw fail6(code);
   }
-  function uint6(value, bits = 128) {
+  function uint7(value, bits = 128) {
     requireThat(typeof value === "string" && /^(0|[1-9][0-9]{0,77})$/.test(value) && BigInt(value) < 1n << BigInt(bits), "INVALID");
     return value;
   }
@@ -125741,8 +125793,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     requireThat(["collateral", "collateral-cancel", "private-fee", "bok"].includes(kind), "INVALID");
     const collateral = kind === "collateral" || kind === "collateral-cancel";
     const scope = object5(input2.scope, ["chainId", "version", "rollup", "portal", "recipient", ...collateral ? [] : ["token"]]);
-    uint6(scope.chainId, 64);
-    uint6(scope.version, 32);
+    uint7(scope.chainId, 64);
+    uint7(scope.version, 32);
     requireThat(BigInt(scope.chainId) > 0n && BigInt(scope.chainId) <= BigInt(Number.MAX_SAFE_INTEGER) && BigInt(scope.version) > 0n, "INVALID");
     for (const key of ["rollup", "portal", ...collateral ? [] : ["token"]]) {
       hex14(scope[key], 20);
@@ -125753,9 +125805,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     hex14(receipt.txHash);
     hex14(receipt.blockHash);
     hex14(receipt.sender, 20);
-    uint6(receipt.nonce, 53);
-    uint6(receipt.amount, collateral ? 96 : 128);
-    uint6(receipt.leafIndex, L1_TO_L2_MSG_TREE_HEIGHT);
+    uint7(receipt.nonce, 53);
+    uint7(receipt.amount, collateral ? 96 : 128);
+    uint7(receipt.leafIndex, L1_TO_L2_MSG_TREE_HEIGHT);
     requireThat(BigInt(receipt.amount) > 0n && BigInt(receipt.sender) > 0n, "INVALID");
     field8(receipt.messageKey);
     field8(receipt.secretHash);
@@ -125836,7 +125888,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       return frozen({ status: "claim-ready", claim: { contract: s.recipient, method: "claim", args: [r.amount, secrets.recipientSalt, secrets.bridgeSecret, r.leafIndex] }, evidence: { kind, txHash: r.txHash, l2: { number: a.number, hash: a.hash }, messageKey: r.messageKey, leafIndex: r.leafIndex, content } });
     } catch (error312) {
       if (failures2.has(error312)) throw error312;
-      throw fail5("UNKNOWN");
+      throw fail6("UNKNOWN");
     }
   }
   async function prepareFundingClaim(input2) {
@@ -125891,7 +125943,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
           return value;
         } catch {
           readFailed = true;
-          throw fail5("UNKNOWN");
+          throw fail6("UNKNOWN");
         }
       };
       const immutable = /* @__PURE__ */ new Map();
@@ -125982,7 +126034,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             try {
               value = await verifyEthereumIntentReceipt(provider, aggregateIntent, r.txHash);
             } catch {
-              throw fail5(readFailed ? "UNKNOWN" : "MISMATCH");
+              throw fail6(readFailed ? "UNKNOWN" : "MISMATCH");
             }
             requireThat(value?.outcome === "success" && value.receipt.blockNumber === r.blockNumber && equal3(value.receipt.blockHash, r.blockHash));
             return frozen({ outcome: value.outcome, receipt: { blockNumber: value.receipt.blockNumber, blockHash: value.receipt.blockHash }, event: structuredClone(value.event) });
@@ -126019,7 +126071,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
           try {
             event = boardAbi.parseLog(events[0])?.args;
           } catch {
-            throw fail5("MISMATCH");
+            throw fail6("MISMATCH");
           }
           requireThat(event && equal3(event.depositor, r.sender) && equal3(event.depositId, r.depositId) && String(event.amount) === r.amount && equal3(event.key, r.messageKey) && String(event.index) === r.leafIndex);
           secret = Fr.ONE.toString();
@@ -126051,7 +126103,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             try {
               result2 = await verifyEthereumIntentReceipt(provider, record8, r.txHash);
             } catch {
-              throw fail5(readFailed ? "UNKNOWN" : "MISMATCH");
+              throw fail6(readFailed ? "UNKNOWN" : "MISMATCH");
             }
             requireThat(result2?.outcome === "success" && equal3(result2.event.key, r.messageKey) && String(result2.event.index) === r.leafIndex);
           }
@@ -126083,7 +126135,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
             try {
               verified = await verifyEthereumIntentReceipt(provider, intent, r.txHash);
             } catch {
-              throw fail5(readFailed ? "UNKNOWN" : "MISMATCH");
+              throw fail6(readFailed ? "UNKNOWN" : "MISMATCH");
             }
             requireThat(verified?.outcome === "success" && equal3(verified.event.key, r.messageKey) && String(verified.event.index) === r.leafIndex);
           }
@@ -126141,8 +126193,8 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         mismatch = !readFailed && error312 instanceof PrivateFeeFundingError && ["PRIVATE_FEE_RECOVERY_TRANSACTION_MISMATCH", "PRIVATE_FEE_RECOVERY_EVENT_MISMATCH", "PRIVATE_FEE_RECOVERY_SCOPE_MISMATCH"].includes(Object.getOwnPropertyDescriptor(error312, "code")?.value);
       } catch {
       }
-      if (mismatch) throw fail5("MISMATCH");
-      throw fail5("UNKNOWN");
+      if (mismatch) throw fail6("MISMATCH");
+      throw fail6("UNKNOWN");
     }
   }
 
@@ -151044,7 +151096,7 @@ See docs for context: https://docs.aztec.network/errors/14`);
         this.#activeStore = scheduled(tx.store);
         for (const container of this.#containers) container.db = this.#activeStore;
         const heartbeat = new Promise((resolveHeartbeat) => {
-          const fail14 = (error312) => {
+          const fail15 = (error312) => {
             callbackPending = false;
             rejectPending(error312);
             try {
@@ -151058,7 +151110,7 @@ See docs for context: https://docs.aztec.network/errors/14`);
             try {
               request = unwrap(tx.store).get("");
             } catch (error312) {
-              fail14(error312);
+              fail15(error312);
               return;
             }
             request.onsuccess = () => {
@@ -151066,7 +151118,7 @@ See docs for context: https://docs.aztec.network/errors/14`);
               if (callbackPending || pending2.length || inflight.size) next();
               else resolveHeartbeat({ ok: true });
             };
-            request.onerror = () => fail14(request.error);
+            request.onerror = () => fail15(request.error);
           };
           next();
         });
@@ -182514,7 +182566,7 @@ ${context2.join("\n")}`;
   init_dirname();
   init_buffer2();
   init_process2();
-  var fail6 = () => transactionError("BB_RECOVERY_REQUIRED", "Recover the saved transaction before starting another operation.");
+  var fail7 = () => transactionError("BB_RECOVERY_REQUIRED", "Recover the saved transaction before starting another operation.");
   var invalid7 = () => transactionError("BB_JOURNAL_INVALID", "Transaction recovery storage could not be authenticated. Preserve it before continuing.");
   function replacementOptions(options = {}) {
     try {
@@ -182607,7 +182659,7 @@ ${context2.join("\n")}`;
     async function checkedScope(expected) {
       try {
         if (expected && contextGuard) await contextGuard();
-        if (ownedScope() !== expected) throw fail6();
+        if (ownedScope() !== expected) throw fail7();
       } catch (error312) {
         canonicalPermit = null;
         throw error312;
@@ -182616,22 +182668,22 @@ ${context2.join("\n")}`;
     async function rememberCanonical(saved, receipt, owner) {
       if (!owner || !receipt) return;
       await checkedScope(owner);
-      if (!await slot.isCurrent(saved.encoded)) throw fail6();
+      if (!await slot.isCurrent(saved.encoded)) throw fail7();
       await checkedScope(owner);
       canonicalPermit = { owner, encoded: saved.encoded, hash: saved.tx.getTxHash().toString(), receipt };
     }
     async function checkPredecessorAnchor(receipt, owner) {
-      if (!owner || !receipt) throw fail6();
+      if (!owner || !receipt) throw fail7();
       const header = await predecessorAnchor();
       await checkedScope(owner);
       const number20 = Number(header?.globalVariables?.blockNumber), hash14 = (await header?.hash?.())?.toString();
       await checkedScope(owner);
-      if (!Number.isSafeInteger(number20) || number20 < receipt.blockNumber || !/^0x[0-9a-f]{64}$/.test(hash14)) throw fail6();
+      if (!Number.isSafeInteger(number20) || number20 < receipt.blockNumber || !/^0x[0-9a-f]{64}$/.test(hash14)) throw fail7();
       const reads = await Promise.allSettled([number20, ...number20 === receipt.blockNumber ? [] : [receipt.blockNumber]].map((height) => boundedTransactionRead(() => node2.getBlock(height), waitOptions.readTimeoutMs ?? 2e4)));
       const failed = reads.find((read3) => read3.status === "rejected");
       if (failed) throw failed.reason;
       const block2 = reads[0].value, predecessor = number20 === receipt.blockNumber ? block2 : reads[1].value;
-      if (block2?.hash?.toString() !== hash14 || predecessor?.hash?.toString() !== receipt.blockHash.toString()) throw fail6();
+      if (block2?.hash?.toString() !== hash14 || predecessor?.hash?.toString() !== receipt.blockHash.toString()) throw fail7();
       await checkedScope(owner);
     }
     async function assertCanStart(options) {
@@ -182663,30 +182715,30 @@ ${context2.join("\n")}`;
       await checkedScope(owner);
       const previous = await read2();
       await checkedScope(owner);
-      if (predecessor && (!previous.tx || previous.value.operation !== predecessor.operation || previous.tx.getTxHash().toString() !== predecessor.txHash)) throw fail6();
+      if (predecessor && (!previous.tx || previous.value.operation !== predecessor.operation || previous.tx.getTxHash().toString() !== predecessor.txHash)) throw fail7();
       if (requested?.value || !owner || canonicalPermit?.owner !== owner || canonicalPermit?.encoded !== previous.encoded) canonicalPermit = null;
       if (previous.tx) {
         if (!predecessor && replacement?.encoded === previous.encoded) {
           await rejectedAttempts(previous, { requireMissingAnchor: replacement.requireMissingAnchor });
           return previous;
         }
-        if (!predecessor && acknowledged !== previous.tx.getTxHash().toString()) throw fail6();
+        if (!predecessor && acknowledged !== previous.tx.getTxHash().toString()) throw fail7();
         if (canonicalPermit?.hash !== previous.tx.getTxHash().toString()) {
           canonicalPermit = null;
           const receipt = predecessor ? await readCanonicalReceipt(node2, previous.tx.getTxHash(), receiptOptions(previous)) : await waitForCanonicalReceipt(node2, previous.tx, receiptOptions(previous));
-          if (!receipt || receipt.status === "proposed" && receipt.executionResult !== "success") throw fail6();
+          if (!receipt || receipt.status === "proposed" && receipt.executionResult !== "success") throw fail7();
           await rememberCanonical(previous, receipt, owner);
         }
         if (receiptOptions(previous).confirmationTier === "proposed") {
           const permit = canonicalPermit;
           if (!permit?.anchorChecked) {
             await checkPredecessorAnchor(permit?.receipt, owner);
-            if (canonicalPermit !== permit) throw fail6();
+            if (canonicalPermit !== permit) throw fail7();
             permit.anchorChecked = true;
           }
         }
         if (predecessor) {
-          if (!owner && (await read2()).encoded !== previous.encoded) throw fail6();
+          if (!owner && (await read2()).encoded !== previous.encoded) throw fail7();
           await checkedScope(owner);
           acknowledged = predecessor.txHash;
         }
@@ -182697,7 +182749,7 @@ ${context2.join("\n")}`;
     const strictMode = (saved, requested) => requested || saved.value.replacementPolicy === "missing-anchor";
     async function attemptState(attempt, active) {
       const reading = Object.fromEntries(["getTxReceipt", "isValidTx", "getBlock"].map((name) => [name, (...args) => {
-        if (!active()) throw fail6();
+        if (!active()) throw fail7();
         return node2[name](...args);
       }]));
       const result = { txHash: attempt.txHash, status: "unknown", stateReasons: [] };
@@ -182746,7 +182798,7 @@ ${context2.join("\n")}`;
     }
     async function rejectedAttempts(saved, { requireMissingAnchor = false, priorOnly = false } = {}) {
       const rows = await inspectAttempts(saved, priorOnly);
-      if (!rejected(rows, strictMode(saved, requireMissingAnchor))) throw fail6();
+      if (!rejected(rows, strictMode(saved, requireMissingAnchor))) throw fail7();
       return [...rows.at(-1).stateReasons];
     }
     async function prepare2(tx, previous, { applicationNullifier } = {}) {
@@ -182758,13 +182810,13 @@ ${context2.join("\n")}`;
       let replacements = [];
       const authorization = replacement, selectedOperation = operation, selectedTier = operationTier;
       if (authorization) {
-        if (authorization.encoded !== previous.encoded || selectedOperation !== previous.value.operation || !selectedOperation) throw fail6();
-        if (previous.value.applicationNullifier !== void 0 && applicationNullifier !== previous.value.applicationNullifier) throw fail6();
+        if (authorization.encoded !== previous.encoded || selectedOperation !== previous.value.operation || !selectedOperation) throw fail7();
+        if (previous.value.applicationNullifier !== void 0 && applicationNullifier !== previous.value.applicationNullifier) throw fail7();
         await rejectedAttempts(previous, { requireMissingAnchor: authorization.requireMissingAnchor });
         replacements = [...previous.value.replacements || [], { txHash: previous.value.txHash, tx: previous.value.tx }];
-        if (replacements.length > 8 || replacements.some((prior) => prior.txHash === tx.getTxHash().toString())) throw fail6();
+        if (replacements.length > 8 || replacements.some((prior) => prior.txHash === tx.getTxHash().toString())) throw fail7();
       }
-      if (operation !== selectedOperation || operationTier !== selectedTier || replacement !== authorization) throw fail6();
+      if (operation !== selectedOperation || operationTier !== selectedTier || replacement !== authorization) throw fail7();
       await slot.write(previous, { version: 1, txHash: tx.getTxHash().toString(), tx: Buffer2.from(tx.toBuffer()).toString("hex"), operation: selectedOperation, confirmationTier: selectedTier, ...authorization?.requireMissingAnchor ? { replacementPolicy: "missing-anchor" } : {}, ...applicationNullifier !== void 0 ? { applicationNullifier } : {}, ...replacements.length ? { replacements } : {} });
       replacement = null;
     }
@@ -182774,7 +182826,7 @@ ${context2.join("\n")}`;
       await checkedScope(owner);
       const saved = await read2();
       await checkedScope(owner);
-      if (!owner || saved.value?.confirmationTier !== "proposed" || saved.value.txHash !== receipt.txHash.toString()) throw fail6();
+      if (!owner || saved.value?.confirmationTier !== "proposed" || saved.value.txHash !== receipt.txHash.toString()) throw fail7();
       acknowledged = receipt.txHash.toString();
       lastHash = acknowledged;
     }
@@ -182784,12 +182836,12 @@ ${context2.join("\n")}`;
       lastHash = acknowledged;
     }
     function bindRecovery(saved, binding2) {
-      if (binding2 && (!saved.tx || saved.value.operation !== binding2.expectedOperation || saved.value.txHash !== binding2.expectedTxHash)) throw fail6();
+      if (binding2 && (!saved.tx || saved.value.operation !== binding2.expectedOperation || saved.value.txHash !== binding2.expectedTxHash)) throw fail7();
     }
     async function savedRecoveryStatus(saved) {
       let active = true;
       const reading = Object.fromEntries(["getTxReceipt", "isValidTx", "getBlock"].map((name) => [name, (...args) => {
-        if (!active) throw fail6();
+        if (!active) throw fail7();
         return node2[name](...args);
       }]));
       try {
@@ -182820,36 +182872,36 @@ ${context2.join("\n")}`;
       try {
         receipt = await boundedTransactionRead(() => node2.getTxReceipt(saved.tx.getTxHash()));
       } catch {
-        throw fail6();
+        throw fail7();
       }
-      if (receipt?.txHash?.toString() !== saved.tx.getTxHash().toString()) throw fail6();
+      if (receipt?.txHash?.toString() !== saved.tx.getTxHash().toString()) throw fail7();
       if (receipt.status === "dropped") {
-        if (reconcileOnly) throw fail6();
+        if (reconcileOnly) throw fail7();
         let validation;
         try {
           validation = await boundedTransactionRead(() => node2.isValidTx(saved.tx));
         } catch {
-          throw fail6();
+          throw fail7();
         }
         try {
           receipt = await boundedTransactionRead(() => node2.getTxReceipt(saved.tx.getTxHash()), waitOptions.readTimeoutMs ?? 2e4);
         } catch {
-          throw fail6();
+          throw fail7();
         }
-        if (receipt?.txHash?.toString() !== saved.value.txHash) throw fail6();
+        if (receipt?.txHash?.toString() !== saved.value.txHash) throw fail7();
         if (receipt.status === "dropped") {
-          if (validation?.result !== "valid") throw fail6();
+          if (validation?.result !== "valid") throw fail7();
           if (contextGuard) await contextGuard();
           if (saved.value.replacementPolicy === "missing-anchor") {
             await rejectedAttempts(saved, { requireMissingAnchor: true, priorOnly: true });
           }
           if (binding2?.beforeSubmit) await binding2.beforeSubmit(saved.value.txHash);
-          if ((await read2()).encoded !== saved.encoded) throw fail6();
+          if ((await read2()).encoded !== saved.encoded) throw fail7();
           if (contextGuard) await contextGuard();
-          if ((await read2()).encoded !== saved.encoded) throw fail6();
+          if ((await read2()).encoded !== saved.encoded) throw fail7();
           if (contextGuard) await contextGuard();
           await submitOnceWithReconciliation(node2, saved.tx);
-        } else if (!["pending", "proposed", "checkpointed", "proven", "finalized"].includes(receipt.status)) throw fail6();
+        } else if (!["pending", "proposed", "checkpointed", "proven", "finalized"].includes(receipt.status)) throw fail7();
       }
       const result = await waitForCanonicalReceipt(node2, saved.tx, waitOptions);
       confirmed(result);
@@ -182868,7 +182920,7 @@ ${context2.join("\n")}`;
         await checkedScope(owner);
         const saved = await read2();
         await checkedScope(owner);
-        if (typeof txHash !== "string" || !saved.tx || saved.value.txHash !== txHash) throw fail6();
+        if (typeof txHash !== "string" || !saved.tx || saved.value.txHash !== txHash) throw fail7();
         if (selectedOptions.confirmationTier !== void 0 && selectedOptions.confirmationTier !== receiptOptions(saved).confirmationTier) throw invalid7();
         const receipt = await waitForSuccessfulReceipt(node2, saved.tx, { ...waitOptions, ...selectedOptions, confirmationTier: receiptOptions(saved).confirmationTier });
         const observed = Object.freeze({
@@ -182880,7 +182932,7 @@ ${context2.join("\n")}`;
           transactionFee: receipt.transactionFee
         });
         await checkedScope(owner);
-        if (operation !== selectedOperation || !await slot.isCurrent(saved.encoded)) throw fail6();
+        if (operation !== selectedOperation || !await slot.isCurrent(saved.encoded)) throw fail7();
         await checkedScope(owner);
         if (owner) completionPermit = { owner, encoded: saved.encoded, hash: txHash, receipt: observed };
         return receipt;
@@ -182922,7 +182974,7 @@ ${context2.join("\n")}`;
         if (!permitted) canonicalPermit = null;
         let receipt = cached7 ?? await readCanonicalReceipt(node2, saved.tx.getTxHash(), receiptOptions(saved));
         if (receipt?.status === "proposed" && receipt.executionResult !== "success") receipt = null;
-        if (!await slot.isCurrent(saved.encoded)) throw fail6();
+        if (!await slot.isCurrent(saved.encoded)) throw fail7();
         await rememberCanonical(saved, receipt, owner);
         return { operation: saved.value.operation ?? null, txHash: saved.value.txHash, applicationNullifier: saved.value.applicationNullifier ?? null, outcome: receipt?.executionResult ?? "pending", receipt };
       },
@@ -182933,7 +182985,7 @@ ${context2.join("\n")}`;
         const expected = expectedOperation(operationInput), requested = replacementOptions(options);
         const saved = await read2();
         if (!saved.tx) return Object.freeze({ status: "empty", operation: null, txHash: null, predecessorTxHashes: Object.freeze([]), requireMissingAnchor: requested, attempts: Object.freeze([]) });
-        if (saved.value.operation !== expected) throw fail6();
+        if (saved.value.operation !== expected) throw fail7();
         const requireMissingAnchor = strictMode(saved, requested);
         let rows;
         try {
@@ -182941,7 +182993,7 @@ ${context2.join("\n")}`;
         } catch {
           rows = attemptsOf(saved).map((attempt) => ({ txHash: attempt.txHash, status: "unknown", stateReasons: [] }));
         }
-        if ((await read2()).encoded !== saved.encoded) throw fail6();
+        if ((await read2()).encoded !== saved.encoded) throw fail7();
         const status = rows.some((row) => row.status === "canonical") ? "canonical" : rows.some((row) => row.status === "pending") ? "pending" : !rejected(rows, requireMissingAnchor) ? "unknown" : (saved.value.replacements?.length ?? 0) >= 8 ? "limit-reached" : "available";
         return Object.freeze({
           status,
@@ -182968,7 +183020,7 @@ ${context2.join("\n")}`;
             status = "unknown";
           }
         }
-        if ((await read2()).encoded !== saved.encoded) throw fail6();
+        if ((await read2()).encoded !== saved.encoded) throw fail7();
         if (contextGuard) await contextGuard();
         return Object.freeze({ status, operation: saved.value.operation ?? null, txHash: saved.value.txHash });
       },
@@ -182976,10 +183028,10 @@ ${context2.join("\n")}`;
         replacement = null;
         const expected = expectedOperation(operationInput), requested = replacementOptions(options);
         const saved = await read2();
-        if (!saved.tx || saved.value.operation !== expected || (saved.value.replacements?.length ?? 0) >= 8) throw fail6();
+        if (!saved.tx || saved.value.operation !== expected || (saved.value.replacements?.length ?? 0) >= 8) throw fail7();
         const requireMissingAnchor = strictMode(saved, requested);
         const reasons = await rejectedAttempts(saved, { requireMissingAnchor });
-        if ((await read2()).encoded !== saved.encoded) throw fail6();
+        if ((await read2()).encoded !== saved.encoded) throw fail7();
         replacement = { encoded: saved.encoded, requireMissingAnchor };
         operation = expected;
         return reasons;
@@ -182991,9 +183043,9 @@ ${context2.join("\n")}`;
         const expected = expectedOperation(operationInput), requested = replacementOptions(options);
         if (typeof currentTxHash !== "string" || !/^0x[0-9a-f]{64}$/.test(currentTxHash)) throw invalid7();
         const saved = await read2();
-        if (!saved.tx || saved.value.operation !== expected || saved.value.txHash !== currentTxHash || !saved.value.replacements?.length) throw fail6();
+        if (!saved.tx || saved.value.operation !== expected || saved.value.txHash !== currentTxHash || !saved.value.replacements?.length) throw fail7();
         await rejectedAttempts(saved, { requireMissingAnchor: requested, priorOnly: true });
-        if ((await read2()).encoded !== saved.encoded) throw fail6();
+        if ((await read2()).encoded !== saved.encoded) throw fail7();
         return true;
       },
       setOperation(value, { confirmationTier: minimum = "checkpointed" } = {}) {
@@ -183013,7 +183065,7 @@ ${context2.join("\n")}`;
         const saved = await read2();
         if (!saved.tx) return null;
         const receipt = await recoverSaved(saved, binding2);
-        if ((await read2()).encoded !== saved.encoded) throw fail6();
+        if ((await read2()).encoded !== saved.encoded) throw fail7();
         return { receipt, operation: saved.value.operation ?? null };
       }
     };
@@ -192340,7 +192392,7 @@ mod tests {
   var FIELD_MODULUS2 = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001n;
 
   // shared/journal-backup.mjs
-  var fail7 = () => transactionError("BB_JOURNAL_INVALID", "Recovery records could not be authenticated or conflict with newer local records. Preserve both copies.");
+  var fail8 = () => transactionError("BB_JOURNAL_INVALID", "Recovery records could not be authenticated or conflict with newer local records. Preserve both copies.");
   var domains = /* @__PURE__ */ new Map([
     ["ROLLING_TOPUP_FUNDING_V1", "ROLLING_TOPUP_FUNDING_V1"],
     ["ROLLING_AGGREGATE_FUNDING_V1", "ROLLING_AGGREGATE_FUNDING_V1"],
@@ -192350,56 +192402,56 @@ mod tests {
   ]);
   var LIMIT = 16 * 1024 * 1024;
   function validDescriptor(descriptor) {
-    if (!descriptor || Object.keys(descriptor).sort().join() !== "keyDomain,scopeText" || !domains.has(descriptor.keyDomain) || typeof descriptor.scopeText !== "string") throw fail7();
+    if (!descriptor || Object.keys(descriptor).sort().join() !== "keyDomain,scopeText" || !domains.has(descriptor.keyDomain) || typeof descriptor.scopeText !== "string") throw fail8();
     const frame = JSON.parse(descriptor.scopeText);
-    if (frame[0] !== domains.get(descriptor.keyDomain)) throw fail7();
+    if (frame[0] !== domains.get(descriptor.keyDomain)) throw fail8();
     if (descriptor.keyDomain === "ROLLING_TOPUP_FUNDING_V1") {
-      if (!Array.isArray(frame) || ![11, 12].includes(frame.length) || frame.at(-1) !== 1 || descriptor.scopeText !== JSON.stringify(frame) || !["private-fee", "bok"].includes(frame[6])) throw fail7();
-      for (const index of [1, 2]) if (typeof frame[index] !== "string" || !/^[1-9][0-9]{0,19}$/.test(frame[index]) || BigInt(frame[index]) >= FIELD_MODULUS2) throw fail7();
+      if (!Array.isArray(frame) || ![11, 12].includes(frame.length) || frame.at(-1) !== 1 || descriptor.scopeText !== JSON.stringify(frame) || !["private-fee", "bok"].includes(frame[6])) throw fail8();
+      for (const index of [1, 2]) if (typeof frame[index] !== "string" || !/^[1-9][0-9]{0,19}$/.test(frame[index]) || BigInt(frame[index]) >= FIELD_MODULUS2) throw fail8();
       for (const index of [3, 4, 5, 7, 8, 9]) {
         const width = [3, 7, 8].includes(index) ? 40 : 64, value = frame[index];
-        if (typeof value !== "string" || !new RegExp(`^0x[0-9a-f]{${width}}$`).test(value) || BigInt(value) === 0n || width === 64 && BigInt(value) >= FIELD_MODULUS2) throw fail7();
+        if (typeof value !== "string" || !new RegExp(`^0x[0-9a-f]{${width}}$`).test(value) || BigInt(value) === 0n || width === 64 && BigInt(value) >= FIELD_MODULUS2) throw fail8();
       }
-      if (frame.length === 12 && (typeof frame[10] !== "string" || !/^0x[0-9a-f]{64}$/.test(frame[10]))) throw fail7();
+      if (frame.length === 12 && (typeof frame[10] !== "string" || !/^0x[0-9a-f]{64}$/.test(frame[10]))) throw fail8();
     }
     if (descriptor.keyDomain === "ROLLING_AGGREGATE_FUNDING_V1") {
-      if (!Array.isArray(frame) || ![8, 9].includes(frame.length) || frame.at(-1) !== 1 || descriptor.scopeText !== JSON.stringify(frame)) throw fail7();
-      if (frame.length === 9 && (typeof frame[7] !== "string" || !/^0x[0-9a-f]{64}$/.test(frame[7]))) throw fail7();
-      for (const index of [1, 2]) if (typeof frame[index] !== "string" || !/^[1-9][0-9]{0,19}$/.test(frame[index]) || BigInt(frame[index]) >= FIELD_MODULUS2) throw fail7();
+      if (!Array.isArray(frame) || ![8, 9].includes(frame.length) || frame.at(-1) !== 1 || descriptor.scopeText !== JSON.stringify(frame)) throw fail8();
+      if (frame.length === 9 && (typeof frame[7] !== "string" || !/^0x[0-9a-f]{64}$/.test(frame[7]))) throw fail8();
+      for (const index of [1, 2]) if (typeof frame[index] !== "string" || !/^[1-9][0-9]{0,19}$/.test(frame[index]) || BigInt(frame[index]) >= FIELD_MODULUS2) throw fail8();
       for (const index of [3, 4, 5, 6]) {
         const width = index === 3 || index === 5 ? 40 : 64, value = frame[index];
-        if (typeof value !== "string" || !new RegExp(`^0x[0-9a-f]{${width}}$`).test(value) || BigInt(value) === 0n || width === 64 && BigInt(value) >= FIELD_MODULUS2) throw fail7();
+        if (typeof value !== "string" || !new RegExp(`^0x[0-9a-f]{${width}}$`).test(value) || BigInt(value) === 0n || width === 64 && BigInt(value) >= FIELD_MODULUS2) throw fail8();
       }
     }
     if (descriptor.keyDomain === "ROLLING_WORKFLOW_V1") {
-      if (!Array.isArray(frame) || frame.length !== 2 || typeof frame[1] !== "string") throw fail7();
+      if (!Array.isArray(frame) || frame.length !== 2 || typeof frame[1] !== "string") throw fail8();
       const nested = JSON.parse(frame[1]), names = ["account", "chainId", "rollup", "version", "board", "portal"];
-      if (!Array.isArray(nested) || nested.length !== 7 || nested[0] !== "AZTEC_BB_L2_JOURNAL_V1" || nested.some((value) => typeof value !== "string")) throw fail7();
+      if (!Array.isArray(nested) || nested.length !== 7 || nested[0] !== "AZTEC_BB_L2_JOURNAL_V1" || nested.some((value) => typeof value !== "string")) throw fail8();
       const canonical2 = l2JournalScopeText(Object.fromEntries(names.map((name, index) => [name, nested[index + 1]])));
-      if (frame[1] !== canonical2 || descriptor.scopeText !== JSON.stringify(["ROLLING_WORKFLOW_V1", canonical2])) throw fail7();
+      if (frame[1] !== canonical2 || descriptor.scopeText !== JSON.stringify(["ROLLING_WORKFLOW_V1", canonical2])) throw fail8();
     }
   }
   async function createJournalBackup({ storage, walletSecret, walletSalt }) {
     const identity = await journalRecoveryIdentity({ walletSecret, walletSalt });
     async function authenticate(record8) {
       try {
-        if (!record8 || typeof record8.key !== "string" || !/^[0-9a-f]{64}$/.test(record8.key) || typeof record8.encoded !== "string" || record8.encoded.length > LIMIT) throw fail7();
+        if (!record8 || typeof record8.key !== "string" || !/^[0-9a-f]{64}$/.test(record8.key) || typeof record8.encoded !== "string" || record8.encoded.length > LIMIT) throw fail8();
         const envelope = JSON.parse(record8.encoded), descriptor = await decryptJournalDescriptor(envelope.recovery, identity);
         validDescriptor(descriptor);
         const slot = await createEncryptedJournalSlot({ walletSecret, walletSalt, ...descriptor, storage: { read: async (key) => {
-          if (key !== record8.key) throw fail7();
+          if (key !== record8.key) throw fail8();
           return record8.encoded;
         } } });
-        if (slot.storageKey !== record8.key) throw fail7();
+        if (slot.storageKey !== record8.key) throw fail8();
         const { value } = await slot.read();
         return { record: record8, descriptor, value };
       } catch {
-        throw fail7();
+        throw fail8();
       }
     }
     return {
       async exportRecords() {
-        if (typeof storage.keys !== "function") throw fail7();
+        if (typeof storage.keys !== "function") throw fail8();
         const keys = await storage.keys(), records = [];
         let total = 0;
         for (const key of keys) {
@@ -192409,34 +192461,34 @@ mod tests {
           try {
             envelope = JSON.parse(encoded);
           } catch {
-            throw fail7();
+            throw fail8();
           }
-          if (!envelope.recovery) throw fail7();
+          if (!envelope.recovery) throw fail8();
           if (envelope.recovery.owner !== identity.owner) continue;
           total += encoded.length;
-          if (total > LIMIT) throw fail7();
+          if (total > LIMIT) throw fail8();
           records.push((await authenticate({ key, encoded })).record);
         }
         const finalKeys = await storage.keys();
-        if (JSON.stringify([...keys].sort()) !== JSON.stringify([...finalKeys].sort())) throw fail7();
-        for (const record8 of records) if (await storage.read(record8.key) !== record8.encoded) throw fail7();
+        if (JSON.stringify([...keys].sort()) !== JSON.stringify([...finalKeys].sort())) throw fail8();
+        for (const record8 of records) if (await storage.read(record8.key) !== record8.encoded) throw fail8();
         return records;
       },
       async restoreRecords(records) {
-        if (!Array.isArray(records) || records.length > 1e4) throw fail7();
+        if (!Array.isArray(records) || records.length > 1e4) throw fail8();
         const seen = /* @__PURE__ */ new Set(), retained = /* @__PURE__ */ new Map();
         let total = 0;
         for (const record8 of records) {
           const incoming = await authenticate(record8);
           total += record8.encoded.length;
-          if (incoming.descriptor.keyDomain === "ROLLING_WORKFLOW_V1" && (incoming.value?.preproof || incoming.value?.preproofReview) && typeof storage.rotateRecoveryEpoch !== "function") throw fail7();
-          if (total > LIMIT || seen.has(record8.key)) throw fail7();
+          if (incoming.descriptor.keyDomain === "ROLLING_WORKFLOW_V1" && (incoming.value?.preproof || incoming.value?.preproofReview) && typeof storage.rotateRecoveryEpoch !== "function") throw fail8();
+          if (total > LIMIT || seen.has(record8.key)) throw fail8();
           seen.add(record8.key);
           const current = await storage.read(record8.key);
           if (current !== null && current !== record8.encoded) {
             const local = await authenticate({ key: record8.key, encoded: current });
-            if (local.descriptor.keyDomain !== incoming.descriptor.keyDomain || local.descriptor.scopeText !== incoming.descriptor.scopeText) throw fail7();
-            if (JSON.stringify(local.value) !== JSON.stringify(incoming.value)) throw fail7();
+            if (local.descriptor.keyDomain !== incoming.descriptor.keyDomain || local.descriptor.scopeText !== incoming.descriptor.scopeText) throw fail8();
+            if (JSON.stringify(local.value) !== JSON.stringify(incoming.value)) throw fail8();
             retained.set(record8.key, current);
           }
         }
@@ -192444,17 +192496,17 @@ mod tests {
         for (const record8 of records) {
           const current = await storage.read(record8.key);
           if (retained.has(record8.key)) {
-            if (current !== retained.get(record8.key)) throw fail7();
+            if (current !== retained.get(record8.key)) throw fail8();
             continue;
           }
           if (current === record8.encoded) continue;
-          if (current !== null) throw fail7();
+          if (current !== null) throw fail8();
           try {
             await storage.compareAndSwap(record8.key, null, record8.encoded);
           } catch {
-            throw fail7();
+            throw fail8();
           }
-          if (await storage.read(record8.key) !== record8.encoded) throw fail7();
+          if (await storage.read(record8.key) !== record8.encoded) throw fail8();
         }
       }
     };
@@ -192553,59 +192605,59 @@ mod tests {
   init_buffer2();
   init_process2();
   var FR2 = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
-  var fail8 = (message) => {
+  var fail9 = (message) => {
     throw Object.assign(Error(message), { code: "BB_DEPLOYMENT_MANIFEST" });
   };
   function exact2(value, keys, label) {
-    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).sort().join() !== [...keys].sort().join()) fail8("Invalid " + label + " fields");
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).sort().join() !== [...keys].sort().join()) fail9("Invalid " + label + " fields");
   }
-  function uint7(v, bits, label) {
-    if (typeof v !== "string" || !/^[1-9][0-9]*$/.test(v) || v.length > 78 || BigInt(v) >= 1n << BigInt(bits)) fail8("Invalid " + label);
+  function uint8(v, bits, label) {
+    if (typeof v !== "string" || !/^[1-9][0-9]*$/.test(v) || v.length > 78 || BigInt(v) >= 1n << BigInt(bits)) fail9("Invalid " + label);
     return v;
   }
   function hex20(v, size2, label) {
-    if (typeof v !== "string" || !new RegExp("^0x[0-9a-f]{" + size2 * 2 + "}$").test(v) || BigInt(v) === 0n) fail8("Invalid " + label);
+    if (typeof v !== "string" || !new RegExp("^0x[0-9a-f]{" + size2 * 2 + "}$").test(v) || BigInt(v) === 0n) fail9("Invalid " + label);
     return v;
   }
   function field12(v, label) {
     hex20(v, 32, label);
-    if (BigInt(v) >= FR2) fail8("Invalid " + label);
+    if (BigInt(v) >= FR2) fail9("Invalid " + label);
     return v;
   }
   function endpoint2(v) {
-    if (typeof v !== "string" || v.length > 4096 || v !== v.trim()) fail8("Invalid deployment endpoint");
+    if (typeof v !== "string" || v.length > 4096 || v !== v.trim()) fail9("Invalid deployment endpoint");
     let u;
     try {
       u = new URL(v);
     } catch {
-      fail8("Invalid deployment endpoint");
+      fail9("Invalid deployment endpoint");
     }
-    if (!["http:", "https:"].includes(u.protocol) || u.username || u.password || u.search || u.hash) fail8("Deployment endpoints must exclude credentials, query and fragment");
+    if (!["http:", "https:"].includes(u.protocol) || u.username || u.password || u.search || u.hash) fail9("Deployment endpoints must exclude credentials, query and fragment");
     return u.href;
   }
   function validateDeploymentManifest(value) {
     exact2(value, ["schemaVersion", "profile", "network", "actors", "board", "artifacts"], "deployment manifest");
-    if (![1, 2].includes(value.schemaVersion) || !["local-test", "operator"].includes(value.profile)) fail8("Invalid deployment profile");
+    if (![1, 2].includes(value.schemaVersion) || !["local-test", "operator"].includes(value.profile)) fail9("Invalid deployment profile");
     const n2 = value.network, b2 = value.board, a = value.actors, f2 = value.artifacts, rolling = value.schemaVersion === 2;
     exact2(n2, ["nodeUrl", "ethRpcUrl", "chainId", "rollupVersion", "rollup", "inbox", "outbox"], "network");
     endpoint2(n2.nodeUrl);
     endpoint2(n2.ethRpcUrl);
-    uint7(n2.chainId, 64, "chain");
-    uint7(n2.rollupVersion, 32, "rollup version");
+    uint8(n2.chainId, 64, "chain");
+    uint8(n2.rollupVersion, 32, "rollup version");
     for (const k of ["rollup", "inbox", "outbox"]) hex20(n2[k], 20, k);
     exact2(a, ["aztecDeployer", "ethereumDeployer"], "actors");
     field12(a.aztecDeployer, "Aztec deployer");
     hex20(a.ethereumDeployer, 20, "Ethereum deployer");
     exact2(b2, ["salt", "minDeposit", "maxDeposit", "baseCooldown", "kMultiplier", "censorWindow", "maxSaveUp", rolling ? "kind" : "censor", "policy"], "board");
-    if (rolling && b2.kind !== "rolling") fail8("Invalid board kind");
-    if (typeof b2.salt !== "string" || !/^(0|[1-9][0-9]*)$/.test(b2.salt) || b2.salt.length > 78 || BigInt(b2.salt) >= FR2) fail8("Invalid contract salt");
-    uint7(b2.minDeposit, 96, "minimum deposit");
-    uint7(b2.maxDeposit, 96, "maximum deposit");
-    if (BigInt(b2.minDeposit) > BigInt(b2.maxDeposit)) fail8("Reversed deposit bounds");
-    for (const k of ["baseCooldown", "censorWindow"]) uint7(b2[k], 32, k);
-    for (const k of ["kMultiplier", "maxSaveUp"]) uint7(b2[k], 16, k);
+    if (rolling && b2.kind !== "rolling") fail9("Invalid board kind");
+    if (typeof b2.salt !== "string" || !/^(0|[1-9][0-9]*)$/.test(b2.salt) || b2.salt.length > 78 || BigInt(b2.salt) >= FR2) fail9("Invalid contract salt");
+    uint8(b2.minDeposit, 96, "minimum deposit");
+    uint8(b2.maxDeposit, 96, "maximum deposit");
+    if (BigInt(b2.minDeposit) > BigInt(b2.maxDeposit)) fail9("Reversed deposit bounds");
+    for (const k of ["baseCooldown", "censorWindow"]) uint8(b2[k], 32, k);
+    for (const k of ["kMultiplier", "maxSaveUp"]) uint8(b2[k], 16, k);
     if (!rolling) field12(b2.censor, "censor");
-    if (typeof b2.policy !== "string" || !b2.policy.isWellFormed() || b2.policy.includes("\0") || !b2.policy.trim() || new TextEncoder().encode(b2.policy).length > (rolling ? 992 : 1488)) fail8("Explicit nonempty policy required");
+    if (typeof b2.policy !== "string" || !b2.policy.isWellFormed() || b2.policy.includes("\0") || !b2.policy.trim() || new TextEncoder().encode(b2.policy).length > (rolling ? 992 : 1488)) fail9("Explicit nonempty policy required");
     exact2(f2, ["boardJsonSha256", "boardClassId", "portalCreationSha256", "portalRuntimeMetadataSha256"], "artifacts");
     for (const k of Object.keys(f2)) hex20(f2[k], 32, k);
     field12(f2.boardClassId, "board class");
@@ -192617,28 +192669,28 @@ mod tests {
   }
   function verifyDeploymentInputs(manifest, { artifact, portalBytecode, runtimeMetadata, config: config8, ethers }) {
     const m2 = validateDeploymentManifest(manifest), expected = deploymentManifestConfig(m2);
-    for (const k of ["aztecNodeUrl", "ethRpcUrl"]) if (endpoint2(config8[k]) !== endpoint2(expected[k])) fail8("Manifest endpoint mismatch");
-    for (const k of ["contractSalt", "minDepositWei", "maxDepositWei", "baseCooldown", "kMultiplier", "censorWindow", "maxSaveUp"]) if (config8[k] === void 0 || BigInt(config8[k]) !== BigInt(expected[k])) fail8("Manifest parameter mismatch: " + k);
-    if ((m2.schemaVersion === 2 ? config8.boardProfile !== "rolling" || config8.censor !== void 0 : config8.boardProfile !== void 0 || config8.censor?.toLowerCase() !== m2.board.censor) || config8.moderationPolicy !== m2.board.policy) fail8("Manifest policy/censor mismatch");
-    if (m2.schemaVersion === 2 && artifact?.name !== "RollingBoard") fail8("Rolling artifact required");
+    for (const k of ["aztecNodeUrl", "ethRpcUrl"]) if (endpoint2(config8[k]) !== endpoint2(expected[k])) fail9("Manifest endpoint mismatch");
+    for (const k of ["contractSalt", "minDepositWei", "maxDepositWei", "baseCooldown", "kMultiplier", "censorWindow", "maxSaveUp"]) if (config8[k] === void 0 || BigInt(config8[k]) !== BigInt(expected[k])) fail9("Manifest parameter mismatch: " + k);
+    if ((m2.schemaVersion === 2 ? config8.boardProfile !== "rolling" || config8.censor !== void 0 : config8.boardProfile !== void 0 || config8.censor?.toLowerCase() !== m2.board.censor) || config8.moderationPolicy !== m2.board.policy) fail9("Manifest policy/censor mismatch");
+    if (m2.schemaVersion === 2 && artifact?.name !== "RollingBoard") fail9("Rolling artifact required");
     const hash14 = (o) => ethers.sha256(ethers.toUtf8Bytes(JSON.stringify(o)));
-    if (hash14(artifact) !== m2.artifacts.boardJsonSha256 || ethers.sha256(portalBytecode) !== m2.artifacts.portalCreationSha256 || hash14(runtimeMetadata) !== m2.artifacts.portalRuntimeMetadataSha256) fail8("Deployment artifact identity mismatch");
+    if (hash14(artifact) !== m2.artifacts.boardJsonSha256 || ethers.sha256(portalBytecode) !== m2.artifacts.portalCreationSha256 || hash14(runtimeMetadata) !== m2.artifacts.portalRuntimeMetadataSha256) fail9("Deployment artifact identity mismatch");
     return { manifest: m2, intentDigest: hash14(m2) };
   }
   async function preflightDeploymentNetwork(manifest, { node: node2, provider, ethers, timeoutMs = 2e4 }) {
     const m2 = validateDeploymentManifest(manifest), n2 = m2.network;
-    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2e4) fail8("Invalid preflight timeout");
+    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2e4) fail9("Invalid preflight timeout");
     const read2 = (fn) => boundedTransactionRead(fn, timeoutMs);
     const [info, contracts, network] = await read2(() => Promise.all([node2.getNodeInfo(), node2.getL1ContractAddresses(), provider.getNetwork()]));
     const realProofs = info && Object.getOwnPropertyDescriptor(info, "realProofs");
-    if (!realProofs || !Object.hasOwn(realProofs, "value") || typeof realProofs.value !== "boolean") fail8("Native proof configuration unavailable");
+    if (!realProofs || !Object.hasOwn(realProofs, "value") || typeof realProofs.value !== "boolean") fail9("Native proof configuration unavailable");
     const proofsEnabled = realProofs.value;
-    if (m2.profile === "local-test" ? n2.chainId !== "31337" || proofsEnabled : n2.chainId !== "11155111" || !proofsEnabled) fail8("Native proof configuration differs from deployment profile");
-    if (String(info.l1ChainId) !== n2.chainId || String(network.chainId) !== n2.chainId || String(info.rollupVersion) !== n2.rollupVersion || contracts.rollupAddress?.toString().toLowerCase() !== n2.rollup) fail8("Deployment network identity mismatch");
-    for (const [key, name] of [["inboxAddress", "inbox"], ["outboxAddress", "outbox"]]) if (contracts[key] && contracts[key].toString().toLowerCase() !== n2[name]) fail8("Node bridge identity mismatch");
+    if (m2.profile === "local-test" ? n2.chainId !== "31337" || proofsEnabled : n2.chainId !== "11155111" || !proofsEnabled) fail9("Native proof configuration differs from deployment profile");
+    if (String(info.l1ChainId) !== n2.chainId || String(network.chainId) !== n2.chainId || String(info.rollupVersion) !== n2.rollupVersion || contracts.rollupAddress?.toString().toLowerCase() !== n2.rollup) fail9("Deployment network identity mismatch");
+    for (const [key, name] of [["inboxAddress", "inbox"], ["outboxAddress", "outbox"]]) if (contracts[key] && contracts[key].toString().toLowerCase() !== n2[name]) fail9("Node bridge identity mismatch");
     const rollup = new ethers.Contract(n2.rollup, ["function getInbox() view returns (address)", "function getOutbox() view returns (address)"], provider);
     const [inbox, outbox, ...codes] = await read2(() => Promise.all([rollup.getInbox(), rollup.getOutbox(), ...["rollup", "inbox", "outbox"].map((k) => provider.getCode(n2[k]))]));
-    if (inbox.toLowerCase() !== n2.inbox || outbox.toLowerCase() !== n2.outbox || codes.some((c) => typeof c !== "string" || !/^0x(?:[0-9a-fA-F]{2})+$/.test(c))) fail8("Deployment bridge/code mismatch");
+    if (inbox.toLowerCase() !== n2.inbox || outbox.toLowerCase() !== n2.outbox || codes.some((c) => typeof c !== "string" || !/^0x(?:[0-9a-fA-F]{2})+$/.test(c))) fail9("Deployment bridge/code mismatch");
     return { nodeInfo: info, l1Contracts: contracts, proofsEnabled };
   }
   async function deploymentPolicyVersion(board2, policy2) {
@@ -192651,26 +192703,26 @@ mod tests {
   init_process2();
   var PORTAL_IMMUTABLES = Object.freeze(["MIN_DEPOSIT", "MAX_DEPOSIT", "L2_CONTRACT", "ROLLUP", "INBOX", "OUTBOX", "VERSION", "L1_CHAIN_ID", "CONFIG_HASH", "DEPLOYMENT_OPERATOR"]);
   var hex21 = (value) => typeof value === "string" && /^0x(?:[0-9a-fA-F]{2})+$/.test(value);
-  var fail9 = () => {
+  var fail10 = () => {
     throw new Error("Invalid portal runtime metadata or immutable values");
   };
   function expectedPortalRuntime(metadata, values) {
-    if (!metadata || metadata.schemaVersion !== 1 || !hex21(metadata.runtimeTemplate) || !metadata.immutables || !values) fail9();
+    if (!metadata || metadata.schemaVersion !== 1 || !hex21(metadata.runtimeTemplate) || !metadata.immutables || !values) fail10();
     const names = Object.keys(metadata.immutables).sort();
-    if (JSON.stringify(names) !== JSON.stringify([...PORTAL_IMMUTABLES].sort()) || JSON.stringify(Object.keys(values).sort()) !== JSON.stringify(names)) fail9();
+    if (JSON.stringify(names) !== JSON.stringify([...PORTAL_IMMUTABLES].sort()) || JSON.stringify(Object.keys(values).sort()) !== JSON.stringify(names)) fail10();
     const bytes4 = metadata.runtimeTemplate.slice(2).toLowerCase().match(/../g), occupied = /* @__PURE__ */ new Set();
     for (const name of names) {
       const raw = values[name];
-      if (!(typeof raw === "bigint" || typeof raw === "string" && /^(?:0|[1-9][0-9]*|0x[0-9a-fA-F]+)$/.test(raw))) fail9();
+      if (!(typeof raw === "bigint" || typeof raw === "string" && /^(?:0|[1-9][0-9]*|0x[0-9a-fA-F]+)$/.test(raw))) fail10();
       const value = BigInt(raw), width = ["ROLLUP", "INBOX", "OUTBOX", "DEPLOYMENT_OPERATOR"].includes(name) ? 160n : 256n;
-      if (value < 0n || value >= 1n << width) fail9();
+      if (value < 0n || value >= 1n << width) fail10();
       const word2 = value.toString(16).padStart(64, "0").match(/../g), refs = metadata.immutables[name];
-      if (!Array.isArray(refs) || !refs.length) fail9();
+      if (!Array.isArray(refs) || !refs.length) fail10();
       for (const ref of refs) {
-        if (!ref || Object.keys(ref).sort().join(",") !== "length,start" || ref.length !== 32 || !Number.isSafeInteger(ref.start) || ref.start < 0 || ref.start + 32 > bytes4.length) fail9();
+        if (!ref || Object.keys(ref).sort().join(",") !== "length,start" || ref.length !== 32 || !Number.isSafeInteger(ref.start) || ref.start < 0 || ref.start + 32 > bytes4.length) fail10();
         for (let i = 0; i < 32; i++) {
           const offset = ref.start + i;
-          if (occupied.has(offset) || bytes4[offset] !== "00") fail9();
+          if (occupied.has(offset) || bytes4[offset] !== "00") fail10();
           occupied.add(offset);
           bytes4[offset] = word2[i];
         }
@@ -192967,9 +193019,9 @@ mod tests {
     publicGas: Object.freeze({ daGas: 384, l2Gas: 92440 }),
     teardownGas: Object.freeze({ daGas: 192, l2Gas: 27510 })
   });
-  var fail10 = (code) => Object.assign(Error(code), { code });
+  var fail11 = (code) => Object.assign(Error(code), { code });
   var check15 = (value, code = "BB_LIKE_FEE_PROFILE_MISMATCH") => {
-    if (!value) throw fail10(code);
+    if (!value) throw fail11(code);
   };
   var equal4 = (a, b2) => a?.toString() === b2?.toString();
   function likeGasLimits() {
@@ -193025,9 +193077,9 @@ mod tests {
     publicGas: Object.freeze({ daGas: 2368, l2Gas: 2e6 }),
     teardownGas: Object.freeze({ daGas: 192, l2Gas: 27510 })
   });
-  var fail11 = (code) => Object.assign(Error(code), { code });
+  var fail12 = (code) => Object.assign(Error(code), { code });
   var check16 = (value, code = "BB_POST_FEE_PROFILE_MISMATCH") => {
-    if (!value) throw fail11(code);
+    if (!value) throw fail12(code);
   };
   var equal5 = (a, b2) => a?.toString() === b2?.toString();
   function ordinaryPostGasLimits() {
@@ -193085,18 +193137,18 @@ mod tests {
   init_process2();
   init_gas2();
   var validations = /* @__PURE__ */ new WeakMap();
-  var fail12 = () => Object.assign(new Error("Transaction validation no longer matches this send."), { code: "BB_SIMULATION_CHANGED" });
+  var fail13 = () => Object.assign(new Error("Transaction validation no longer matches this send."), { code: "BB_SIMULATION_CHANGED" });
   var encode14 = (value) => JSON.stringify(value, (_key, item) => typeof item === "bigint" ? item.toString() : item);
   var snapshotPrivateFeeSimulationInput = (payload, from, gasSettings) => encode14([payload, from.toString(), GasSettings.from(gasSettings).toBuffer().toString("hex")]);
   var fingerprint = snapshotPrivateFeeSimulationInput;
   var hash13 = async (header) => {
-    if (typeof header?.hash !== "function") throw fail12();
+    if (typeof header?.hash !== "function") throw fail13();
     return (await header.hash()).toString();
   };
   async function createPrivateFeeSimulationValidation({ wallet, simulationPXE, payload, from, gasSettings, result, inputSnapshot }) {
-    if (wallet.pxe !== simulationPXE || inputSnapshot !== fingerprint(payload, from, gasSettings)) throw fail12();
+    if (wallet.pxe !== simulationPXE || inputSnapshot !== fingerprint(payload, from, gasSettings)) throw fail13();
     const anchor2 = await hash13(result.publicInputs?.constants?.anchorBlockHeader);
-    if (wallet.pxe !== simulationPXE || inputSnapshot !== fingerprint(payload, from, gasSettings)) throw fail12();
+    if (wallet.pxe !== simulationPXE || inputSnapshot !== fingerprint(payload, from, gasSettings)) throw fail13();
     const token = Object.freeze({});
     validations.set(token, {
       wallet,
@@ -193114,9 +193166,9 @@ mod tests {
   async function consumePrivateFeeSimulationValidation(token, { wallet, payload, from, gasSettings, additionalScopes, sendMessagesAs }) {
     const value = validations.get(token);
     validations.delete(token);
-    if (!value || value.wallet !== wallet || value.pxe !== wallet.pxe || value.payload !== payload || additionalScopes?.length || sendMessagesAs !== void 0 || value.fingerprint !== fingerprint(payload, from, gasSettings)) throw fail12();
-    if (value.anchor !== await hash13(await wallet.pxe.getSyncedBlockHeader())) throw fail12();
-    if (value.pxe !== wallet.pxe || value.fingerprint !== fingerprint(payload, from, gasSettings)) throw fail12();
+    if (!value || value.wallet !== wallet || value.pxe !== wallet.pxe || value.payload !== payload || additionalScopes?.length || sendMessagesAs !== void 0 || value.fingerprint !== fingerprint(payload, from, gasSettings)) throw fail13();
+    if (value.anchor !== await hash13(await wallet.pxe.getSyncedBlockHeader())) throw fail13();
+    if (value.pxe !== wallet.pxe || value.fingerprint !== fingerprint(payload, from, gasSettings)) throw fail13();
     return value.gasUsed;
   }
 
@@ -193213,7 +193265,7 @@ mod tests {
 
   // shared/private-fee-estimation.mjs
   var dimensions = ["daGas", "l2Gas"];
-  var fail13 = (code) => Object.assign(new Error(code), { code });
+  var fail14 = (code) => Object.assign(new Error(code), { code });
   var min = (a, b2) => a < b2 ? a : b2;
   var successful = (r) => r.publicInputs && (!r.publicInputs.forPublic || r.publicOutput?.txEffect?.revertCode?.isOK()) && !r.publicOutput?.revertReason;
   var outOfGas = (e) => /^(?:Out of gas(?: exception)?(?::|$)|Not enough (?:DAGAS|L2GAS)(?:, (?:DAGAS|L2GAS))? gas left$)/i.test(e?.getOriginalMessage?.() ?? "");
@@ -193244,17 +193296,17 @@ mod tests {
     let qualifiedApplication, qualifiedProfile, checkQualified;
     if (qualifiedLike !== void 0) {
       const mismatch = "BB_LIKE_FEE_PROFILE_MISMATCH";
-      if (ordinaryPost !== void 0 || !deferSimulation || typeof wallet.pxe?.proveTxWithPublicValidation !== "function") throw fail13(mismatch);
+      if (ordinaryPost !== void 0 || !deferSimulation || typeof wallet.pxe?.proveTxWithPublicValidation !== "function") throw fail14(mismatch);
       await guard();
       const board2 = qualifiedLike;
       const budget = likeFeeBudget({ wallet, prepared: prepared2, board: board2 });
       const application2 = await interaction.request();
       assertLikePayload({ wallet, from, application: application2, board: board2 });
       if (prepared2.creditCheck === "qualified-like-proof") {
-        if (typeof prepared2.withAvailableCredit !== "function") throw fail13(mismatch);
+        if (typeof prepared2.withAvailableCredit !== "function") throw fail14(mismatch);
         prepared2 = await prepared2.withAvailableCredit();
         await guard();
-        if (prepared2.creditCheck !== "read-balance") throw fail13(mismatch);
+        if (prepared2.creditCheck !== "read-balance") throw fail14(mismatch);
       }
       if (BigInt(prepared2.availableCredit) >= budget.reservation) {
         const payload = mergeExecutionPayloads([await prepared2.paymentMethod.withReservation(budget.reservation).getExecutionPayload(), application2]);
@@ -193269,7 +193321,7 @@ mod tests {
       };
     }
     if (ordinaryPost !== void 0) {
-      if (!deferSimulation || typeof wallet.pxe?.proveTxWithPublicValidation !== "function") throw fail13("BB_POST_FEE_PROFILE_MISMATCH");
+      if (!deferSimulation || typeof wallet.pxe?.proveTxWithPublicValidation !== "function") throw fail14("BB_POST_FEE_PROFILE_MISMATCH");
       await guard();
       const budget = ordinaryPostFeeBudget({ wallet, prepared: prepared2, board: ordinaryPost });
       const application2 = await interaction.request();
@@ -193278,19 +193330,19 @@ mod tests {
       await guard();
       return { payload, ...budget, passes: 0, atomicSimulation: true };
     }
-    if (prepared2.creditCheck === "qualified-like-proof") throw fail13("BB_LIKE_FEE_PROFILE_MISMATCH");
-    if (prepared2.creditCheck === "ordinary-post-proof") throw fail13("BB_POST_FEE_PROFILE_MISMATCH");
+    if (prepared2.creditCheck === "qualified-like-proof") throw fail14("BB_LIKE_FEE_PROFILE_MISMATCH");
+    if (prepared2.creditCheck === "ordinary-post-proof") throw fail14("BB_POST_FEE_PROFILE_MISMATCH");
     const network = prepared2.networkGasLimits;
-    if (!network || dimensions.some((key) => !Number.isSafeInteger(network[key]) || network[key] < 0)) throw fail13("PRIVATE_FEE_CONFIGURATION_REQUIRED");
+    if (!network || dimensions.some((key) => !Number.isSafeInteger(network[key]) || network[key] < 0)) throw fail14("PRIVATE_FEE_CONFIGURATION_REQUIRED");
     const ceiling = GasSettings.from(prepared2.gasSettings), available = BigInt(prepared2.availableCredit);
     const caps = new Gas(Math.min(ceiling.gasLimits.daGas, network.daGas, MAX_TX_DA_GAS), Math.min(ceiling.gasLimits.l2Gas, network.l2Gas, MAX_PROCESSABLE_L2_GAS));
     const settings = (gasLimits, teardownGasLimits) => GasSettings.from({ gasLimits, teardownGasLimits, maxFeesPerGas: ceiling.maxFeesPerGas, maxPriorityFeesPerGas: ceiling.maxPriorityFeesPerGas });
     const maximum = min(available, cost(caps, ceiling.maxFeesPerGas) + 1n), application = qualifiedApplication ?? await interaction.request();
-    if (available <= 0n) throw fail13("PRIVATE_FEE_BALANCE_INSUFFICIENT");
+    if (available <= 0n) throw fail14("PRIVATE_FEE_BALANCE_INSUFFICIENT");
     const payloadFor = async (reservation2) => mergeExecutionPayloads([await prepared2.paymentMethod.withReservation(reservation2).getExecutionPayload(), application]);
-    if (!prepared2.refundGasLimits) throw fail13("PRIVATE_FEE_CONFIGURATION_REQUIRED");
+    if (!prepared2.refundGasLimits) throw fail14("PRIVATE_FEE_CONFIGURATION_REQUIRED");
     const refundLimits = Gas.from(prepared2.refundGasLimits);
-    if (dimensions.some((k) => refundLimits[k] > ceiling.teardownGasLimits[k] || refundLimits[k] > caps[k])) throw fail13("BB_GAS_LIMIT_EXCEEDED");
+    if (dimensions.some((k) => refundLimits[k] > ceiling.teardownGasLimits[k] || refundLimits[k] > caps[k])) throw fail14("BB_GAS_LIMIT_EXCEEDED");
     const bounded2 = settings(caps, refundLimits);
     const boundedFee = bounded2.getFeeLimit().toBigInt();
     if (boundedFee <= available) {
@@ -193300,8 +193352,8 @@ mod tests {
       if (deferSimulation) return { payload, gasSettings: bounded2, reservation: reservation2, maximumFee: boundedFee, passes: 0, atomicSimulation: true };
       const simulationPXE = wallet.pxe, inputSnapshot = snapshotPrivateFeeSimulationInput(payload, from, bounded2);
       const result = await simulator.public(payload, from, bounded2, true);
-      if (!successful(result)) throw result.publicOutput?.revertReason ?? fail13("BB_SIMULATION_FAILED");
-      if (dimensions.some((k) => result.gasUsed.totalGas[k] > bounded2.gasLimits[k] || result.gasUsed.teardownGas[k] > bounded2.teardownGasLimits[k])) throw fail13("BB_GAS_LIMIT_EXCEEDED");
+      if (!successful(result)) throw result.publicOutput?.revertReason ?? fail14("BB_SIMULATION_FAILED");
+      if (dimensions.some((k) => result.gasUsed.totalGas[k] > bounded2.gasLimits[k] || result.gasUsed.teardownGas[k] > bounded2.teardownGasLimits[k])) throw fail14("BB_GAS_LIMIT_EXCEEDED");
       await guard();
       const simulationValidation = await createPrivateFeeSimulationValidation({ wallet, simulationPXE, payload, from, gasSettings: bounded2, result, inputSnapshot });
       return { payload, gasSettings: bounded2, reservation: reservation2, maximumFee: boundedFee, passes: 1, simulationValidation };
@@ -193317,12 +193369,12 @@ mod tests {
     let measuredFeeExceedsCredit = false;
     for (let pass = 0; pass < 8; pass++) {
       await guard();
-      if (measuredReservations.has(reservation)) throw fail13(measuredFeeExceedsCredit ? "BB_FEE_RESERVATION_UNAFFORDABLE" : "BB_FEE_ESTIMATION_UNSTABLE");
+      if (measuredReservations.has(reservation)) throw fail14(measuredFeeExceedsCredit ? "BB_FEE_RESERVATION_UNAFFORDABLE" : "BB_FEE_ESTIMATION_UNSTABLE");
       measuredReservations.add(reservation);
       const payload = await payloadFor(reservation);
       const privateResult = await measure("action.fee-private-candidate", () => simulator.private(payload, from, privateSettings)), lower6 = privateResult.gasUsed.totalGas;
       if (qualifiedProfile && simulator.detachedMeasurement && typeof simulator.validateMeasurement === "function") {
-        if (!refundLimits.equals(Gas.from(qualifiedProfile.teardownGas))) throw fail13("BB_GAS_LIMIT_EXCEEDED");
+        if (!refundLimits.equals(Gas.from(qualifiedProfile.teardownGas))) throw fail14("BB_GAS_LIMIT_EXCEEDED");
         const measured = { totalGas: lower6.add(Gas.from(qualifiedProfile.publicGas)).add(refundLimits), teardownGas: refundLimits };
         let limits = getGasLimits(measured, caps, 0.1);
         limits.teardownGasLimits = refundLimits;
@@ -193356,7 +193408,7 @@ mod tests {
           if (successful(full)) {
             const measured = { ...full.gasUsed, totalGas: full.gasUsed.totalGas.sub(full.gasUsed.teardownGas).add(refundLimits), teardownGas: refundLimits };
             let limits = getGasLimits(measured, caps, 0.1);
-            if (dimensions.some((k) => full.gasUsed.teardownGas[k] > refundLimits[k])) throw fail13("BB_GAS_LIMIT_EXCEEDED");
+            if (dimensions.some((k) => full.gasUsed.teardownGas[k] > refundLimits[k])) throw fail14("BB_GAS_LIMIT_EXCEEDED");
             limits.teardownGasLimits = refundLimits;
             if (cost(limits.gasLimits, ceiling.maxFeesPerGas) > available) {
               limits = getGasLimits(measured, caps, 0);
@@ -193374,15 +193426,15 @@ mod tests {
               if (deferSimulation) return { payload: finalPayload, gasSettings, reservation: finalReservation, maximumFee: required7, passes: pass + 1, atomicSimulation: true };
               const simulationPXE = wallet.pxe, inputSnapshot = snapshotPrivateFeeSimulationInput(finalPayload, from, gasSettings);
               const final = await simulator.public(finalPayload, from, gasSettings, true);
-              if (!successful(final)) throw final.publicOutput?.revertReason ?? fail13("BB_SIMULATION_FAILED");
-              if (dimensions.some((k) => final.gasUsed.totalGas[k] > gasSettings.gasLimits[k] || final.gasUsed.teardownGas[k] > gasSettings.teardownGasLimits[k])) throw fail13("BB_GAS_LIMIT_EXCEEDED");
+              if (!successful(final)) throw final.publicOutput?.revertReason ?? fail14("BB_SIMULATION_FAILED");
+              if (dimensions.some((k) => final.gasUsed.totalGas[k] > gasSettings.gasLimits[k] || final.gasUsed.teardownGas[k] > gasSettings.teardownGasLimits[k])) throw fail14("BB_GAS_LIMIT_EXCEEDED");
               await guard();
               const simulationValidation = await createPrivateFeeSimulationValidation({ wallet, simulationPXE, payload: finalPayload, from, gasSettings, result: final, inputSnapshot });
               return { payload: finalPayload, gasSettings, reservation: finalReservation, maximumFee: required7, passes: pass + 1, simulationValidation };
             } else measuredFeeExceedsCredit = true;
           } else {
             const error312 = full.publicOutput?.revertReason;
-            if (!refundReservationShortage(error312, prepared2) && !(!simulator.detachedMeasurement && outOfGas(error312))) throw error312 ?? fail13("BB_SIMULATION_FAILED");
+            if (!refundReservationShortage(error312, prepared2) && !(!simulator.detachedMeasurement && outOfGas(error312))) throw error312 ?? fail14("BB_SIMULATION_FAILED");
           }
         }
       }
@@ -193390,7 +193442,7 @@ mod tests {
       reservation = min(maximum, reservation * 2n);
       reservationFromBalance = reservation === available;
     }
-    throw fail13("BB_FEE_ESTIMATION_UNSTABLE");
+    throw fail14("BB_FEE_ESTIMATION_UNSTABLE");
   }
   async function sendPrivateFeeTransaction(input2) {
     const estimated = await estimatePrivateFeeTransaction(input2);
