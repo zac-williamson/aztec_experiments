@@ -1,8 +1,10 @@
 # Rolling Chat: start here
 
-Current handover: 29 October 2026. The owner's current request takes precedence over historical task records. Credentials and private account material stay outside Git.
+Current handover: 2 November 2026. The owner's current request takes precedence over historical task records. Credentials and private account material stay outside Git.
 
 ## Live work and next action
+
+**Mainnet cutover (2 November):** owner authorized deployment using the existing Ethereum funding wallet. rolling.chat now serves Ethereum chain 1 / Aztec mainnet; all prior test state was discarded. See [mainnet deployment and verification](docs/MAINNET_20261102.md). Earlier testnet acceptance results below are historical, not mainnet flow certification.
 
 **Welcome and proving controls are live (`c5243ae5`, 2 November):** first-visit popup with owner-approved copy, plus persistent Remote proving switch at the bottom of the sidebar. Off selects real local proving. Focused browser/worker checks and live browser verification passed. [Evidence](docs/WELCOME_PROVING_20261102.md).
 
@@ -10,7 +12,7 @@ UI update **7a59cca2 is live (2 November)**: worker fee estimates, two-decimal c
 
 Fast-click Reply is fixed and published: `6e5f02ab`, promoted 29 October at 08:49 UTC, all seven real release flows passed. [Exact evidence and limits](docs/FAST_REPLY_20261029.md). This supersedes the earlier operations handover statement that the defect remained unchanged. Performance work remains paused.
 
-Compact deployment background: compact Board gas optimization is **published and real-proof browser acceptance passed** on 29 October. Fresh Board `0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5`, matching SDK/readers/prover/moderator/Bok, one funding router, refund 40,000/512. Source 48c2750f is pushed to master. Fresh signup, a 29-byte post, two 20-FEE self-tips with count 2 and exact fee accounting, and a 44-byte post passed. The 29-byte post used 998,470 L2 gas and paid 2.760553580939 FEE at its inclusion-block price. Old test posts/accounts were not migrated. [Deployment and boundaries](docs/COMPACT_DEPLOYMENT_20261029.md). Operations acceptance is complete: J `03bb6b8d` passed all seven real flows and explicit rollback/return. Automatic release is enabled. Use the installed GitHub CI route for compatible app updates, not legacy manual replacement. See [operations handover](docs/LAUNCH_OPERATIONS.md). Performance remains paused.
+Compact deployment background: compact Board gas optimization is **published and real-proof browser acceptance passed** on 29 October. Fresh Board `0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5`, matching SDK/readers/prover/moderator/Bok, one funding router, refund 40,000/512. Source 48c2750f is pushed to master. Fresh signup, a 29-byte post, two 20-FEE self-tips with count 2 and exact fee accounting, and a 44-byte post passed. The 29-byte post used 998,470 L2 gas and paid 2.760553580939 FEE at its inclusion-block price. Old test posts/accounts were not migrated. [Deployment and boundaries](docs/COMPACT_DEPLOYMENT_20261029.md). Operations acceptance is complete: J `03bb6b8d` passed all seven real flows and explicit rollback/return. The historical automatic release journey was enabled on testnet; its seven-flow wallet gate remains Sepolia-only and is not mainnet-qualified. Use the installed GitHub CI route for compatible app updates, not legacy manual replacement. See [operations handover](docs/LAUNCH_OPERATIONS.md). Performance remains paused.
 
 **Performance work remains paused by the owner.** Harry feedback wallet/account/payment UX and Home ranking are published. Images and the moderation-information item were dropped. MetaMask’s official hostname scanner returns BLOCK for the current CloudFront hostname; manual classification review is needed. See docs/METAMASK_ALERT_20261028.md. No external report has been sent. [Current release report](docs/HARRY_FEEDBACK_20261028.md).
 
@@ -60,25 +62,25 @@ Bok uses private repository `zac-williamson/rolling-chat-bok-pool-20261015-03`, 
 Website: https://rolling.chat (old CloudFront URL remains available: https://d30njln0kead8n.cloudfront.net). See [domain configuration](docs/ROLLING_CHAT_DOMAIN_20261102.md).
 Repository: https://github.com/zac-williamson/aztec_experiments — default branch `master`. Integration branch `codex/rolling-chat-account-ux` and `codex/rolling-chat-draft3` receive the same reviewed changes.
 
-Network: Aztec stable6.0.0, rollup `0x1f435a7f2da358caf887a470faeee7d5d5f4efba`, version679261766, Ethereum Sepolia11155111. No mainnet work.
+Network: Aztec 6.0.0 mainnet, rollup `0xe37a2663cc9c119ba41572c40fab0bbb23a5402f`, version2070860440, Ethereum chain1. Mainnet deployment explicitly authorized by the owner.
 
 | Component | Current deployment reference |
 | --- | --- |
-| Live application/UI | `/opt/rolling-release-live/current` (`7a59cca2`, UI update; includes fast-click Reply fix) |
+| Live application/UI | `/opt/rolling-release-live/current` (mainnet runtime `29e677b1`; includes previous UI fixes) |
 | Stage | `/opt/rolling-stage/current` |
 | Releases / retained rollback | `/opt/rolling-releases`; J `03bb6b8d` is the previous release |
 | Shared dependencies — retain | `/opt/rolling-app/releases/86be52150de16ad6fe628000404e44e3592705bb/node_modules` |
 | Private runtime configuration — retain | `/var/lib/rolling-bootstrap-private/rolling-tips-48c2750f617b/config` |
-| Prover, moderator and Bok | Coherent compact-deployment services; see [deployment record](docs/COMPACT_DEPLOYMENT_20261029.md) |
+| Prover, moderator and Bok | Mainnet services; see [deployment record](docs/MAINNET_20261102.md) |
 
 | Contract | Current address |
 | --- | --- |
-| Board | `0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5` |
+| Board | `0x1908bcf7fec3bdea724746be87dbf59dcb222e4452216f9522afd65212f3de19` |
 | Private fee contract | `0x2d71392cfb41aa25a62c5ecc510400167dda9f3669676d2b539413a4fa0bcbb7` |
-| Bok | `0x18eb9f9de94df31b450930e8b97c7f661cd69af7a992f1e076ec6c0d852208f7` |
-| Posting deposit portal | `0xb1b393e696c1ceb744ad47325dd18e5c96f5c073` |
-| Single funding router | `0x4036f93a035433b704fc60d52fdba4aa813ab2b3` |
-| Bok portal | `0x487dc0ac4984ef830307044bad577713bee62392` |
+| Bok | `0x011011775d3e4abdc60fc904ddf60de53813f16fd953172c879a81be184537b7` |
+| Posting deposit portal | `0x0c5f6f90fe3c59e804288370ce5c69148a934aa1` |
+| Single funding router | `0xa3d39908f2fba7ef788ff179fd2e8c1c3512a3b7` |
+| Bok portal | `0x7861f139a48b1ba2acb4285ed0bf9c05e8c7faed` |
 
 Canonical Bok plugin ID is `0x0000000000000000000000000000000000000000000000000000000000626f6b`. This fresh contract scope has replaced the old test board; previous performance results are historical until repeated on the current scope.
 

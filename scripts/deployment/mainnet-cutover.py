@@ -77,7 +77,7 @@ def main():
             wallet['remoteProver'].update(board=scope['boardAddress'], chainId='1', rollupVersion=scope['rollupVersion'], proofsEnabled=True)
             relay = load(directory + '/relay.json')
             relay['ethereumUrl'] = record['ethereumUrl']
-            relay['stateDirectory'] = str(pathlib.Path(relay['stateDirectory']).parent / suffix)
+            relay['stateDirectory'] = str(pathlib.Path(relay['stateDirectory']).parent / (suffix + '-relay'))
             funding = wallet['config']['aggregateFunding']
             policy = relay['policy']
             for key in ['chainId', 'router', 'routerCodeHash', 'collateralPortal', 'feePortal', 'bokPortal', 'privateFpc', 'usdcCodeHash', 'usdcImplementation', 'usdcImplementationCodeHash', 'weth', 'quoter', 'quoterCodeHash']:
