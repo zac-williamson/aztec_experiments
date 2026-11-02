@@ -1,0 +1,232 @@
+{
+  "scenario": "Already signed-in disposable test account; two consecutive 20-character ASCII ordinary anonymous drafts, no Bok, no submission",
+  "source": {
+    "sdkSha256": "eeb9f390d6e0a420ef1a5a73cc625fe8d1e4dafec1e6120b9ce3c1740de43619",
+    "workerSha256": "a6fd9b3bab293b4ff5b36e5aad2df63a109b5696b11629dcbe07e872aae39242",
+    "diagnosticSha256": "802fd8a71510c1392b30b4c6dc2ccfc99680b14fa6565cee2c0a7a71682f4975"
+  },
+  "origin": "https://d30njln0kead8n.cloudfront.net",
+  "board": "0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5",
+  "started": "2026-11-02T13:52:27.975Z",
+  "finished": "2026-11-02T13:53:43.221Z",
+  "runs": [
+    {
+      "number": 1,
+      "characters": 20,
+      "wallMs": 12400,
+      "label": "1.25 credits",
+      "availableCredit": "31592663804825400000",
+      "reservation": "16350002616000000000",
+      "ampleBalance": true,
+      "nativePhaseMs": {
+        "rolling.action.sync": 1055.625,
+        "private-execution": 3607.214999973774,
+        "public-simulation": 595.505000025034,
+        "synthetic-kernel-and-serialization": 678.1850000023842,
+        "admission-validation": 955.7249999940395,
+        "exact-estimate": 5846.579999983311
+      },
+      "orderedSpans": [
+        {
+          "stage": "rolling.action.policy",
+          "start": 1793627601667.465,
+          "end": 1793627602202.86,
+          "duration": 535.3949999809265
+        },
+        {
+          "stage": "rolling.action.sync",
+          "start": 1793627601149.705,
+          "end": 1793627602205.33,
+          "duration": 1055.625
+        },
+        {
+          "stage": "rolling.action.contract-state",
+          "start": 1793627602205.8901,
+          "end": 1793627602755.455,
+          "duration": 549.5649999976158
+        },
+        {
+          "stage": "rolling.action.screening",
+          "start": 1793627603244.01,
+          "end": 1793627603258.46,
+          "duration": 14.450000017881393
+        },
+        {
+          "stage": "rolling.action.history-witnesses",
+          "start": 1793627603258.49,
+          "end": 1793627603924.46,
+          "duration": 665.9699999988079
+        },
+        {
+          "stage": "rolling.action.policy",
+          "start": 1793627603243.86,
+          "end": 1793627604442.86,
+          "duration": 1199
+        },
+        {
+          "stage": "rolling.action.fee-metadata",
+          "start": 1793627604444.01,
+          "end": 1793627605043.47,
+          "duration": 599.4600000083447
+        },
+        {
+          "stage": "rolling.action.fee-binding",
+          "start": 1793627605043.695,
+          "end": 1793627605044.995,
+          "duration": 1.300000011920929
+        },
+        {
+          "stage": "rolling.action.fee-balance",
+          "start": 1793627605045.0251,
+          "end": 1793627607069.4702,
+          "duration": 2024.4449999928474
+        },
+        {
+          "stage": "private-execution",
+          "start": 1793627607077.1802,
+          "end": 1793627610684.395,
+          "duration": 3607.214999973774
+        },
+        {
+          "stage": "synthetic-kernel-and-serialization",
+          "start": 1793627610684.59,
+          "end": 1793627611362.7751,
+          "duration": 678.1850000023842
+        },
+        {
+          "stage": "public-simulation",
+          "start": 1793627611362.83,
+          "end": 1793627611958.335,
+          "duration": 595.505000025034
+        },
+        {
+          "stage": "admission-validation",
+          "start": 1793627611958.415,
+          "end": 1793627612914.1401,
+          "duration": 955.7249999940395
+        },
+        {
+          "stage": "exact-estimate",
+          "start": 1793627607070.09,
+          "end": 1793627612916.6702,
+          "duration": 5846.579999983311
+        }
+      ],
+      "nativeSyncStreamMs": [
+        517.7649999856949
+      ],
+      "proverJobRequests": 0,
+      "nodeHttpRequests": 22
+    },
+    {
+      "number": 2,
+      "characters": 20,
+      "wallMs": 9887,
+      "label": "1.25 credits",
+      "availableCredit": "31592663804825400000",
+      "reservation": "16350002616000000000",
+      "ampleBalance": true,
+      "nativePhaseMs": {
+        "rolling.action.sync": 1194.2100000083447,
+        "private-execution": 1237.5850000083447,
+        "public-simulation": 569.4750000238419,
+        "synthetic-kernel-and-serialization": 546.0750000178814,
+        "admission-validation": 939.7600000202656,
+        "exact-estimate": 3300.844999998808
+      },
+      "orderedSpans": [
+        {
+          "stage": "rolling.action.sync",
+          "start": 1793627613550.485,
+          "end": 1793627614744.695,
+          "duration": 1194.2100000083447
+        },
+        {
+          "stage": "rolling.action.policy",
+          "start": 1793627614050.37,
+          "end": 1793627614744.5251,
+          "duration": 694.1550000011921
+        },
+        {
+          "stage": "rolling.action.contract-state",
+          "start": 1793627614744.7751,
+          "end": 1793627615504.495,
+          "duration": 759.7199999988079
+        },
+        {
+          "stage": "rolling.action.screening",
+          "start": 1793627616431.135,
+          "end": 1793627616444.045,
+          "duration": 12.909999996423721
+        },
+        {
+          "stage": "rolling.action.history-witnesses",
+          "start": 1793627616444.0552,
+          "end": 1793627617161.6252,
+          "duration": 717.5699999928474
+        },
+        {
+          "stage": "rolling.action.policy",
+          "start": 1793627616431.085,
+          "end": 1793627617667.305,
+          "duration": 1236.219999998808
+        },
+        {
+          "stage": "rolling.action.fee-metadata",
+          "start": 1793627617668.3901,
+          "end": 1793627618198.6152,
+          "duration": 530.2250000238419
+        },
+        {
+          "stage": "rolling.action.fee-binding",
+          "start": 1793627618199.01,
+          "end": 1793627618204.1301,
+          "duration": 5.120000004768372
+        },
+        {
+          "stage": "rolling.action.fee-balance",
+          "start": 1793627618204.1602,
+          "end": 1793627619746.37,
+          "duration": 1542.2100000083447
+        },
+        {
+          "stage": "private-execution",
+          "start": 1793627619752.225,
+          "end": 1793627620989.81,
+          "duration": 1237.5850000083447
+        },
+        {
+          "stage": "synthetic-kernel-and-serialization",
+          "start": 1793627620989.855,
+          "end": 1793627621535.9302,
+          "duration": 546.0750000178814
+        },
+        {
+          "stage": "public-simulation",
+          "start": 1793627621536.05,
+          "end": 1793627622105.5251,
+          "duration": 569.4750000238419
+        },
+        {
+          "stage": "admission-validation",
+          "start": 1793627622105.7002,
+          "end": 1793627623045.46,
+          "duration": 939.7600000202656
+        },
+        {
+          "stage": "exact-estimate",
+          "start": 1793627619746.97,
+          "end": 1793627623047.8152,
+          "duration": 3300.844999998808
+        }
+      ],
+      "nativeSyncStreamMs": [
+        494.669999986887
+      ],
+      "proverJobRequests": 0,
+      "nodeHttpRequests": 17
+    }
+  ],
+  "errors": [],
+  "browserClosed": true
+}
