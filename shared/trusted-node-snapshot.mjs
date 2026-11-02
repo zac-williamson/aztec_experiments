@@ -23,3 +23,8 @@ export function getTrustedNodeSnapshotInfo(snapshot,node){
  return detachedInfo(record.info);
 }
 export function recordTrustedNodeSnapshot(snapshot,record){canonicalBlocks.set(snapshot,record);}
+
+// Authority belongs to this exact successful inspection, never to wall-clock age.
+export function canTrustedNodeSnapshotReadProposed(snapshot) {
+  return canonicalBlocks.get(snapshot)?.proposedReady === true;
+}

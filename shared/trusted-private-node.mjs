@@ -1,5 +1,5 @@
 import {detachedInfo,recordTrustedNodeSnapshot} from './trusted-node-snapshot.mjs';
-export {getTrustedNodeCanonicalBlock,getTrustedNodeSnapshotInfo} from './trusted-node-snapshot.mjs';
+export {getTrustedNodeCanonicalBlock,getTrustedNodeSnapshotInfo,canTrustedNodeSnapshotReadProposed} from './trusted-node-snapshot.mjs';
 import {createSafeJsonRpcClient} from '@aztec-labs/foundation/json-rpc/client';
 import {jsonStringify} from '@aztec-labs/foundation/json-rpc';
 import {retry,makeBackoff,NoRetryError} from '@aztec-labs/foundation/retry';
@@ -82,6 +82,19 @@ async function canonicalPhase(node, anchors, unsynced) {
   return readTogether([...unique.values()]);
 }
 
+// A post-read fence needs identity plus exact canonical anchors, not a second
+// detached sync/finality snapshot. The caller drains this alongside its anchors.
+export async function inspectTrustedNodeIdentity(node, options) {
+ const p=policy(options);
+ try {
+  const info=await node.getNodeInfo();
+  const chainId=info?.l1ChainId,version=info?.rollupVersion,realProofs=info?.realProofs,rollup=info?.l1ContractAddresses?.rollupAddress;
+  if(!natural(chainId)||!natural(version)||typeof realProofs!=='boolean')throw fail('UNAVAILABLE');
+  if(String(chainId)!==p.chainId||String(version)!==p.version||hex(rollup,20)!==p.rollup||realProofs!==p.proofsEnabled)throw fail('IDENTITY');
+  return detachedInfo(info);
+ }catch(error){throw failures.has(error)?error:fail('UNAVAILABLE');}
+}
+
 /** Public readiness queries only; no account, tag, nullifier or transaction inputs.
  * This is a snapshot, not a lease. The server must gate ongoing requests too.
  * 120 seconds is a reversible engineering default; 1..600 bounds configuration.
@@ -98,11 +111,7 @@ export async function inspectTrustedNode(node, options) {
     // alongside the detached chain snapshot; no private work starts until the
     // whole group and its canonical anchors have passed.
     const [info,tips,state,stamp]=await readTogether([
-      async()=>{const info=await node.getNodeInfo();
-        const chainId=info?.l1ChainId,version=info?.rollupVersion,realProofs=info?.realProofs,rollup=info?.l1ContractAddresses?.rollupAddress;
-        if(!natural(chainId)||!natural(version)||typeof realProofs!=='boolean')throw fail('UNAVAILABLE');
-        if(String(chainId)!==p.chainId||String(version)!==p.version||hex(rollup,20)!==p.rollup||realProofs!==p.proofsEnabled)throw fail('IDENTITY');
-        return detachedInfo(info);},
+      ()=>inspectTrustedNodeIdentity(node,options),
       async()=>{const value=await node.getChainTips();return {
         proposed:block(value?.proposed),checkpointed:block(value?.checkpointed?.block),
         proven:block(value?.proven?.block),finalized:block(value?.finalized?.block)};},
@@ -153,7 +162,7 @@ export async function inspectTrustedNode(node, options) {
       ...(historical?{readinessTier:p.readinessTier,readinessBlockNumber:selected.number,readinessBlockHash:selected.hash}:{}),
       finalizedBlockNumber:finalized.number,oldestHistoricBlockNumber:oldest,
       syncedL1Timestamp:String(stamp),checkedAtSeconds:now,lagSeconds:lag});
-    recordTrustedNodeSnapshot(result,{node,info,blocks:finalBlocks});return result;
+    recordTrustedNodeSnapshot(result,{node,info,blocks:finalBlocks,proposedReady:latest===proposed.number&&latestHash===proposed.hash});return result;
     }
   } catch(error) { throw failures.has(error) ? error : fail('UNAVAILABLE'); }
 }

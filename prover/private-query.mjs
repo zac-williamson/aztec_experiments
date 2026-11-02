@@ -1,7 +1,7 @@
 import {BlockHash} from '@aztec-labs/stdlib/block';
 import {gunzip as decompressGzip,gzip as compressGzip} from 'node:zlib';
 import {promisify} from 'node:util';
-import {getTrustedNodeFailureDiagnostic,getTrustedNodeCanonicalBlock} from '../shared/trusted-private-node.mjs';
+import {getTrustedNodeFailureDiagnostic,getTrustedNodeCanonicalBlock,canTrustedNodeSnapshotReadProposed,inspectTrustedNodeIdentity} from '../shared/trusted-private-node.mjs';
 import {createSafeJsonRpcClient} from '@aztec-labs/foundation/json-rpc/client';
 import {jsonStringify} from '@aztec-labs/foundation/json-rpc';
 import {getSchemaParameters, getSchemaReturnType, parseWithOptionals, schemaHasMethod} from '@aztec-labs/foundation/schemas';
@@ -226,12 +226,13 @@ export function createPrivateQueryWithInspector({queryNode, chainId, rollupVersi
     }
     return {number,hash:hash.toString(),root:data.header.txEffectsTreeRoot?.toString(),data};
   };
-  const recheckRecords=async(records,ready)=>{
+  const recheckRecords=async(records)=>{
     const unique=new Map(records.map(record=>[record.number+':'+record.hash,record]));
     const results=await Promise.allSettled([...unique.values()].map(async record=>{
-      // Only the NEW inspector result may satisfy a final fence. Never consult
-      // the headers retained for request dispatch after its operations complete.
-      const data=getTrustedNodeCanonicalBlock(ready,record.number,record.hash)??await node.getBlockData(record.number);
+      // Always read again after dispatch. Replaying identity/sync metadata adds
+      // no authority to an exact state anchor: its canonical hash is the fence.
+      // The safe client checks network version headers on this fresh RPC too.
+      const data=await node.getBlockData(record.number);
       if(data?.header?.globalVariables?.blockNumber!==record.number||data?.blockHash?.toString()!==record.hash)throw unavailable();}));
     if(results.some(result=>result.status==='rejected'))throw unavailable();
   };
@@ -323,13 +324,16 @@ export function createPrivateQueryWithInspector({queryNode, chainId, rollupVersi
           // Unknown/pending tx status still needs ordinary proposed readiness.
           // This is a stronger policy before publication, not a retry or a
           // replacement for an unavailable historical result.
-          if(strict){const strictReady=await inspect(),strictRecords=[];historical=false;
+          if(strict){const reuseProposed=canTrustedNodeSnapshotReadProposed(ready),strictReady=reuseProposed?ready:await inspect(),strictRecords=[];historical=false;
             for(const call of prepared)if(call.anchor){
               const stateful=historicalKind(call)==='selector'&&!['getBlock','getBlockData'].includes(call.method);
               if(call.anchor.number>strictReady.latestBlockNumber||stateful&&call.anchor.number<strictReady.oldestHistoricBlockNumber)throw unavailable();
             }
-            await recheckRecords(records,strictReady);
+            // The same snapshot already authenticated these anchors; when a
+            // fresh proposed snapshot was needed, recheck before dispatch.
+            if(!reuseProposed)await recheckRecords(records);
             for(const call of prepared)if(call.receipt?.isMined()&&!call.anchor){call.anchor=await canonicalRecord({number:call.receipt.blockNumber,hash:call.receipt.blockHash},strictReady,strictRecords,strictReady.latestBlockNumber,false);strictRecords.push(call.anchor);records.push(call.anchor);}
+            records.push({number:ready.readinessBlockNumber,hash:ready.readinessBlockHash},{number:strictReady.latestBlockNumber,hash:strictReady.latestBlockHash});
           }
           else records.push({number:ready.readinessBlockNumber,hash:ready.readinessBlockHash},{number:ready.latestBlockNumber,hash:ready.latestBlockHash});
         }
@@ -350,11 +354,14 @@ export function createPrivateQueryWithInspector({queryNode, chainId, rollupVersi
         catch {return errorResponse(id);}
       }));
       if(historical||records.length||absenceTip){try{
-        const finalReady=await inspect(historical?anchoredReadTier:undefined);await recheckRecords(records,finalReady);
-        if(absenceTip){const current=await inspect();
-          if(current.latestBlockNumber!==absenceTip.number||current.latestBlockHash!==absenceTip.hash)throw unavailable();
+        const fenced=await Promise.allSettled([inspectTrustedNodeIdentity(node,options),recheckRecords(records)]);
+        const failed=fenced.find(result=>result.status==='rejected');if(failed)throw failed.reason;
+        if(absenceTip){
+          const current=(await node.getChainTips()).proposed;
+          if(current.number!==absenceTip.number||current.hash.toString()!==absenceTip.hash)throw unavailable();
+          await recheckRecords([absenceTip]);
         }
-      }catch{reply(503,errorResponse(null));return;}}
+      }catch(error){reportFailure(error);reply(503,errorResponse(null));return;}}
       const encoded = jsonStringify(batch ? results : results[0]);
       const responseSize=Buffer.byteLength(encoded);
       if (responseSize > QUERY_LIMITS.responseBytes) {reply(502, errorResponse(null)); return;}

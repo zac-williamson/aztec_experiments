@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {gunzipSync} from 'node:zlib';
-import {inspectTrustedNode,createTrustedPrivateNode,isTrustedPrivateNode,getTrustedNodeFailureDiagnostic,getTrustedNodeCanonicalBlock,getTrustedNodeSnapshotInfo} from './trusted-private-node.mjs';
+import {inspectTrustedNode,createTrustedPrivateNode,isTrustedPrivateNode,getTrustedNodeFailureDiagnostic,getTrustedNodeCanonicalBlock,getTrustedNodeSnapshotInfo,canTrustedNodeSnapshotReadProposed,inspectTrustedNodeIdentity} from './trusted-private-node.mjs';
 import {BlockHeader} from '@aztec-labs/stdlib/tx';
 import {AppendOnlyTreeSnapshot} from '@aztec-labs/stdlib/trees';
 import {L1ContractsNames} from '@aztec-labs/ethereum/l1-contract-addresses';
@@ -433,3 +433,17 @@ test('snapshot handoff factory exposes actual safeRPC native values only after f
  const later=getTrustedNodeSnapshotInfo(snapshot,node);assert.notEqual(later.l1ContractAddresses.rollupAddress,info.l1ContractAddresses.rollupAddress);assert.equal(later.l1ContractAddresses.rollupAddress.toString(),rollup);
  f.state.treesAreSynched=false;await rejects(()=>create({onReady:()=>{notified++;}}),'UNSYNCED');assert.equal(notified,1);
 }));
+
+test('proposed readiness reuse is branded by the successful canonical snapshot',async()=>{
+ const f=fixture();const ready=await inspectTrustedNode(f.node,{...options,readinessTier:'checkpointed'});
+ assert.equal(canTrustedNodeSnapshotReadProposed(ready),true);
+ assert.equal(canTrustedNodeSnapshotReadProposed({...ready,proposedReady:true}),false);
+ f.state.latestBlockNumber=7;f.state.latestBlockHash=h(7);
+ const lagging=await inspectTrustedNode(f.node,{...options,readinessTier:'checkpointed'});
+ assert.equal(canTrustedNodeSnapshotReadProposed(lagging),false);
+});
+test('identity-only final fence validates scope and proof policy without synchronization calls',async()=>{
+ const f=fixture();assert.equal((await inspectTrustedNodeIdentity(f.node,options)).l1ChainId,31337);
+ assert.deepEqual(f.calls,[['getNodeInfo']]);f.info.realProofs=false;
+ await rejects(()=>inspectTrustedNodeIdentity(f.node,options),'IDENTITY');
+});
