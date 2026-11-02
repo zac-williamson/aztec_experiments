@@ -152,7 +152,7 @@ export async function createRollingModerationService({configFile,stateDirectory,
  const [{readHostedPrivateFile,rollingOperatorConfig,rollingPxeOptions,operatorNodeFetch,fileState},
   {acquireHostedLease,readHostedActor,hostedIndexNode,initializeHostedNativeProver},{createAztecNodeClient},{EmbeddedWallet},
   {Fr},{AztecAddress},{Contract},{TxHash},{loadContractArtifact},{getContractClassFromArtifact},{deriveStorageSlotInMap},
-  {jsonStringify},{loadRollingArtifacts},{prepareNativeRuntime},{BackendType},
+  {jsonStringify},{loadRollingArtifacts},{prepareInProcessNativeRuntime:prepareNativeRuntime},{BackendType},
   {createRollingPersistentPublicIndex},{createRollingPublicSqliteStore},{ownRollingPersistentPublicIndex}]=await Promise.all([
   import('../plugins/operations.mjs'),import('../plugins/main.mjs'),import('../shared/aztec-node-client.mjs'),import('@aztec-labs/wallets/embedded'),
   import('@aztec-labs/foundation/curves/bn254'),import('@aztec-labs/stdlib/aztec-address'),import('@aztec-labs/aztec.js/contracts'),import('@aztec-labs/stdlib/tx'),
