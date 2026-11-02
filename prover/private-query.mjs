@@ -145,7 +145,8 @@ export function createPrivateQueryWithInspector({queryNode, chainId, rollupVersi
   }
   const compactFetch=globalThis.fetch.bind(globalThis);
   const node = createSafeJsonRpcClient(config.url, AztecNodeApiSchema, {
-    namespaceMethods: 'aztec', log: silent, maxBatchSize: QUERY_LIMITS.batch,
+    // Public RPC providers accept three upstream calls; inbound admission remains eight.
+    namespaceMethods: 'aztec', log: silent, maxBatchSize: 3,
     maxRequestBodySize: QUERY_LIMITS.bodyBytes,
     onResponse: getVersioningResponseHandler({l1ChainId: String(chainId), rollupVersion: String(rollupVersion), l1RollupAddress: config.rollupAddress}),
     // Exactly one transport attempt, including sendTx. Never follow redirects or

@@ -728,3 +728,10 @@ test('real inspector: healthy proposed witness batch reads metadata once and fen
  const counts=Object.fromEntries([...new Set(f.operations)].map(method=>[method,f.operations.filter(value=>value===method).length]));
  assert.deepEqual(counts,{getNodeInfo:2,getChainTips:1,getWorldStateSyncStatus:1,getSyncedL1Timestamp:1,getBlockData:4,findLeavesIndexes:1});
 });
+
+test('eight admitted reads split into public-provider batches of at most three',async t=>{
+ const f=await fixture(t);
+ const response=await f.post(Array.from({length:8},(_,i)=>({...call(),id:i+1})));
+ assert.equal(response.status,200);assert.equal((await response.json()).length,8);
+ assert.deepEqual(f.received.map(x=>x.body.length),[3,3,2]);
+});
