@@ -22,7 +22,7 @@ assertNodeVersion();
 const [configurationPath,outputPath]=process.argv.slice(2);
 if(!configurationPath||!outputPath||process.argv.length!==4)throw Error('Expected public wallet configuration and new descriptor output paths.');
 const {value}=validateRollingWalletConfig(JSON.parse(await fs.readFile(configurationPath,'utf8')));
-if(!['11155111','31337'].includes(value.config.network.chainId))throw Error('Registration assertion is testnet-only.');
+if(!['1','11155111','31337'].includes(value.config.network.chainId))throw Error('Unsupported registration network.');
 const bytes=await Promise.all(['billboard/target/rolling_contract-RollingBoard.json','apps/src/billboard/private_fee_artifact.json'].map(file=>fs.readFile(path.join(ROOT,file))));
 const artifactHashes=Object.fromEntries(['board','privateFee'].map((name,index)=>[name,createHash('sha256').update(bytes[index]).digest('hex')]));
 const manifest=JSON.parse(await fs.readFile(path.join(ROOT,'.build/contracts-manifest.json'),'utf8'));

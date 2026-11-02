@@ -77,10 +77,10 @@ contract BillboardPortal is ReentrancyGuard {
         DEPLOYMENT_OPERATOR = deploymentOperator;
     }
 
-    /// @notice The explicitly bound operator attests deployment readiness on test networks.
+    /// @notice The explicitly bound operator attests deployment readiness on the configured network.
     /// @dev User withdrawals and refunds still consume Outbox proofs.
     function activate() external nonReentrant {
-        require(block.chainid == L1_CHAIN_ID && (block.chainid == 11155111 || block.chainid == 31337), "Test network only");
+        require(block.chainid == L1_CHAIN_ID && (block.chainid == 1 || block.chainid == 11155111 || block.chainid == 31337), "Unsupported network");
         require(msg.sender == DEPLOYMENT_OPERATOR, "Not deployment operator");
         require(!depositsEnabled, "Already activated");
         depositsEnabled = true;

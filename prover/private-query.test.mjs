@@ -38,9 +38,10 @@ async function fixture(t, {inspect = async () => ({ready:true}), upstreamReply, 
   const post = (body,headers={}) => fetch(url+'/v1/node',{method:'POST',headers:{'content-type':'application/json',...headers},body:typeof body==='string'?body:JSON.stringify(body)});
   return {url,post,received,privateQuery,upstreamUrl};
 }
-test('query disabled by default; fixed loopback configuration only',async()=>{
+test('query disabled by default; explicit HTTPS or loopback upstream',async()=>{
   assert.equal(await createPrivateQuery({}),undefined);
-  for (const url of ['https://127.0.0.1','http://localhost','http://example.org','http://127.0.0.1/path','http://u:p@127.0.0.1','http://127.0.0.1?x=1','http://127.0.0.1#x']) assert.throws(()=>validateQueryNode({url,rollupAddress}));
+  assert.equal(validateQueryNode({url:'https://aztec-mainnet.drpc.org',rollupAddress}).url,'https://aztec-mainnet.drpc.org/');
+  for (const url of ['http://localhost','http://example.org','http://127.0.0.1/path','http://u:p@127.0.0.1','http://127.0.0.1?x=1','http://127.0.0.1#x']) assert.throws(()=>validateQueryNode({url,rollupAddress}));
   for (const patch of [{maxLagSeconds:0},{maxLagSeconds:601},{rollupAddress:'0x'+'00'.repeat(20)},{admin:true}]) assert.throws(()=>validateQueryNode({url:'http://127.0.0.1',rollupAddress,...patch}));
   assert.equal(validateQueryNode({url:'http://[::1]:9999',rollupAddress}).maxLagSeconds,120);
 });

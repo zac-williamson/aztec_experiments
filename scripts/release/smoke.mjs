@@ -10,7 +10,7 @@ async function json(origin,route,fetcher){
 }
 export async function checkRuntime(origin,manifest,{fetcher=fetch}={}){
  const runtime=await json(origin,'/wallet/runtime.json',fetcher),c=runtime.config,pin=manifest.compatibility;
- if(runtime.proofsEnabled!==true||runtime.remoteProver?.proofsEnabled!==true||c?.network?.chainId!=='11155111'||c.network.chainId!==pin.chainId||c.network.rollupAddress!==pin.rollup||c.network.rollupVersion!==pin.rollupVersion||c.board?.contractAddress!==pin.board||runtimeIdentity(runtime)!==pin.runtimeSha256)throw failure('RELEASE_RUNTIME_CHANGED');
+ if(runtime.proofsEnabled!==true||runtime.remoteProver?.proofsEnabled!==true||!['1','11155111'].includes(c?.network?.chainId)||c.network.chainId!==pin.chainId||c.network.rollupAddress!==pin.rollup||c.network.rollupVersion!==pin.rollupVersion||c.board?.contractAddress!==pin.board||runtimeIdentity(runtime)!==pin.runtimeSha256)throw failure('RELEASE_RUNTIME_CHANGED');
  const feed=await json(origin,'/api/home?limit=1',fetcher);
  if(feed.schemaVersion!==1||feed.complete!==true||feed.scope?.boardAddress!==pin.board||String(feed.scope.chainId)!==pin.chainId||feed.scope.rollupAddress!==pin.rollup||String(feed.scope.rollupVersion)!==pin.rollupVersion)throw failure('RELEASE_API_INVALID');
 }

@@ -1,7 +1,7 @@
 import {sha256,failure} from './bundle.mjs';
 export function runtimeIdentity(runtime){
  const c=runtime?.config,n=c?.network;
- if(runtime?.proofsEnabled!==true||runtime.remoteProver?.proofsEnabled!==true||n?.chainId!=='11155111'||!c.board||!c.privateFee||!c.bok||!c.aggregateFunding)throw failure('RELEASE_REAL_PROOFS_REQUIRED');
+ if(runtime?.proofsEnabled!==true||runtime.remoteProver?.proofsEnabled!==true||!['1','11155111'].includes(n?.chainId)||!c.board||!c.privateFee||!c.bok||!c.aggregateFunding)throw failure('RELEASE_REAL_PROOFS_REQUIRED');
  // Endpoint hostnames differ between stage/live. Contract identities and gas
  // policy must remain identical; sort recursively to ignore JSON key ordering.
  const sort=v=>Array.isArray(v)?v.map(sort):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,sort(v[k])])):v;

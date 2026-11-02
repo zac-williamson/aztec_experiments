@@ -94,7 +94,7 @@ export function validateQueryNode(config) {
   if (!config || typeof config !== 'object' || Array.isArray(config)
     || Object.keys(config).some(k => !['url','rollupAddress','maxLagSeconds'].includes(k))) throw Error('Invalid query node configuration');
   let url; try { url = new URL(config.url); } catch { throw Error('Invalid query node configuration'); }
-  if (url.protocol !== 'http:' || !['127.0.0.1','[::1]'].includes(url.hostname)
+  if (!(url.protocol === 'https:' || url.protocol === 'http:' && ['127.0.0.1','[::1]'].includes(url.hostname))
     || url.username || url.password || url.search || url.hash
     || (url.pathname !== '/' && url.pathname !== '')
     || !/^0x[0-9a-f]{40}$/.test(config.rollupAddress) || BigInt(config.rollupAddress) === 0n

@@ -28,10 +28,10 @@ contract PluginPortal is ReentrancyGuard {
         token=IERC20(token_);escrow=escrow_;version=version_;chainId=block.chainid;deploymentOperator=msg.sender;
         inbox=IRollup(rollup).getInbox();outbox=IRollup(rollup).getOutbox();
     }
-    // Testnet deployment assertion only. User withdrawals remain Outbox-authorized.
+    // Deployment operator assertion only. User withdrawals remain Outbox-authorized.
     // Retain the existing ABI; activation no longer consumes an L2 message.
     function activate(uint256,uint256,uint256,bytes32[] calldata) external nonReentrant {
-        require(block.chainid==11155111 || block.chainid==31337,"Testnet activation only");
+        require(block.chainid==1 || block.chainid==11155111 || block.chainid==31337,"Unsupported network");
         require(msg.sender==deploymentOperator,"Deployment operator only");
         require(block.chainid==chainId,"Wrong chain");
         require(!active,"Already active");
