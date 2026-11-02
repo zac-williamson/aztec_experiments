@@ -171,7 +171,7 @@ async function setRemoteProving(enabled){
    proverReady=Promise.resolve();
   }
   if(creationFailed&&creating===pendingCreation)creating=undefined;
-  await guard();remoteProving=enabled;return enabled;
+  remoteProving=enabled;return enabled;
  })();
  try{return await provingChange;}finally{provingChange=undefined;}
 }

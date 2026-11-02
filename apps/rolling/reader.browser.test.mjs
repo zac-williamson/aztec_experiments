@@ -27,7 +27,7 @@ test('public reader: navigation, unsafe content, failure recovery and narrow key
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
  const browser=await launchBrowser();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],requests=[];
  page.setDefaultTimeout(5000);page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>requests.push(request.url()));
- await page.addInitScript(()=>{window.IntersectionObserver=undefined;}); // Exercise the accessible manual fallback.
+ await page.addInitScript(()=>{window.IntersectionObserver=undefined;localStorage.setItem('rolling.welcome.seen','1');}); // Exercise the accessible manual fallback.
  await page.goto(`http://127.0.0.1:${server.address().port}/`);await page.getByRole('article').waitFor();
  assert.equal(await page.locator('article script,article img').count(),0);assert.equal(await page.locator('a[href^="javascript:"]').count(),0);
  const message=page.locator('#post-10 > .post-body');assert.equal(await message.textContent(),'Docs\nhttp://example.org/path [Unsafe](javascript:alert) [Data](data:text/html,hello) <img src=x onerror=alert(1)> 😀');
@@ -63,7 +63,7 @@ test('public reader: navigation, unsafe content, failure recovery and narrow key
 
 // These public records and the action-recorder module are labelled doubles.
 // The renderer is real; this checks routing/presentation, never a transaction.
-async function socialFixture(t,{wallet='recorder',policies=[],proving=false}={}){
+async function socialFixture(t,{wallet='recorder',policies=[],proving=false,firstVisit=false}={}){
  const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css','avatar-upload.mjs']);
  if(wallet==='real')files.add('wallet-panel.mjs');
  const reason='<img src=x onerror=alert(1)> [unsafe](javascript:alert(1))';
@@ -93,6 +93,7 @@ async function socialFixture(t,{wallet='recorder',policies=[],proving=false}={})
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
  const browser=await launchBrowser();t.after(()=>browser.close());const page=await browser.newPage(),requests=[],errors=[];
  page.on('request',request=>requests.push(new URL(request.url()).pathname));page.on('pageerror',error=>errors.push(error.message));
+ if(!firstVisit)await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));
  t.after(()=>assert.deepEqual(errors,[]));await page.goto(`http://127.0.0.1:${server.address().port}/#/${wallet==='liked'?'post/10':'home'}`);await page.locator(proving?'.proving-preference':wallet==='liked'?'#post-10':'#post-13').waitFor();return {page,requests,reason};
 }
 
@@ -207,6 +208,7 @@ async function pagingFixture(t,{observer='controlled',directory=false}={}){
    fire(){this.callback([{target:this.lastTarget,isIntersecting:true}]);}
   };
  });
+ await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));
  await page.goto(`http://127.0.0.1:${server.address().port}/${directory?'#/directory/needle':''}`);
  if(directory)await page.getByRole('button',{name:'Load more',exact:true}).waitFor();else await page.locator('#post-1').waitFor();
  return {page,state,async fire(times=1){await page.evaluate(n=>{for(let i=0;i<n;i++)window.pagingObservers.at(-1).fire();},times);},async release(){for(const fn of state.pending.splice(0))fn();}};
@@ -281,6 +283,7 @@ async function boardFixture(t,{rejected=false}={}){
   res.writeHead(200,{'content-type':name.endsWith('.mjs')?'text/javascript':name.endsWith('.css')?'text/css':'text/html'});res.end(await fs.readFile(path.join(root,name)));
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
  const browser=await launchBrowser();t.after(()=>browser.close());const page=await browser.newPage(),requests=[],errors=[];page.on('request',r=>requests.push(new URL(r.url()).pathname));page.on('pageerror',e=>errors.push(e.message));t.after(()=>assert.deepEqual(errors,[]));
+ await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));
  await page.addInitScript(()=>{window.IntersectionObserver=undefined;});await page.goto(`http://127.0.0.1:${server.address().port}/`);await page.locator('#post-10').waitFor();return {page,state,requests,hostile};
 }
 
@@ -352,6 +355,7 @@ export async function loadRollingWalletRuntime(){return {selectPrivateViews,getA
   res.writeHead(200,{'content-type':name.endsWith('.mjs')?'text/javascript':name.endsWith('.css')?'text/css':'text/html'});res.end(await fs.readFile(path.join(root,name)));
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
  const browser=await launchBrowser();t.after(()=>browser.close());const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));t.after(()=>assert.deepEqual(errors,[]));await page.addInitScript(()=>window.IntersectionObserver=undefined);
+ await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));
  await page.goto(`http://127.0.0.1:${server.address().port}/#/bookmarks`);await page.getByRole('heading',{name:'Your bookmarks',exact:true}).waitFor();return {page,requests,feed,state};
 }
 async function recoverPrivateView(page){await page.getByRole('button',{name:'Open your account'}).click();await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.getByRole('button',{name:'Load saved items',exact:true}).click();await page.getByText('Your saved choices are ready.').waitFor();await page.getByRole('button',{name:'Close account panel'}).click();}
@@ -601,6 +605,7 @@ test('public revision notification renders a Bok response without navigation or 
   res.writeHead(200,{'content-type':name.endsWith('.mjs')?'text/javascript':name.endsWith('.css')?'text/css':'text/html'});res.end(await fs.readFile(path.join(root,name)));
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const browser=await launchBrowser(),page=await browser.newPage();t.after(async()=>{await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));});
+ await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));
  const errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto(`http://127.0.0.1:${server.address().port}/#/thread/10`);await page.locator('#post-10').waitFor();await connected.promise;
  assert.equal(reads,1);release=Promise.withResolvers();revision='2';const refreshed=page.waitForRequest(url=>new URL(url.url()).pathname==='/api/thread');stream.write('event: revision\ndata: '+JSON.stringify({schemaVersion:1,revision,checkpoint})+'\n\n');
  await refreshed;assert.equal(await page.locator('#post-10').count(),1);assert.equal(await page.getByText('Loading conversations…').count(),0);
@@ -634,6 +639,7 @@ async function threadRefreshFixture(t,{total=32,hydrate=false,locked=false}={}){
  const browser=await launchBrowser(),page=await browser.newPage();t.after(async()=>{for(const release of state.pending.splice(0))release();await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));});
  const errors=[];page.setDefaultTimeout(5000);page.on('pageerror',error=>errors.push(error.message));t.after(()=>assert.deepEqual(errors,[]));
  await page.addInitScript(()=>{window.IntersectionObserver=undefined;});
+ await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));
  await page.goto(`http://127.0.0.1:${server.address().port}/#/thread/1`);await page.locator('#post-16').waitFor();await page.waitForFunction(()=>typeof refreshThread==='function');await connected.promise;
  return {page,state,notify(){stream.write('event: revision\ndata: '+JSON.stringify({schemaVersion:1,revision:state.revision,checkpoint})+'\n\n');}};
 }
@@ -814,8 +820,23 @@ test('conversation back arrow returns to prior app route and direct links return
  await page.getByRole('heading',{name:'Home',exact:true}).waitFor();
  const direct=await page.context().browser().newPage();
  try{
+  await direct.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));
   await direct.goto(new URL('/#/thread/10',page.url()).href);
   await direct.getByRole('button',{name:'Back',exact:true}).click();
   await direct.getByRole('heading',{name:'Home',exact:true}).waitFor();
  }finally{await direct.close();}
+});
+
+test('welcome shows approved copy on first visit only',async t=>{
+ const {page}=await socialFixture(t,{firstVisit:true,proving:true});
+ await page.getByRole('dialog',{name:'Welcome!'}).waitFor();
+ assert.deepEqual(await page.locator('.welcome-dialog p').allTextContents(),[
+  'rolling.chat is a decentralized, anonymous message board, powered by the Aztec network.',
+  'Put up a small ETH deposit to post. Posts that break the rules incur a delay timer before you can post or withdraw your deposit.'
+ ]);
+ await page.getByRole('button',{name:'Get started',exact:true}).click();
+ await page.getByRole('link',{name:'Main board',exact:true}).first().click();
+ assert.equal(await page.locator('.welcome-dialog').count(),0);
+ await page.reload();await page.locator('.proving-preference').waitFor();
+ assert.equal(await page.locator('.welcome-dialog').count(),0);
 });

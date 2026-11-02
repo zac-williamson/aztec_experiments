@@ -114,6 +114,19 @@ function confirmTip(){
  });
 }
 function updatePreferenceControl(node,blocked=false){const state=preferenceControl(node.dataset.privateSetting,Number(node.dataset.kind),node.dataset.target);labelled(node,state.label);node.disabled=blocked||state.disabled;if(state.busy)node.setAttribute('aria-busy','true');else node.removeAttribute('aria-busy');}
+function welcomeFirstVisit(){
+ const key='rolling.welcome.seen';
+ try{if(localStorage.getItem(key))return;}catch{/* Storage may be unavailable. */}
+ const dialog=el('dialog',{class:'welcome-dialog','aria-labelledby':'welcome-title'},
+  el('h2',{id:'welcome-title'},'Welcome!'),
+  el('p',{},'rolling.chat is a decentralized, anonymous message board, powered by the Aztec network.'),
+  el('p',{},'Put up a small ETH deposit to post. Posts that break the rules incur a delay timer before you can post or withdraw your deposit.'));
+ const dismiss=()=>{dialog.close();dialog.remove();};
+ dialog.append(el('div',{class:'dialog-actions'},button('Get started',dismiss,{class:'button primary'})));
+ dialog.addEventListener('cancel',event=>{event.preventDefault();dismiss();});
+ document.body.append(dialog);dialog.showModal();
+ try{localStorage.setItem(key,'1');}catch{/* Reading does not require browser storage. */}
+}
 function updatePreferenceControls(){for(const node of app.querySelectorAll('[data-private-setting]')){const retained=inlineActions.snapshot(node.dataset.inlineAction);if(retained)node.renderInlineAction(retained);else updatePreferenceControl(node);}}
 const inlineActions=createInlineActionRegistry({perform:async(captured,onIncluded)=>{
  let panel;try{panel=await accountPanel();}catch{walletPanel=null;return {status:'failed',message:'Account tools could not load. Try again.'};}
@@ -487,5 +500,6 @@ updates.start();
 // click or completion of service-worker installation.
 void prepareAccountTools().catch(()=>{});
 render();
+welcomeFirstVisit();
 // Restore this browser’s saved account without opening the panel or prompting a wallet.
 void accountPanel().catch(()=>{});

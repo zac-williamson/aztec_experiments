@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 2 November: UI candidate7a59cca2 published by owner-directed focused UI release. Sealed compatible staging/live runtime and asset checks passed; public browser verified parent/reply groups on Main board15/Home4, gift cancel, Back and removed controls, no page errors. Seven old Bok tool repos and allocations deleted, healthy. No new seven-flow journey claimed; performance paused. Unrelated USDC reconciliation historical-RPC issue documented separately.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 2 November: owner requested first-visit welcome popup with approved wording and restoration of sidebar remote/local proving switch. Focused UI lane; measurement agents now authorized to measure 20-character adequately-funded signed-in fee estimation components and audit local/remote execution. No contract changes; performance campaign otherwise paused.
 
 ## Ready internal work
 

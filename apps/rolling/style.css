@@ -566,3 +566,8 @@ dialog::backdrop{background:rgb(15 23 42/.45);backdrop-filter:blur(2px);animatio
 .proving-mode{display:block;margin-top:5px;font-weight:400;font-size:12px}
 .proving-mode:empty{display:none}
 .proving-mode.error{color:var(--danger,#a23131)}
+
+.welcome-dialog{width:min(520px,calc(100% - 32px))}
+.welcome-dialog h2{margin:0 0 20px;font-size:30px}
+.welcome-dialog p{line-height:1.6}
+.welcome-dialog .dialog-actions{margin-top:24px}

@@ -30,6 +30,5 @@ Verified: both hostnames returned HTTP200 with certificate verification enabled;
 HTTP rolling.chat redirected301 to HTTPS; the live home API returned a complete
 snapshot; prover health was ready and the new-origin OPTIONS request returned204
 with the exact allowed origin. The directory rendered in the user's Chrome at
-https://rolling.chat/#/directory. CloudFront global rollout was still reporting
-InProgress at that check; observed edges already served the updated configuration.
+https://rolling.chat/#/directory. CloudFront global rollout subsequently reported Deployed.
 No wallet signing or new transaction was performed for this DNS change.

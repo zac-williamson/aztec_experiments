@@ -68,7 +68,7 @@ test('native decoding concurrency is bounded and timed-out work never draws late
 });
 test('actual reader keeps named avatars, anonymous and authenticated Bok separate; no private requests',async t=>{
  const {page,state,requests,base}=await setup(t);state.identity=await page.evaluate(async()=>{const {bytes}=await make();const id=identity(bytes);id.profile.bio.text='<script>bad()</script> Public bio';return id;});
- await page.goto(base+'/live.html#/profile/7');await page.locator('.public-profile [data-state="ready"]').waitFor();
+ await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));await page.goto(base+'/live.html#/profile/7');await page.locator('.public-profile [data-state="ready"]').waitFor();
  assert.equal(await page.getByRole('heading',{name:'River Lane',exact:true}).count(),1);assert.equal(await page.locator('.post .public-avatar').count(),1);assert.equal(await page.getByText('Authenticated bot',{exact:true}).count(),1);assert.equal(await page.locator('.public-profile script').count(),0);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.locator('.skip').focus();await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>document.activeElement.id),'content');
  assert(requests.every(url=>url.startsWith(base)));assert(requests.every(url=>!url.includes('/wallet')&&!url.includes('owned_')&&!url.includes('aztec')));

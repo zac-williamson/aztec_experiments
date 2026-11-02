@@ -25,7 +25,7 @@ async function fixture(t){
  return {page,calls,cursorCalls,origin:'http://127.0.0.1:'+server.address().port};
 }
 test('feed replies show their full parent, preserve actions, redact removals and fit mobile',async t=>{
- const {page,calls,cursorCalls,origin}=await fixture(t);await page.goto(origin+'/#/board/0');await page.locator('#post-11').waitFor();
+ const {page,calls,cursorCalls,origin}=await fixture(t);await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));await page.goto(origin+'/#/board/0');await page.locator('#post-11').waitFor();
  const group=page.locator('.feed-conversation').filter({has:page.locator('#post-11')});
  assert.equal(await group.locator('.feed-parent .author').innerText(),'River Lane');
  assert.match(await group.locator('.feed-parent .post-body').innerText(),/The original question/);
