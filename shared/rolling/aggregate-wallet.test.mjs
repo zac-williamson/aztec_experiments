@@ -1538,3 +1538,12 @@ for(const [asset,make] of [['ETH',fixture],['USDC',usdcWalletFixture]])test(`${a
  const workflow=durableClaimApplication(f,funding),result=await advanceAggregateClaim({application:workflow.open(),funding:await f.open()});assert.equal(result.state,'complete');assert.equal(result.intent.action.type,'claim-private-fee');assert.equal(workflow.state.sends,1);assert.equal((await funding.inspect()).completed,true);
  await (await f.open()).prepare(f.allocation);assert.equal(f.state.sends,asset==='ETH'?1:0);
 });
+
+test('starter routes mainnet AZTEC through its liquid 1% pool for either payment asset',async()=>{
+ const {starterFundingAllocation}=await import('./aggregate-wallet.mjs');
+ for(const chainId of ['1','11155111'])for(const asset of ['ETH','USDC']){
+  const allocation=await starterFundingAllocation({asset,chainId,minDeposit:'100',privateFeeCap:'200',provider:{getFeeData:async()=>({maxFeePerGas:2n})}});
+  assert.equal(allocation.feePoolFee,chainId==='1'?10000:3000);
+  if(asset==='USDC')assert.equal(allocation.collateralPoolFee,3000);
+ }
+});

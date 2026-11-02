@@ -209,7 +209,7 @@ export async function createRollingFundingSession({sdk,ethers,config,account,dep
  const requirePrivate=()=>{if(!privateContext)throw fail('ROLLING_FUNDING_PRIVATE_SESSION_REQUIRED');return privateContext;};
  let defaultPrivateFeeCap=sdk.normalizePrivateFeeGasSettings(selected.privateFee.gasSettings).gasSettings.getFeeLimit().toBigInt().toString();
  const currentFees=async()=>{const fees=await readRollingFundingFees({node,gasSettings:selected.privateFee.gasSettings,contextGuard:guard});defaultPrivateFeeCap=fees.maximumFee.toString();try{onFeePricing(structuredClone(fees.gasSettings));}catch{}return fees;};
- const starter=async asset=>{const fees=await currentFees();return starterFundingAllocation({asset,minDeposit:deployment.economics.minDeposit,privateFeeCap:fees.maximumFee.toString(),provider:fundingProvider});};
+ const starter=async asset=>{const fees=await currentFees();return starterFundingAllocation({asset,minDeposit:deployment.economics.minDeposit,privateFeeCap:fees.maximumFee.toString(),provider:fundingProvider,chainId:network.chainId});};
  await guard();
  const rawAggregate=await createAggregateWallet({sdk,ethers,scope,network,board:deployment.board.address.toString(),bok:selected.bok?.contractAddress,owner:captured.address,
   walletSecret:captured.secretKey,walletSalt:captured.salt,storage:storage??sdk.createBrowserJournalStorage(),provider:fundingProvider,captureWallet,contextGuard:guard,claimStore,relay,onProgress,
@@ -234,7 +234,7 @@ export async function createRollingFundingSession({sdk,ethers,config,account,dep
   await guard();
   if(!input||Object.keys(input).sort().join()!=='amount,asset,privateFeeCap'||!['ETH','USDC'].includes(input.asset))throw fail('ROLLING_FUNDING_INVALID');
   const {amount,asset}=structuredClone(input),privateFeeCap=(await currentFees()).maximumFee.toString();
-  const allocation={asset,collateralWei:'0',feeAmount:amount,bokAmount:'0',feePoolFee:3000,slippageBps:100,privateFeeCap,
+  const allocation={asset,collateralWei:'0',feeAmount:amount,bokAmount:'0',feePoolFee:network.chainId==='1'?10000:3000,slippageBps:100,privateFeeCap,
    ...(asset==='USDC'?{collateralPoolFee:0}:{bokPoolFee:0,gasBudgetWei:await automaticFundingGasBudget(fundingProvider)})};
   const quote=await aggregate.prepare(allocation);await guard();
   return Object.freeze({kind:'private-fee',phase:'deposit',asset,amount,privateFeeCap,walletName:quote.walletName,

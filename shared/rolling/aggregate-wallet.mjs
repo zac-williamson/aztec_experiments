@@ -32,10 +32,10 @@ const freeze=value=>{if(value&&typeof value==='object'){Object.values(value).for
 // Exact router gas can only be estimated after the user's consent signature.
 // This conservative 5m-unit ceiling covers three bridge legs and swaps; confirm
 // still estimates the real transaction and refuses to exceed the reviewed cap.
-export async function starterFundingAllocation({asset,minDeposit,privateFeeCap,provider}){
+export async function starterFundingAllocation({asset,minDeposit,privateFeeCap,provider,chainId}){
  check(['ETH','USDC'].includes(asset),'INVALID');
  for(const value of [minDeposit,privateFeeCap])check(typeof value==='string'&&/^[1-9][0-9]{0,38}$/.test(value),'INVALID');
- const allocation={asset,collateralWei:minDeposit,feeAmount:(BigInt(privateFeeCap)*2n).toString(),bokAmount:'0',feePoolFee:3000,slippageBps:100,privateFeeCap};
+ const allocation={asset,collateralWei:minDeposit,feeAmount:(BigInt(privateFeeCap)*2n).toString(),bokAmount:'0',feePoolFee:String(chainId)==='1'?10000:3000,slippageBps:100,privateFeeCap};
  if(asset==='USDC')return {...allocation,collateralPoolFee:3000};
  return {...allocation,bokPoolFee:0,gasBudgetWei:await automaticFundingGasBudget(provider)};
 }
