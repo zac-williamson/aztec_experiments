@@ -55,7 +55,7 @@ Bok uses private repository `zac-williamson/rolling-chat-bok-pool-20261015-03`, 
 
 ## Current deployment
 
-Website: https://d30njln0kead8n.cloudfront.net
+Website: https://rolling.chat (old CloudFront URL remains available: https://d30njln0kead8n.cloudfront.net). See [domain configuration](docs/ROLLING_CHAT_DOMAIN_20261102.md).
 Repository: https://github.com/zac-williamson/aztec_experiments — default branch `master`. Integration branch `codex/rolling-chat-account-ux` and `codex/rolling-chat-draft3` receive the same reviewed changes.
 
 Network: Aztec stable6.0.0, rollup `0x1f435a7f2da358caf887a470faeee7d5d5f4efba`, version679261766, Ethereum Sepolia11155111. No mainnet work.
