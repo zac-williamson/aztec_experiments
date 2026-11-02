@@ -11,7 +11,7 @@ export function createRankedHomeReader({read,getPreferences=()=>({}),getPriority
  }
  function ingest(state,page){
   state.observed.push(...page.posts);
-  Object.assign(state.names,page.names??{});Object.assign(state.boards,page.boards??{});
+  Object.assign(state.names,page.names??{});Object.assign(state.boards,page.boards??{});Object.assign(state.contextPosts,page.contextPosts??{});
   for(const post of page.posts){if(!state.ids.has(post.id)){state.ids.add(post.id);if(!state.roots.has(post.record?.root))state.queue.push(post);}}
  }
  function rank(state){
@@ -27,7 +27,7 @@ export function createRankedHomeReader({read,getPreferences=()=>({}),getPriority
    const sources=['recent','engaged','explore'].map(pool=>({route:'candidates',parameters:{pool,limit:60},cursor:null,done:false}));
    const base=await read('candidates',sources[0].parameters,signal,options);if(!Array.isArray(base.posts))fail();
    sources[0].cursor=base.nextCursor??null;sources[0].done=!sources[0].cursor;
-   state={id,base,sources,preferences,priorityTxs,now:now(),names:{},boards:{},ids:new Set(),roots:new Set(),queue:[],observed:[],page:0};ingest(state,base);
+   state={id,base,sources,preferences,priorityTxs,now:now(),names:{},boards:{},contextPosts:{},ids:new Set(),roots:new Set(),queue:[],observed:[],page:0};ingest(state,base);
    const boards=(preferences.followedBoards??[]).slice(0,100),names=(preferences.followedNames??[]).filter(x=>x!=='0').slice(0,100-boards.length);
    if(boards.length||names.length)sources.push({route:'following',parameters:{boards:boards.join(','),names:names.join(','),limit:60},cursor:null,done:false});
    await collect(state,sources.slice(1),signal);rank(state);
@@ -42,6 +42,6 @@ export function createRankedHomeReader({read,getPreferences=()=>({}),getPriority
   }
   if(signal?.aborted||state.id!==serial)throw new DOMException('Feed request superseded','AbortError');
   const posts=state.queue.splice(0,limit);posts.forEach(post=>state.roots.add(post.record.root));state.page++;
-  return {...state.base,posts,observedPosts:state.observed.splice(0),names:{...state.names},boards:{...state.boards},ranking:'personalised-v1',nextCursor:state.queue.length||state.sources.some(s=>!s.done)?`home:${state.id}:${state.page}`:null};
+  return {...state.base,posts,observedPosts:state.observed.splice(0),names:{...state.names},boards:{...state.boards},contextPosts:Object.fromEntries(posts.map(post=>post.record?.parent).filter(id=>id&&id!=='0'&&state.contextPosts[id]).map(id=>[id,state.contextPosts[id]])),ranking:'personalised-v1',nextCursor:state.queue.length||state.sources.some(s=>!s.done)?`home:${state.id}:${state.page}`:null};
  };
 }

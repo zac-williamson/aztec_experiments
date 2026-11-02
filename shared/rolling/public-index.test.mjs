@@ -30,7 +30,7 @@ const digest=async(text,size)=>poseidon2HashWithSeparator([BigInt(Buffer.byteLen
 async function log(type,payload){const abi=artifact.outputs.structs.events.find(e=>e.path==='RollingBoard::'+type),selector=await EventSelector.fromSignature(decodeFunctionSignature(type,abi.fields));
   return new PublicLog(address,[await computeLogTag(selector.toField(),DomainSeparator.EVENT_LOG_TAG),...encodeArguments({parameters:abi.fields},abi.fields.map(f=>payload[f.name]))]);}
 async function fixture(t,resources=[]){
- const directory=fs.mkdtempSync(path.join(os.tmpdir(),'rolling-public-index-'));t.after(()=>{try{for(const resource of resources)resource.close();}finally{fs.rmSync(directory,{recursive:true,force:true});}});
+ const directory=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'rolling-public-index-')));t.after(()=>{try{for(const resource of resources)resource.close();}finally{fs.rmSync(directory,{recursive:true,force:true});}});
  const nameId=(await poseidon2HashWithSeparator(nameRegistration('John','Doe').preimage,NAME_DOMAIN)).toBigInt();
  const boardId=(await poseidon2HashWithSeparator([5n,...pack('build',2)],0x52435331)).toBigInt();
  const block1=[await log('MainPolicyPublished',{schema:1,version:1,digest:await digest('Rules',32),length:5,rules:pack('Rules',32)}),
@@ -892,4 +892,17 @@ test('candidate pools bind lane, page size and publication, retaining public met
  for(const key of ['owner','reads','topics','names','seen'])assert.throws(()=>index.query('candidates',{pool:'recent',[key]:'private'}));
  const first=index.query('candidates',{pool:'recent',limit:1});f.put(5,[await f.post(30,5)]);f.setHead(5);await index.step();await f.drain(index);
  assert.throws(()=>index.query('candidates',{pool:'recent',limit:1,cursor:first.nextCursor}),{code:'ROLLING_PUBLIC_CURSOR_STALE'});
+});
+
+import {Grumpkin} from '@aztec-labs/foundation/crypto/grumpkin';
+for(const persistent of [false,true])test('feed parent context API carries same-snapshot labels without request-time node reads, persistent='+persistent,async t=>{
+ const f=await(persistent?persistentFixture(t):fixture(t)),key={x:Grumpkin.generator.x.toBigInt(),y:Grumpkin.generator.y.toBigInt()};
+ f.put(3,[await log('PostTipKey',{schema:1,post:10,key}),await f.post(10,3,'Parent')]);
+ const text='Reply';f.put(4,[await log('PostTipKey',{schema:1,post:20,key}),await log('PostPublished',{schema:1,id:20,
+  record:{subboard:BigInt(f.boardId),parent:10,root:10,kind:1,name_id:0,reference:0,content_digest:await digest(text,32)},timestamp:4,main_policy_version:1,local_policy_version:1,length:5,message:pack(text,32)})]);f.setHead(4);
+ const index=persistent?(await f.open()).index:await f.create();if(persistent)await f.drain(index);else await index.sync();
+ for(const name of Object.keys(f.node))f.node[name]=()=>assert.fail('Feed request reached node: '+name);
+ const page=index.query('feed',{limit:1});assert.equal(page.posts[0].id,'20');assert.equal(page.contextPosts['10'].text,'Parent');assert.equal(page.names[f.nameId].first,'John');assert.equal(page.boards[f.boardId].slug,'build');
+ if(persistent){assert.equal(page.contextPosts['10'].confirmation,'confirmed');assert.equal(page.posts[0].confirmation,'confirmed');}
+ const next=index.query('feed',{limit:1,cursor:page.nextCursor});assert.equal(next.posts[0].id,'10');assert.deepEqual(next.contextPosts,{});assert.equal(page.revision,next.revision);
 });

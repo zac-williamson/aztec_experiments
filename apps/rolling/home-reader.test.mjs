@@ -50,3 +50,10 @@ test('Home cursor is invalid after a fresh session and non-Home requests remain 
  const controller=new AbortController(),parameters={id:'9'},options={revision:'r'};await read('board',parameters,controller.signal,options);
  assert.deepEqual(calls.at(-1),['board',parameters,controller.signal,options]);
 });
+
+test('ranked Home carries same-snapshot parent context and its identity from every candidate pool',async()=>{
+ const parent=post(10,'10',{record:{root:'10',parent:'0',name_id:'7',subboard:'0'},text:'Parent context'});
+ const reply=post(11,'10',{record:{root:'10',parent:'10',name_id:'0',subboard:'0'}});
+ const read=createRankedHomeReader({now:()=>now,read:async(route,{pool})=>envelope(pool==='engaged'?[reply]:[],{contextPosts:pool==='engaged'?{'10':parent}:{},names:pool==='engaged'?{'7':{id:'7',first:'River',last:'Lane'}}:{}})});
+ const page=await read('home');assert.deepEqual(page.contextPosts,{'10':parent});assert.equal(page.names['7'].first,'River');assert.deepEqual(page.posts,[reply]);
+});

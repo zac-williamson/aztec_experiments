@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 2 November: owner requests nonblocking worker estimated fees with blurred pending state, two-decimal FEE displays, confirmed 20-credit heart tips, and conversation Back arrow. Implementing coherent UI changes; prior dynamic-pricing release outcome under inspection. Performance campaign remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 2 November: integrated worker estimated fees, two-decimal credits, confirmed heart gifts, Back arrow, and same-snapshot parent/reply feed cards. Removed archive link and analytics toggle. Deleted seven empty old Bok test repositories and all allocations; retained credentials and financial journals. Focused UI/backend checks and independent review passed. Publishing combined candidate through normal CI and real seven-flow release gate; performance campaign remains paused.
 
 ## Ready internal work
 

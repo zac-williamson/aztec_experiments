@@ -5,7 +5,7 @@ import {createPublicReader} from './reader-client.mjs';
 import {createRankedHomeReader} from './home-reader.mjs';
 import {createFeedPreferences,createFeedObservation} from './feed-preferences.mjs';
 import {createPublicAvatar,createPublicProfile} from './profile-view.mjs';
-import {createMessageContent as richText,createInlineActionRegistry,savedPreferenceControl,savedReaderSelection,savedReaderRoute,createIcon,createBrand,createSkeletonFeed,createThreadView,boardTone,boardInitial} from './model.mjs';
+import {createMessageContent as richText,createInlineActionRegistry,savedPreferenceControl,savedReaderSelection,savedReaderRoute,createIcon,createBrand,createSkeletonFeed,createThreadView,createFeedReplyGroup,boardTone,boardInitial} from './model.mjs';
 import {captureRoutePosition,focusRoute,skipToContent,revealIncludedPost,createConversationNavigation} from './navigation.mjs';
 
 const analytics=createAnalytics();
@@ -212,7 +212,7 @@ function updateAccountButton(){
 function shell(title,{boardId=null}={}){
  document.title=title+' · rollingchat';
  const nav=(label,to,icon)=>link([el('span',{class:'nav-icon','aria-hidden':'true'},createIcon(icon)),label],to);
- const rail=el('aside',{class:'rail',id:'community-navigation'},link(createBrand(),'/home',{class:'brand'}),el('p',{class:'rail-label'},'Browse'),el('nav',{class:'nav-group','aria-label':'Community'},nav('Home','/home','home'),nav('Main board','/board/0','message'),nav('Explore boards','/directory','compass'),nav('Following','/following','users'),nav('Bookmarks','/bookmarks','bookmark')),el('p',{class:'rail-foot'},'Say it in public. Stay private.',el('br'),el('a',{href:'/archive/'},'Earlier conversations')));
+ const rail=el('aside',{class:'rail',id:'community-navigation'},link(createBrand(),'/home',{class:'brand'}),el('p',{class:'rail-label'},'Browse'),el('nav',{class:'nav-group','aria-label':'Community'},nav('Home','/home','home'),nav('Main board','/board/0','message'),nav('Explore boards','/directory','compass'),nav('Following','/following','users'),nav('Bookmarks','/bookmarks','bookmark')),el('p',{class:'rail-foot'},'Say it in public. Stay private.'));
  for(const entry of rail.querySelectorAll('nav a'))if(entry.hash.slice(1)===route||entry.hash==='#/directory'&&route.startsWith('/directory/')){entry.setAttribute('aria-current','page');entry.classList.add('active');}
  rail.querySelector('.rail-foot').append(el('br'),link('Help and privacy','/help'));
  const closeMenu=()=>{rail.classList.remove('open');rail.inert=narrow.matches;document.querySelector('.workspace').inert=false;menu.setAttribute('aria-expanded','false');menu.focus();};
@@ -344,7 +344,7 @@ async function render({live=false,publicationRevision}={}){
  signal.addEventListener('abort',()=>viewObserver?.disconnect(),{once:true});
  function notifyRenderedPosts(){
   if(!container.isConnected||!pendingPublicPages.length)return;
-  for(const node of container.querySelectorAll('.post'))if(!viewed.has(node.id.slice(5)))viewObserver?.observe(node);
+  for(const node of container.querySelectorAll('.post:not([data-context-post])'))if(!viewed.has(node.id.slice(5)))viewObserver?.observe(node);
   const pages=pendingPublicPages.splice(0);
   void walletPanel?.then(panel=>{if(current===sequence&&!signal.aborted&&container.isConnected){updateLikeControls();for(const page of pages)panel.observePublicPosts?.(page.items,page.snapshot);}}).catch(()=>{});
  }
@@ -373,10 +373,26 @@ async function render({live=false,publicationRevision}={}){
    if(items.some(item=>privateView==='bookmarks'?!savedSelection.bookmarks.includes(item.id):!savedSelection.boards.includes(item.record?.subboard)&&!savedSelection.names.includes(item.record?.name_id)))throw Error('Unrequested saved item');
   }
   const nodes=visible.map(item=>api==='directory'?boardCard(item):postCard(item,response,{feedMetrics}));
+  const contextual=['home','board'].includes(api);
+  const parents=contextual?visible.map(item=>{
+   const id=item.record?.parent;if(!field(id)||id==='0')return null;
+   const parent=response.contextPosts?.[id];
+   if(parent&&(parent.id!==id||parent.record?.root!==item.record.root||parent.record?.subboard!==item.record.subboard))throw Error('Invalid reply context');
+   const node=parent?postCard(parent,response):null;
+   if(node){node.id='context-'+id+'-for-'+item.id;node.dataset.contextPost=id;}
+   return {id,node};
+  }):[];
   // Rows rise in sequence on a fresh page; a live refresh swaps content without replaying the motion.
   if(!live)nodes.forEach((node,index)=>node.style.setProperty('--i',String(Math.min(index,8))));
   if(nodes.length)container.querySelector('.empty')?.remove();lastPosition=nextPosition;lastPositionHash=nextPositionHash;
-  if(thread){visible.forEach((item,index)=>thread.add(item,nodes[index]));thread.commit();}else container.append(...nodes);
+  if(thread){visible.forEach((item,index)=>thread.add(item,nodes[index]));thread.commit();}
+  else nodes.forEach((node,index)=>{
+   const parent=parents[index];
+   if(!parent){container.append(node);return;}
+   // Reuse an immediately preceding parent card when it is already in view.
+   const previous=container.lastElementChild,adjacent=previous?.id==='post-'+parent.id?previous:null;
+   container.append(createFeedReplyGroup({parent:adjacent??parent.node,reply:node,parentId:parent.id,root:visible[index].record.root}));
+  });
   for(const id of ids)seenIds.add(id);if(next)seenCursors.add(next);
   if(api!=='directory'){pendingPublicPages.push({items:api==='home'?(response.observedPosts??items):items,snapshot:{checkpoint:response.checkpoint,confirmationCheckpoint:response.confirmationCheckpoint,revision:response.revision,renderedPosts:visible}});notifyRenderedPosts();}
   return nodes;
@@ -388,7 +404,7 @@ async function render({live=false,publicationRevision}={}){
   const finishDOM=beginRollingMeasure('reader.dom');
   append(data);showFollowing(data.following);
   let cursor=data.nextCursor;
-  while(api!=='directory'&&cursor&&(pages<(saved?.pages??1)||api==='thread'&&saved?.threadEnd||api!=='home'&&saved?.anchor&&!seenIds.has(saved.anchor.id.slice(5)))){
+  while(api!=='directory'&&cursor&&(pages<(saved?.pages??1)||api==='thread'&&saved?.threadEnd||api!=='home'&&saved?.anchor&&!container.querySelector('#'+CSS.escape(saved.anchor.id)))){
    const page=await read(api,{...parameters,cursor},restoreSignal,{revision:data.revision});if(current!==sequence)return;append(page);cursor=page.nextCursor;pages++;
   }
   loading.remove();

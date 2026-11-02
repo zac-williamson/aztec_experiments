@@ -4,7 +4,7 @@ import {NUM_BLOCK_END_BLOB_FIELDS,NUM_CHECKPOINT_END_MARKER_FIELDS,MIN_TX_BLOB_F
 import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
 import {createHash,createHmac,randomBytes,randomUUID,timingSafeEqual} from 'node:crypto';
 import {createRollingEventDecoder,isRollingEvent,validateRollingScope} from './public-events.mjs';
-import {createRollingProjection,normalizeHomeSubboards,normalizeLikePosts} from './public-projection.mjs';
+import {createRollingProjection,ROLLING_PARENT_CONTEXT_VIEWS,rollingParentContext,normalizeHomeSubboards,normalizeLikePosts} from './public-projection.mjs';
 const fail=code=>Object.assign(Error('Rolling public history is unavailable.'),{code});
 const check=(v,code='ROLLING_PUBLIC_INVALID')=>{if(!v)throw fail(code);};
 const hash=v=>typeof v==='string'&&/^0x[0-9a-f]{64}$/.test(v);
@@ -161,10 +161,11 @@ export async function createRollingPublicIndex({node,artifact,scope,deployment,s
       else if(view==='profile'){check(field(params.nameId));check(projection.identity(params.nameId),'ROLLING_PUBLIC_NOT_FOUND');result=projection.profile(params.nameId,options);}
       else if(view==='post'){check(field(params.id));result={post:projection.post(params.id)};}
       else throw fail('ROLLING_PUBLIC_INVALID');
+      if(ROLLING_PARENT_CONTEXT_VIEWS.includes(view))result.contextPosts=rollingParentContext(result.posts,id=>projection.post(id));
       if(result.nextCursor)result.nextCursor=epoch+':'+(['likes','candidates'].includes(view)?likeBinding+':':'')+result.nextCursor;
       const envelope={schemaVersion:1,scope,checkpoint:checkpoint(),complete:true,...result,revision:`${epoch}:${revision}`};
       if(!['directory','likes'].includes(view)){
-        const names={},boards={};for(const post of result.posts??(result.post?[result.post]:[])){
+        const names={},boards={};for(const post of [...(result.posts??(result.post?[result.post]:[])),...Object.values(result.contextPosts??{})]){
           // Current profile content is resolved once per distinct name at query
           // time, not embedded again in every historical post.
           if(post.record.name_id!=='0'&&!Object.hasOwn(names,post.record.name_id)){const name=projection.identity(post.record.name_id);check(name);names[name.id]=name;}
@@ -270,7 +271,7 @@ export async function createRollingPersistentPublicIndex({node,artifact,bokArtif
       const nextCursor=page.nextAfter===null?null:(()=>{const last=view==='likes'?page.nextAfter:key(page.nextAfter);return `${tokenEpoch}:${last}:${mac(last)}`;})();
       const selectedCheckpoint=view==='bok-accounting'?accountingCheckpoint:control.checkpoint;
       const annotate=post=>post?{...post,confirmation:BigInt(post.position.blockNumber)<=BigInt(confirmationCheckpoint.number)?'confirmed':'pending'}:post;
-      const value={...page.value,...(page.value.posts?{posts:page.value.posts.map(annotate)}:{}),...(Object.hasOwn(page.value,'post')?{post:annotate(page.value.post)}:{})};
+      const value={...page.value,...(page.value.posts?{posts:page.value.posts.map(annotate)}:{}),...(Object.hasOwn(page.value,'post')?{post:annotate(page.value.post)}:{}),...(page.value.contextPosts?{contextPosts:Object.fromEntries(Object.entries(page.value.contextPosts).map(([id,post])=>[id,annotate(post)]))}:{})};
       const envelope={schemaVersion:1,scope,...(view==='bok-accounting'?{bokScope:scope.bok}:{}),checkpoint:{number:Number(selectedCheckpoint.number),hash:selectedCheckpoint.hash},
         confirmationTier:view==='bok-accounting'?(BigInt(accountingCheckpoint.number)<=BigInt(confirmationCheckpoint.number)?'checkpointed':'proposed'):confirmationTier,confirmationCheckpoint:{number:Number(confirmationCheckpoint.number),hash:confirmationCheckpoint.hash},complete:true,...value,
         ...(view==='post'?{}:{nextCursor}),revision:publicationRevision()};

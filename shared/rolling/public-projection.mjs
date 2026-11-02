@@ -17,6 +17,19 @@ export function normalizeLikePosts(value){
  check(ids.every(id=>/^[1-9][0-9]{0,76}$/.test(id)&&BigInt(id)<0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001n));
  return ids.sort((a,b)=>BigInt(a)<BigInt(b)?-1:1);
 }
+// One direct parent per feed row, never recursive history or request-time RPC.
+export const ROLLING_PARENT_CONTEXT_VIEWS=Object.freeze(['candidates','home','feed','board','following','bookmarks','profile']);
+export function rollingParentContext(posts,readPost){
+ check(Array.isArray(posts)&&posts.length<=100&&typeof readPost==='function');
+ const context={};
+ for(const post of posts){
+  const id=post.record.parent;if(id==='0')continue;
+  const parent=context[id]??readPost(id);if(!parent)continue;
+  check(parent.id===id&&parent.record.root===post.record.root&&parent.record.subboard===post.record.subboard&&BigInt(parent.order)<BigInt(post.order));
+  context[id]=parent;
+ }
+ return context;
+}
 const pos=e=>[e.position.blockNumber,e.position.txIndexWithinBlock,e.position.logIndexWithinTx].map(BigInt);
 const compare=(a,b)=>{for(let i=0;i<3;i++)if(a[i]!==b[i])return a[i]<b[i]?-1:1;return 0;};
 const text=(p,field,length)=>{const bytes=new Uint8Array(p[field].length*31);p[field].forEach((word,i)=>{let n=BigInt(word);for(let j=30;j>=0;j--){bytes[i*31+j]=Number(n&255n);n>>=8n;}});return new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes.slice(0,Number(p[length])));};
@@ -180,7 +193,8 @@ export function createRollingProjection({isValidatedEvent,maxEvents=50000,homeSu
    // navigable tombstones through the same visible() redaction as every view.
    const page=select([...state.order].reverse().filter(key=>state.posts.get(key).record.subboard===id),{limit,cursor});
    if(page.nextCursor)page.nextCursor=id+':'+page.nextCursor;
-   const board=state.boards.get(id),needed=new Set([state.version,...page.posts.map(p=>p.mainVersion),...page.posts.filter(p=>p.removal).map(p=>String(BigInt(p.removal.policy)&0xffffffffn))]);
+   const contextual=[...page.posts,...Object.values(rollingParentContext(page.posts,key=>{const post=state.posts.get(key);return post?visible(post):null;}))];
+   const board=state.boards.get(id),needed=new Set([state.version,...contextual.map(p=>p.mainVersion),...contextual.filter(p=>p.removal).map(p=>String(BigInt(p.removal.policy)&0xffffffffn))]);
    if(board?.rejection)needed.add(board.rejection.mainVersion);
    const policies=[...needed].sort((a,b)=>BigInt(a)<BigInt(b)?-1:BigInt(a)>BigInt(b)?1:0).map(version=>{
     const policy=state.policies.get(version);check(policy);return {version,digest:policy.digest,text:policy.text};

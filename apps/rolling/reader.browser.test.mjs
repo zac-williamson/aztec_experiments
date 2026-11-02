@@ -775,6 +775,8 @@ test('gift confirmation cancellation and Escape send nothing; heart dollar repla
 });
 test('conversation back arrow returns to prior app route and direct links return Home',async t=>{
  const {page}=await socialFixture(t,{wallet:'liked'});page.setDefaultTimeout(5000);
+ assert.equal(await page.getByRole('link',{name:'Earlier conversations',exact:true}).count(),0);
+ assert.equal(await page.getByRole('button',{name:/usage analytics/i}).count(),0);
  await page.getByRole('button',{name:'Back',exact:true}).click();
  await page.getByRole('heading',{name:'Home',exact:true}).waitFor();
  assert.equal(await page.getByRole('button',{name:'Back',exact:true}).count(),0);

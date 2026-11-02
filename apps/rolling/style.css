@@ -540,3 +540,18 @@ dialog::backdrop{background:rgb(15 23 42/.45);backdrop-filter:blur(2px);animatio
 .account-dialog .wallet-credit-context h3{margin-top:0}
 .account-dialog .wallet-credit-context p{font-size:13px;color:var(--muted)}
 .account-dialog .wallet-setup-prompt{margin-bottom:18px}
+
+/* Feed replies keep the parent and reply in one avatar-connected conversation. */
+.feed-conversation{min-width:0;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow-sm);overflow:hidden}
+.feed-conversation>.post{border:0;border-radius:0;box-shadow:none;background:transparent}
+.feed-conversation>.feed-parent{position:relative;padding-bottom:18px}
+.feed-conversation>.feed-parent::after{content:"";position:absolute;left:39px;top:62px;bottom:-18px;width:2px;background:var(--line-strong);pointer-events:none}
+.feed-conversation>.post .post-body,.feed-conversation>.post>.removed{margin-left:52px}
+.feed-conversation>.post .post-actions{margin-left:44px}
+.feed-conversation>.feed-reply{padding-top:18px}
+.feed-conversation .context-collapsed{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:6;overflow:hidden}
+.context-expand{display:block;margin:6px 0 0 52px;padding:2px 0;border:0;background:none;color:var(--brand-ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.missing-parent{padding:18px 20px 18px 72px;color:var(--muted);font-size:14px}
+.missing-parent p{margin:0 0 4px}
+.feed-conversation>.missing-parent::after{top:18px}
+@media(max-width:700px){.feed-conversation>.post{padding-left:14px;padding-right:14px}.feed-conversation>.feed-parent::after{left:33px}.missing-parent{padding-left:66px}}

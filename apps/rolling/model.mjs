@@ -368,3 +368,26 @@ export function createThreadView({ root, signals, state, announce = () => {}, po
     size: () => posts.length
   });
 }
+
+// One immediate parent gives a feed reply its context without expanding ancestry.
+// Cards retain their own action handlers; context clones receive distinct IDs.
+export function createFeedReplyGroup({parent,reply,parentId,root}) {
+  const group=document.createElement('section');group.className='feed-conversation';group.setAttribute('aria-label','Reply with its parent post');
+  if(parent){
+    parent.classList.add('feed-parent');
+    parent.querySelector('[data-parent-line]')?.remove();
+    const body=parent.querySelector('.post-body');
+    if(body&&body.textContent.length>420){
+      body.classList.add('context-collapsed');
+      const toggle=document.createElement('button');toggle.type='button';toggle.className='context-expand';toggle.textContent='Show more';toggle.setAttribute('aria-expanded','false');
+      toggle.addEventListener('click',()=>{const expanded=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(expanded));body.classList.toggle('context-collapsed',!expanded);toggle.textContent=expanded?'Show less':'Show more';});
+      body.after(toggle);
+    }
+  }else{
+    parent=document.createElement('div');parent.className='feed-parent missing-parent';
+    const message=document.createElement('p');message.textContent='The post being replied to is unavailable.';
+    const link=document.createElement('a');link.href='#/thread/'+root+'/'+parentId;link.textContent='View conversation';parent.append(message,link);
+  }
+  reply.classList.add('feed-reply');reply.querySelector('[data-parent-line]')?.remove();
+  group.append(parent,reply);return group;
+}

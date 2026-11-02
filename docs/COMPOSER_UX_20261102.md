@@ -33,3 +33,17 @@ from the validated outputs. Clean CI remains the full reproducible-build gate.
 Publication is pending. The real-testnet release journey must observe a resolved
 worker estimate before its first actual post, as well as the existing seven
 required flows. No contracts or infrastructure were redeployed for these changes.
+
+Home and Main board now render an immediate parent above each reply, connected
+through the avatars. Long parents expand in place. Parent and reply actions retain
+their own targets. Missing and removed parents have explicit placeholders. Parent
+content and identity arrive in the same local-index response, with bounded response
+size and no per-reply network requests. Eight backend checks and eleven Home/browser
+checks passed, including avatar-heavy pagination and mobile layout. Independent
+review covered both sides.
+
+The Earlier conversations link and analytics opt-out control are removed. Seven
+empty prior-release repositories were removed from Bok's local repository tool,
+and its remaining four empty pool allocations released (one already released).
+All five GitHub repositories were unchanged genesis repositories; no GitHub
+contents were deleted. Credentials and financial journals were retained.

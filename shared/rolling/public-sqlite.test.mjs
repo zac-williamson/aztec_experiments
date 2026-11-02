@@ -284,7 +284,8 @@ async function queryFixture(t,{homeSubboards=[],...options}={}){
 }
 const withoutPage=value=>{const {nextCursor,revision,...rest}=value;return rest;};
 function compareQuery(f,view,params={},home=[]){
- const got=f.read(view,params,null,home).value,{names,boards,...base}=got;
+ const got=f.read(view,params,null,home).value,{names,boards,contextPosts,...base}=got;
+ if(contextPosts)assert.deepEqual(contextPosts,rollingParentContext(got.posts,id=>f.pure.post(id)));
  let expected;if(view==='feed')expected=f.pure.feed(params);else if(view==='home')expected=f.pure.home(params);
  else if(view==='board')expected=f.pure.boardFeed(params.id,params);else if(view==='thread')expected=f.pure.thread(params.root,params);
  else if(view==='profile')expected=f.pure.profile(params.nameId,params);else if(view==='post')expected={post:f.pure.post(params.id)};
@@ -479,4 +480,52 @@ test('all-board candidate lanes cover every row with bounded indexed pagination'
   assert.deepEqual(seen,expected[pool]);assert.equal(new Set(seen).size,5);
  }
  assert.throws(()=>f.read('candidates',{pool:'private'}));assert.throws(()=>f.read('candidates',{pool:'recent',reads:'private'}));
+});
+
+// Current paid-tip post events; old fixtures above predate the PostTipKey pair.
+import {Grumpkin} from '@aztec-labs/foundation/crypto/grumpkin';
+import {rollingParentContext} from './public-projection.mjs';
+async function contextPost(f,id,options){return f.add([
+ ['PostTipKey',{post:id,key:{x:Grumpkin.generator.x.toBigInt().toString(),y:Grumpkin.generator.y.toBigInt().toString()}}],await f.postInput(id,options)
+]);}
+for(const view of ['feed','board','candidates'])test('feed parent context includes off-page parent and identity from local snapshot: '+view,async t=>{
+ const f=await queryFixture(t),name=await f.name(),board=await f.board('context');await f.avatar(name);
+ await contextPost(f,'10',{name,board,text:'Parent detail'});await f.policy('2','Updated rules');await contextPost(f,'20',{board,parent:'10',root:'10',text:'Reply'});
+ const params={limit:1,...(view==='board'?{id:board}:view==='candidates'?{pool:'recent'}:{})};
+ const page=f.read(view,params),value=page.value;assert.deepEqual(value.posts.map(p=>p.id),['20']);assert.deepEqual(Object.keys(value.contextPosts),['10']);
+ assert.equal(value.contextPosts['10'].text,'Parent detail');assert.equal(value.names[name].first,'John');assert.equal(value.names[name].profile.avatar.data,'AQID');assert.equal(value.boards[board].name,'Build');if(view==='board')assert.deepEqual(value.policies.map(p=>p.version),['1','2']);
+ assert.equal(page.revision,f.control.revision);assert.equal(page.generation,f.control.generation);assert(page.work.materializedRows<=(view==='board'?6:4));assert.equal(page.nextAfter,'20');
+ const next=f.read(view,params,page.nextAfter);assert.deepEqual(next.value.posts.map(p=>p.id),['10']);assert.deepEqual(next.value.contextPosts,{});
+});
+test('feed parent context redacts removed posts and rejected boards before publication',async t=>{
+ const f=await queryFixture(t),board=await f.board('context');
+ await contextPost(f,'10',{text:'Removed parent secret'});await contextPost(f,'20',{parent:'10',root:'10',text:'Reply'});
+ await contextPost(f,'30',{board,text:'Rejected board secret'});await contextPost(f,'40',{board,parent:'30',root:'30',text:'Reply'});
+ const old=f.control;
+ await f.add([['PostRemoved',{id:'10',policy_version:'1',penalized:true,reason_length:'3',reason:queryPack('Bad',7)}],
+ ['SubboardRejected',{subboard_id:board,main_policy_version:'1',local_policy_version:'1',reason_length:'3',reason:queryPack('Bad',7),reason_digest:await queryDigest('Bad',7)}]]);
+ const value=f.read('feed').value;assert.equal(value.contextPosts['10'].text,null);assert(value.contextPosts['10'].removal);assert.equal(value.contextPosts['30'].text,null);
+ assert(!JSON.stringify(value).includes('Removed parent secret'));assert(!JSON.stringify(value).includes('Rejected board secret'));
+ assert.throws(()=>f.store.readPublicPage({expectedControl:old,view:'feed'}),{code:'ROLLING_PUBLIC_STORAGE_CONFLICT'});
+});
+test('shared feed parent context deduplicates direct parents, omits missing and rejects mismatched linkage',()=>{
+ const parent={id:'1',order:'0',record:{parent:'0',root:'1',subboard:'0'}},child=id=>({id,order:id,record:{parent:'1',root:'1',subboard:'0'}});let reads=0;
+ assert.deepEqual(rollingParentContext([child('2'),child('3')],()=>{reads++;return parent;}),{'1':parent});assert.equal(reads,1);
+ assert.deepEqual(rollingParentContext([child('2')],()=>null),{});
+ for(const record of [{...parent.record,root:'9'},{...parent.record,subboard:'9'}])assert.throws(()=>rollingParentContext([child('2')],()=>({...parent,record})),{code:'ROLLING_PUBLIC_INVALID'});
+ assert.throws(()=>rollingParentContext([child('2'),{...child('3'),record:{parent:'1',root:'9',subboard:'0'}}],()=>parent),{code:'ROLLING_PUBLIC_INVALID'});
+});
+
+test('feed parent context paginates distinct maximum avatars within the response budget without losing rows',async t=>{
+ const f=await queryFixture(t),names=[],data=Buffer.alloc(8192,1);
+ for(let i=0;i<120;i++){const name=await f.name('Actor'+String.fromCharCode(65+Math.floor(i/26),65+i%26),'Stone');await f.avatar(name,'1',data);names.push(name);}
+ for(let i=0;i<60;i++)await contextPost(f,String(100+i),{name:names[i],text:'Parent'});
+ for(let i=0;i<60;i++)await contextPost(f,String(200+i),{name:names[60+i],parent:String(100+i),root:String(100+i),text:'Reply'});
+ let after=null,pages=0;const seen=[];
+ do{
+  const page=f.read('feed',{limit:60},after);assert(Buffer.byteLength(JSON.stringify(page.value))<=1048576-8192);
+  assert(page.value.posts.length>0);if(pages===0){assert(page.value.posts.length<60);assert.equal(Object.keys(page.value.contextPosts).length,page.value.posts.length);assert.equal(Object.keys(page.value.names).length,2*page.value.posts.length);}
+  seen.push(...page.value.posts.map(p=>p.id));after=page.nextAfter;assert(++pages<10);
+ }while(after!==null);
+ assert.equal(seen.length,120);assert.equal(new Set(seen).size,120);assert.deepEqual(seen,[...Array.from({length:60},(_,i)=>String(259-i)),...Array.from({length:60},(_,i)=>String(159-i))]);
 });

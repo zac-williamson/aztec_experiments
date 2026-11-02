@@ -7,7 +7,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {randomBytes} from 'node:crypto';
 import {FLAT_PUBLIC_LOGS_PAYLOAD_LENGTH} from '@aztec-labs/constants';
 import {isRollingEvent,validateRollingScope} from './public-events.mjs';
-import {ROLLING_PROJECTION_TABLES,stageRollingPublicReduction,normalizeHomeSubboards,normalizeLikePosts} from './public-projection.mjs';
+import {ROLLING_PROJECTION_TABLES,ROLLING_PARENT_CONTEXT_VIEWS,rollingParentContext,stageRollingPublicReduction,normalizeHomeSubboards,normalizeLikePosts} from './public-projection.mjs';
 
 const error=code=>Object.assign(Error('Rolling public storage is unavailable.'),{code});
 const requireThat=(v,code='ROLLING_PUBLIC_STORAGE_INVALID')=>{if(!v)throw error(code);};
@@ -293,6 +293,18 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
    const work={candidateRows:0,materializedRows:0,materializedBytes:0,seeks:0};
    const points=new Map();
    const point=(table,id)=>{const k=table+':'+id;if(!points.has(k)){const value=projectionRead(g,table,id,b);points.set(k,value);if(value!==undefined)work.materializedRows++;}return points.get(k);};
+   const parentContext=ROLLING_PARENT_CONTEXT_VIEWS.includes(view);
+   const batchPosts=ids=>{
+    const missing=[...new Set(ids)].filter(id=>!points.has('posts:'+id));if(!missing.length)return;
+    requireThat(missing.length<=100&&missing.every(field));
+    const where=`FROM projection WHERE g=? AND kind='posts' AND k IN (${missing.map(()=>'?').join(',')})`,args=[g,...missing];
+    // Validate byte limits before reading JSON, inside this same read snapshot.
+    const metadata=prepare('SELECT k,length(CAST(value AS BLOB)) AS bytes '+where).all(...args);
+    let bytes=0;for(const row of metadata){requireThat(missing.includes(row.k));if(!bounded(row.bytes,0,limits.maxRowBytes))throw capacity();bytes+=row.bytes;}
+    if(b.bytes+bytes>b.max)throw capacity();b.bytes+=bytes;
+    for(const id of missing)points.set('posts:'+id,undefined);
+    for(const row of prepare('SELECT k,value '+where).all(...args)){const value=JSON.parse(row.value);requireThat(value.id===row.k);points.set('posts:'+row.k,value);work.materializedRows++;}
+   };
    const rows=(name,args,n)=>{requireThat(Object.hasOwn(ROLLING_PUBLIC_QUERY_SQL,name)&&bounded(n,1,257));work.seeks++;
     const found=prepare(ROLLING_PUBLIC_QUERY_SQL[name]).all(g,name==='directory'?'boards':name==='accounting'?'bok':'posts',...args,n);work.candidateRows+=found.length;
     for(const row of found){requireThat(typeof row.k==='string'&&row.k.length<=160&&field(row.k));if(!bounded(row.bytes,0,limits.maxRowBytes))throw capacity();
@@ -313,17 +325,20 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
     boards:selections.boards.map(id=>{const board=point('boards',id);return {id,name:id==='0'?'Main board':board?.name??null,slug:board?.slug??null};}),
     names:selections.names.map(id=>{const name=point('names',id);return {id,first:name?.first??null,last:name?.last??null};})};
    const valueFor=posts=>{
-    const value={...fixed,posts},names={},boards={};
-    for(const p of posts){if(p.record.name_id!=='0'&&!Object.hasOwn(names,p.record.name_id))names[p.record.name_id]=identity(p.record.name_id);
+    const contextPosts=parentContext?rollingParentContext(posts,id=>{const post=point('posts',id);return post?visible(post):null;}):null;
+    const value={...fixed,posts,...(contextPosts?{contextPosts}:{})},names={},boards={},allPosts=[...posts,...Object.values(contextPosts??{})];
+    for(const p of allPosts){if(p.record.name_id!=='0'&&!Object.hasOwn(names,p.record.name_id))names[p.record.name_id]=identity(p.record.name_id);
      if(p.record.subboard!=='0'&&!Object.hasOwn(boards,p.record.subboard)){const board=point('boards',p.record.subboard);requireThat(board);boards[board.id]={id:board.id,name:board.name,slug:board.slug};}}
-    if(view==='board'){const needed=new Set([c.scalars.version,...posts.map(p=>p.mainVersion),...posts.filter(p=>p.removal).map(p=>String(BigInt(p.removal.policy)&0xffffffffn))]);
+    if(view==='board'){const needed=new Set([c.scalars.version,...allPosts.map(p=>p.mainVersion),...allPosts.filter(p=>p.removal).map(p=>String(BigInt(p.removal.policy)&0xffffffffn))]);
      if(fixed.board?.rejection)needed.add(fixed.board.rejection.mainVersion);
      value.policies=[...needed].sort((a,b)=>BigInt(a)<BigInt(b)?-1:BigInt(a)>BigInt(b)?1:0).map(policy);value.mainPolicy=policy(c.scalars.version);
     }return {...value,names,boards};
    };
    // Reserve more than the maximum validated scope/checkpoint/revision/token
    // envelope. Count all materialized row bytes separately, before JSON reads.
-   const fits=value=>Buffer.byteLength(JSON.stringify(value))<=1048576-4096;
+   // Context adds up to 100 confirmation annotations in the HTTP envelope.
+   const envelopeReserve=parentContext?8192:4096;
+   const fits=value=>Buffer.byteLength(JSON.stringify(value))<=1048576-envelopeReserve;
    let value,nextAfter=null;
    if(view==='likes'){
     value={postIds:likePosts,items:[]};let last=after,more=false;
@@ -419,6 +434,7 @@ export function createRollingPublicSqliteStore(directory,{scope,serviceOwned=fal
      const bound=prior?key(prior.order):['thread','chronological','pending'].includes(view)?low:high;
      const args=['feed','chronological','pending'].includes(view)?[bound]:[key(input[idKey]),bound];candidates=rows(view,args,limit+1);
     }
+    if(parentContext)batchPosts(candidates.slice(0,limit).map(row=>point('posts',row.k).record.parent).filter(id=>id!=='0'));
     const selected=[];value=valueFor(selected);
     for(const row of candidates){if(selected.length===limit){nextAfter=selected.at(-1).id;break;}
      const candidate=visible(point('posts',row.k)),page=valueFor([...selected,candidate]);if(!fits(page)){if(!selected.length)throw capacity();nextAfter=selected.at(-1).id;break;}
