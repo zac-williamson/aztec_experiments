@@ -177,5 +177,5 @@ test('existing relay accepts fee-only USDC authorization and returns one conserv
 
 for(const chainId of ['1','11155111'])test('public relay accepts matched chain and refuses mismatched RPC '+chainId,async t=>{
  const f=await fixture(t,{chainId});assert.equal((await f.relay.terms()).feeUsdc,'500');
- const wrong=await fixture(t,{chainId,wrongChain:true});await assert.rejects(wrong.relay.terms());assert.equal(wrong.state.signs,0);
+ const wrong=await fixture(t,{chainId,wrongChain:true});await assert.rejects(wrong.relay.submit(wrong.input));assert.equal(wrong.state.signs,0);
 });
