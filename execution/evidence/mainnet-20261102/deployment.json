@@ -1,0 +1,90 @@
+{
+  "scope": {
+    "chainId": "1",
+    "rollupVersion": "2070860440",
+    "rollupAddress": "0xe37a2663cc9c119ba41572c40fab0bbb23a5402f",
+    "boardAddress": "0x1908bcf7fec3bdea724746be87dbf59dcb222e4452216f9522afd65212f3de19",
+    "classId": "0x129f10e1a9e290654415f97ca5f082f143504ff1bc80bd26ed441f6bb738701f",
+    "bok": {
+      "address": "0x011011775d3e4abdc60fc904ddf60de53813f16fd953172c879a81be184537b7",
+      "classId": "0x0c59d24f902ce86319f91e15513e514e23b78b0b1685ca63812974df862f509e",
+      "operatorAddress": "0x119fa1d976f386eb0b3577a9661c923ce02ca500fbc1e68096718aa7f24948e5",
+      "deployer": "0x0233a0ebe93af15f273c200ce05a893ae2c7e87c0b24196eec705c1d09f6ceaa",
+      "salt": "0x1e95176d5896ea8582b690ce5ccb7e5ce45e776e1e8af8bfaa2e0d11b2fdd44a",
+      "deployment": {
+        "blockNumber": 10685,
+        "blockHash": "0x20ccf18d6e98b8587ba5d05cc5f630fd07758a52028eea01152e2e02ffa04f04",
+        "txHash": "0x0083db1593b1beb822ad374fa31bb6112eba0d7f3fc7d924cdc6bab9802756ec"
+      }
+    }
+  },
+  "deployment": {
+    "blockNumber": 10684,
+    "blockHash": "0x28b323763822400a76361040d4e055b9d470247beb46e110537e75429be69b27",
+    "txHash": "0x2ba658d3de01d05370ed4108d5378d224115b368159b0c4660e60e12eb9406b6"
+  },
+  "config": {
+    "network": {
+      "chainId": "1",
+      "rollupVersion": "2070860440",
+      "rollupAddress": "0xe37a2663cc9c119ba41572c40fab0bbb23a5402f",
+      "ethRpcUrl": "https://ethereum-rpc.publicnode.com/"
+    },
+    "publicRefundRpcUrl": "https://aztec-mainnet.drpc.org",
+    "board": {
+      "contractAddress": "0x1908bcf7fec3bdea724746be87dbf59dcb222e4452216f9522afd65212f3de19",
+      "portalAddress": "0x0c5f6f90fe3c59e804288370ce5c69148a934aa1"
+    },
+    "privateFee": {
+      "contractAddress": "0x2d71392cfb41aa25a62c5ecc510400167dda9f3669676d2b539413a4fa0bcbb7",
+      "gasSettings": {
+        "gasLimits": {
+          "daGas": "117624",
+          "l2Gas": "6540000"
+        },
+        "teardownGasLimits": {
+          "l2Gas": "40000",
+          "daGas": "512"
+        },
+        "maxFeesPerGas": {
+          "feePerDaGas": "0",
+          "feePerL2Gas": "18981708800000"
+        },
+        "maxPriorityFeesPerGas": {
+          "feePerDaGas": "0",
+          "feePerL2Gas": "0"
+        }
+      }
+    },
+    "aggregateFunding": {
+      "chainId": "1",
+      "router": "0xa3d39908f2fba7ef788ff179fd2e8c1c3512a3b7",
+      "routerCodeHash": "0x167a9c30cc3d472ca27217dccd565a1591e575d435379d2ac28be6a8986dbd03",
+      "collateralPortal": "0x0c5f6f90fe3c59e804288370ce5c69148a934aa1",
+      "feePortal": "0x534361be805ca30bdb6404ec5e6cdaffb3e9f3b3",
+      "bokPortal": "0x7861f139a48b1ba2acb4285ed0bf9c05e8c7faed",
+      "weth": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "swapRouter": "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45",
+      "feeToken": "0xa27ec0006e59f245217ff08cd52a7e8b169e62d2",
+      "bokToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "privateFpc": "0x2d71392cfb41aa25a62c5ecc510400167dda9f3669676d2b539413a4fa0bcbb7",
+      "quoter": "0x61ffe014ba17989e743c5f6cb21bf9697530b21e",
+      "quoterCodeHash": "0x06148f47d0f41a68d3bc970030a7150e5d608cfbc28d372440a2e41ce543d92b",
+      "usdcRelayAddress": "0xe6c6f747c7f94ac3238a10f6ba4fd1d5367b2c4e",
+      "usdcCodeHash": "0xd80d4b7c890cb9d6a4893e6b52bc34b56b25335cb13716e0d1d31383e6b41505",
+      "usdcImplementation": "0x43506849d7c04f9138d1a2050bbf3a0c054402dd",
+      "usdcImplementationCodeHash": "0xcdfb7d322961af3acae7a8f7ee8b69c205b36f576cc5b077f170c7eb8ecbe3ea",
+      "usdcDomain": {
+        "name": "USD Coin",
+        "version": "2"
+      }
+    },
+    "bok": {
+      "contractAddress": "0x011011775d3e4abdc60fc904ddf60de53813f16fd953172c879a81be184537b7",
+      "operatorAddress": "0x119fa1d976f386eb0b3577a9661c923ce02ca500fbc1e68096718aa7f24948e5",
+      "pluginId": "0x0000000000000000000000000000000000000000000000000000000000626f6b"
+    }
+  },
+  "nodeUrl": "https://aztec-mainnet.drpc.org",
+  "ethereumUrl": "https://ethereum-rpc.publicnode.com/"
+}
