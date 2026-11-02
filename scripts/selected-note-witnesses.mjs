@@ -1,6 +1,5 @@
 import {createHash} from 'node:crypto';
 import {preservePxeSimulationLogs} from './pxe-simulation-logs.mjs';
-import {ORDINARY_POST_GAS_PROFILE} from '../shared/ordinary-post-fees.mjs';
 export const SELECTED_NOTE_PINS=Object.freeze({
  'node_modules/@aztec-labs/pxe/dest/contract_function_simulator/contract_function_simulator.js':'f1a9aa049431f5946b6c1a208ce0d7e62bc090f734a9adfe2f47f9c9330ef2b3',
  'node_modules/@aztec-labs/aztec.js/dest/contract/contract_function_interaction.js':'3dc5bfd4dd0b2a7ce16a39ad6f5d6e9a5213c0bde0aa7e9e0755a16c17cb88a4',
@@ -26,9 +25,9 @@ async function rollingSelectedNoteCapture(oracle,call,artifact,scopes,contracts,
  try{
   if(artifact.name!=='get_screen_hints'||scopes?.length!==1||call.args.length!==2||!call.args[0].equals(Fr.fromString(scopes[0].toString()))||!call.selector.equals(await FunctionSelector.fromNameAndParameters(artifact.name,artifact.parameters)))return absent;
   const classId=await contracts.getCurrentClassId(call.to);
-  if(classId?.toString()!==${JSON.stringify(ORDINARY_POST_GAS_PROFILE.boardClassId)})return absent;
+  if(!classId)return absent;
   const boardArtifact=await store.getContractArtifact(classId),slot=boardArtifact?.storageLayout?.posts?.slot,depositSlotValue=boardArtifact?.storageLayout?.deposits?.slot;
-  if(slot===undefined||depositSlotValue===undefined)return absent;
+  if(boardArtifact?.name!=='RollingBoard'||slot===undefined||depositSlotValue===undefined)return absent;
   const postSlot=new Fr(BigInt(slot)),depositSlot=new Fr(BigInt(depositSlotValue)),owner=scopes[0],selected=[];let valid=true,deposit;
   const original=oracle.getNotes.bind(oracle);
   oracle.getNotes=async(...args)=>{

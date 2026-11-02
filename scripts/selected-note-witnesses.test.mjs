@@ -5,25 +5,26 @@ import vm from 'node:vm';
 import {Fr} from '@aztec-labs/foundation/curves/bn254';
 import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
 import {FunctionSelector} from '@aztec-labs/stdlib/abi';
+import {loadContractArtifact} from '@aztec-labs/stdlib/abi';
+import {getContractClassFromArtifact} from '@aztec-labs/stdlib/contract';
 import {BlockHash} from '@aztec-labs/stdlib/block';
 import {siloNoteHash,computeUniqueNoteHash} from '@aztec-labs/stdlib/hash';
 import {allToCompletion} from '@aztec-labs/foundation/promise';
 import {Note} from '@aztec-labs/stdlib/note';
 import {UtilityExecutionOracle} from '../node_modules/@aztec-labs/pxe/dest/contract_function_simulator/oracle/utility_execution_oracle.js';
 import {Option} from '../node_modules/@aztec-labs/pxe/dest/contract_function_simulator/noir-structs/option.js';
-import {ORDINARY_POST_GAS_PROFILE} from '../shared/ordinary-post-fees.mjs';
 import {selectedNoteWitnesses,SELECTED_NOTE_PINS} from './selected-note-witnesses.mjs';
 const source=Object.fromEntries(Object.keys(SELECTED_NOTE_PINS).map(name=>[name,fs.readFileSync(new URL('../'+name,import.meta.url),'utf8')]));
 const [simulatorPath,interactionPath]=Object.keys(source),simulator=selectedNoteWitnesses(source[simulatorPath],simulatorPath),interaction=selectedNoteWitnesses(source[interactionPath],interactionPath);
 const capture=vm.runInNewContext(simulator.slice(simulator.indexOf('async function rollingSelectedNoteCapture'))+';rollingSelectedNoteCapture',{Fr,FunctionSelector,allToCompletion,siloNoteHash,computeUniqueNoteHash});
-async function fixture({wrongClass=false,wrongOwner=false,wrongName=false}={}){
- const owner=AztecAddress.fromFieldUnsafe(new Fr(7)),board=AztecAddress.fromFieldUnsafe(new Fr(8)),hash=BlockHash.random(),postSlot=new Fr(12),depositSlot=new Fr(13);
+async function fixture({wrongClass=false,wrongOwner=false,wrongName=false,currentArtifact,currentClassId}={}){
+ const owner=AztecAddress.fromFieldUnsafe(new Fr(7)),board=AztecAddress.fromFieldUnsafe(new Fr(8)),hash=BlockHash.random(),postSlot=new Fr(BigInt(currentArtifact?.storageLayout.posts.slot??12)),depositSlot=new Fr(BigInt(currentArtifact?.storageLayout.deposits.slot??13));
  const artifact={name:wrongName?'other':'get_screen_hints',parameters:[]},call={to:board,selector:await FunctionSelector.fromNameAndParameters(artifact.name,artifact.parameters),args:[owner.toField(),new Fr(9)]};
  const posts=[1,2].map(i=>({contractAddress:board,owner,storageSlot:postSlot,note:new Note([new Fr(9),new Fr(i-1)]),noteHash:new Fr(40+i),noteNonce:new Fr(50+i),randomness:new Fr(60+i),siloedNullifier:new Fr(70+i)}));
  const deposit={...posts[0],storageSlot:depositSlot,noteHash:new Fr(99)};
  let reads=0;
  const oracle=Object.create(UtilityExecutionOracle.prototype);Object.assign(oracle,{callContext:{contractAddress:board},scopes:[owner],anchorBlockHeader:{},changeSetId:42,aztecNode:{},noteStore:{getNotes:async(filter,id)=>{reads++;assert.equal(id,42);assert(filter.contractAddress.equals(board));assert(filter.owner.equals(owner));assert.equal(filter.scopes[0],owner);return [deposit,...posts].filter(note=>note.storageSlot.equals(filter.storageSlot));}}});
- const finish=await capture(oracle,call,artifact,[wrongOwner?AztecAddress.ZERO:owner],{getCurrentClassId:async()=>Fr.fromString(wrongClass?'0x01':ORDINARY_POST_GAS_PROFILE.boardClassId)},{getContractArtifact:async()=>({storageLayout:{posts:{slot:12},deposits:{slot:13}}})},{hash:async()=>hash});
+ const finish=await capture(oracle,call,artifact,[wrongOwner?AztecAddress.ZERO:owner],{getCurrentClassId:async()=>currentClassId??new Fr(42)},{getContractArtifact:async id=>{assert(id.equals(currentClassId??new Fr(42)));return wrongClass?undefined:currentArtifact??{name:'RollingBoard',storageLayout:{posts:{slot:12},deposits:{slot:13}}};}},{hash:async()=>hash});
  const select=(slot,count,previous)=>oracle.getNotes(Option.some(owner),slot,count,[0,1],[0,0],[32,32],[new Fr(9),new Fr(previous)], [1,1],[],[],[],[],2,0,0,2,9);
  return {owner,board,hash,posts,deposit,finish,oracle,select,postSlot,depositSlot,reads:()=>reads};
 }
@@ -34,6 +35,12 @@ for(const count of [0,1,2])test(`capture ${count} native-selected PostNotes and 
  assert.deepEqual([...meta.hashes],await Promise.all(f.posts.slice(0,count).map(async n=>(await computeUniqueNoteHash(n.noteNonce,await siloNoteHash(n.contractAddress,n.noteHash))).toString())));
  assert.equal(meta.depositHash,(await computeUniqueNoteHash(f.deposit.noteNonce,await siloNoteHash(f.deposit.contractAddress,f.deposit.noteHash))).toString());
  assert.equal(f.reads(),count+1,'no second native note query');
+});
+test('current deployed Board class captures deposit and history without an obsolete gas-profile gate',async()=>{
+ const currentArtifact=loadContractArtifact(JSON.parse(fs.readFileSync(process.env.ROLLING_TEST_ARTIFACT??new URL('../billboard/target/rolling_contract-RollingBoard.json',import.meta.url),'utf8')));
+ const currentClassId=(await getContractClassFromArtifact(currentArtifact)).id;
+ const f=await fixture({currentArtifact,currentClassId});await f.select(f.depositSlot,1,0);await f.select(f.postSlot,2,0);
+ const meta=await f.finish();assert(meta);assert.equal(meta.hashes.length,1);assert.equal(typeof meta.depositHash,'string');assert.equal(f.reads(),2);
 });
 for(const config of [{wrongClass:true},{wrongOwner:true},{wrongName:true}])test('unqualified utility capture absent '+JSON.stringify(config),async()=>{
  const f=await fixture(config);await f.select(f.postSlot,2,0);assert.equal(await f.finish(),undefined);assert.equal(f.reads(),1);
