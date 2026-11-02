@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 2 November: c5243ae5 welcome + sidebar remote/local proving published through scoped UI operator34f1b9da. Stage/live asset/runtime checks passed, actual rolling.chat Chrome confirmed approved welcome, dismissed-on-reload and sidebar switch. Focused2browser+14unit/serving checks passed; predecessor synthetic Home pagination test independently also fails. Fee timing investigation currently running isolated 20-character funded-account browser measurement, no estimator changes published.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 2 November owner goal: ordinary post fee preview under5s final input event to fee DOM, live pricing and exact input-dependent simulation, no fixed gas estimates. Implementation lanes: application preparation/scheduling, SDK payment estimation, gateway/readiness query deduplication. Root integrates and independently reviews; existing funded fixture reused for actual measurements.
 
 ## Ready internal work
 
