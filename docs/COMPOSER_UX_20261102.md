@@ -30,9 +30,19 @@ release helper. SDK rebuilt and all declared bytes checked. Local full apps
 build found an old contract-build manifest; checked SDK consumers were refreshed
 from the validated outputs. Clean CI remains the full reproducible-build gate.
 
-Publication is pending. The real-testnet release journey must observe a resolved
-worker estimate before its first actual post, as well as the existing seven
-required flows. No contracts or infrastructure were redeployed for these changes.
+Published 2 November: `7a59cca2ffaa76454b87627f127c478ced923882`. At the owner’s
+explicit direction to publish the UI without waiting for unrelated signup work,
+the operator prepared a sealed compatible bundle, checked staging and live asset
+bytes and runtime, and atomically promoted it. No new seven-flow transaction
+journey is claimed. Contracts and account state are unchanged. The normal
+automated release gate was not modified.
+
+Live browser verification found 15 parent/reply groups on Main board and 4 on
+Home; gift cancellation, conversation Back, and absence of the archive link and
+analytics toggle passed with no page errors. Deployment command
+`1da87aba-9535-48a3-92e7-435c988d553d` completed successfully.
+The clean CI build and byte-for-byte reproducibility stages passed; the separate
+full baseline test job was still running when the UI publication completed.
 
 Home and Main board now render an immediate parent above each reply, connected
 through the avatars. Long parents expand in place. Parent and reply actions retain

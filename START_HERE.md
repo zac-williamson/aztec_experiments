@@ -4,6 +4,8 @@ Current handover: 29 October 2026. The owner's current request takes precedence 
 
 ## Live work and next action
 
+UI update **7a59cca2 is live (2 November)**: worker fee estimates, two-decimal credits, confirmed heart gifts, conversation Back, connected parent/reply feed cards, and removal of archive/analytics controls. Published by owner-directed focused UI release with staging/live asset and runtime checks; actual public-browser checks passed. No new full transaction journey is claimed. See [UI release evidence](docs/COMPOSER_UX_20261102.md).
+
 Fast-click Reply is fixed and published: `6e5f02ab`, promoted 29 October at 08:49 UTC, all seven real release flows passed. [Exact evidence and limits](docs/FAST_REPLY_20261029.md). This supersedes the earlier operations handover statement that the defect remained unchanged. Performance work remains paused.
 
 Compact deployment background: compact Board gas optimization is **published and real-proof browser acceptance passed** on 29 October. Fresh Board `0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5`, matching SDK/readers/prover/moderator/Bok, one funding router, refund 40,000/512. Source 48c2750f is pushed to master. Fresh signup, a 29-byte post, two 20-FEE self-tips with count 2 and exact fee accounting, and a 44-byte post passed. The 29-byte post used 998,470 L2 gas and paid 2.760553580939 FEE at its inclusion-block price. Old test posts/accounts were not migrated. [Deployment and boundaries](docs/COMPACT_DEPLOYMENT_20261029.md). Operations acceptance is complete: J `03bb6b8d` passed all seven real flows and explicit rollback/return. Automatic release is enabled. Use the installed GitHub CI route for compatible app updates, not legacy manual replacement. See [operations handover](docs/LAUNCH_OPERATIONS.md). Performance remains paused.
@@ -60,7 +62,7 @@ Network: Aztec stable6.0.0, rollup `0x1f435a7f2da358caf887a470faeee7d5d5f4efba`,
 
 | Component | Current deployment reference |
 | --- | --- |
-| Live application/UI | `/opt/rolling-release-live/current` (`6e5f02ab`, fast-click Reply fix) |
+| Live application/UI | `/opt/rolling-release-live/current` (`7a59cca2`, UI update; includes fast-click Reply fix) |
 | Stage | `/opt/rolling-stage/current` |
 | Releases / retained rollback | `/opt/rolling-releases`; J `03bb6b8d` is the previous release |
 | Shared dependencies — retain | `/opt/rolling-app/releases/86be52150de16ad6fe628000404e44e3592705bb/node_modules` |

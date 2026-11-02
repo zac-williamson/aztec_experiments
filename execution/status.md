@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 2 November: integrated worker estimated fees, two-decimal credits, confirmed heart gifts, Back arrow, and same-snapshot parent/reply feed cards. Removed archive link and analytics toggle. Deleted seven empty old Bok test repositories and all allocations; retained credentials and financial journals. Focused UI/backend checks and independent review passed. Publishing combined candidate through normal CI and real seven-flow release gate; performance campaign remains paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 2 November: UI candidate7a59cca2 published by owner-directed focused UI release. Sealed compatible staging/live runtime and asset checks passed; public browser verified parent/reply groups on Main board15/Home4, gift cancel, Back and removed controls, no page errors. Seven old Bok tool repos and allocations deleted, healthy. No new seven-flow journey claimed; performance paused. Unrelated USDC reconciliation historical-RPC issue documented separately.
 
 ## Ready internal work
 
