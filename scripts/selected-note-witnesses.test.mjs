@@ -19,7 +19,7 @@ const [simulatorPath,interactionPath]=Object.keys(source),simulator=selectedNote
 const capture=vm.runInNewContext(simulator.slice(simulator.indexOf('async function rollingSelectedNoteCapture'))+';rollingSelectedNoteCapture',{Fr,FunctionSelector,allToCompletion,siloNoteHash,computeUniqueNoteHash});
 async function fixture({wrongClass=false,wrongOwner=false,wrongName=false,currentArtifact,currentClassId}={}){
  const owner=AztecAddress.fromFieldUnsafe(new Fr(7)),board=AztecAddress.fromFieldUnsafe(new Fr(8)),hash=BlockHash.random(),postSlot=new Fr(BigInt(currentArtifact?.storageLayout.posts.slot??12)),depositSlot=new Fr(BigInt(currentArtifact?.storageLayout.deposits.slot??13));
- const artifact={name:wrongName?'other':'get_screen_hints',parameters:[]},call={to:board,selector:await FunctionSelector.fromNameAndParameters(artifact.name,artifact.parameters),args:[owner.toField(),new Fr(9)]};
+ const artifact=currentArtifact?.functions.find(fn=>fn.name==='get_screen_hints')??{name:wrongName?'other':'get_screen_hints',parameters:[]},call={to:board,selector:await FunctionSelector.fromNameAndParameters(artifact.name,artifact.parameters),args:[owner.toField(),new Fr(9)]};
  const posts=[1,2].map(i=>({contractAddress:board,owner,storageSlot:postSlot,note:new Note([new Fr(9),new Fr(i-1)]),noteHash:new Fr(40+i),noteNonce:new Fr(50+i),randomness:new Fr(60+i),siloedNullifier:new Fr(70+i)}));
  const deposit={...posts[0],storageSlot:depositSlot,noteHash:new Fr(99)};
  let reads=0;
