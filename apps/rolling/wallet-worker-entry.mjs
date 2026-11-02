@@ -7,7 +7,7 @@ import {APPLICATION_METHODS,FUNDING_METHODS,TOPUP_METHODS,WITHDRAWAL_METHODS,DEP
 
 const sdk=globalThis.__aztec,ethers=globalThis.ethers,routing=globalThis.BillboardPrivateFeeRouting;
 let closed=false,closing=false,settings,warming,cryptoReady,proverReady,pxeArtifactsReady,publicState,account,accountPreparation,funding,opening,session,creating,refundSession,fundingBusy=false,fundingCompletion=Promise.resolve();
-let stopPerformance=()=>{},latestFeeSettings;
+let stopPerformance=()=>{},latestFeeSettings,remoteProving=true,provingChange;
 const observeFeePricing=prices=>{latestFeeSettings=structuredClone(prices);};
 let nextCallback=0;const pendingCallbacks=new Map(),operations=new Map();
 const send=value=>globalThis.postMessage(value);
@@ -90,6 +90,7 @@ function metadata(){return {bokConfigured:settings.config.bok!==undefined,fundin
 function initialize(value){
  if(settings||!sdk||!ethers||!routing||!globalThis.makeClaimSecretStore||!globalThis.BillboardCRS)throw workerFailure();
  settings=structuredClone(value);
+ if(settings.remoteProving!==undefined&&typeof settings.remoteProving!=='boolean')throw workerFailure();remoteProving=settings.remoteProving!==false;
  globalThis[Symbol.for('rolling.proof.profile')]=settings.profile===true;
  if(settings.profile===true)try{stopPerformance=observeRollingWorkerPerformance({send,origin:new URL(globalThis.__rollingWalletAssetBase).origin});}catch{}
  if(typeof settings.proofsEnabled!=='boolean'||!settings.proofsEnabled&&settings.config.network.chainId!=='31337')throw workerFailure();
@@ -99,7 +100,7 @@ function initialize(value){
  // Built-in artifacts/classes are independent of deployment RPCs and accounts.
  pxeArtifactsReady=background('pxe-artifacts',cryptoReady.then(()=>sdk.preparePrivatePXEArtifacts()));
  // Verifier/SRS preparation is independent of the public deployment and quote.
- proverReady=background('prover',(async()=>{const manifest=await jsonAsset(settings.crs,65536);globalThis.BILLBOARD_CRS_MANIFEST=manifest;globalThis.BillboardCRS.validateManifest(manifest);if(settings.proofsEnabled&&!settings.config.refundOnly)await sdk.initializeBrowserProver(undefined,{verifierOnly:!!settings.remoteProver});})());
+ proverReady=background('prover',(async()=>{const manifest=await jsonAsset(settings.crs,65536);globalThis.BILLBOARD_CRS_MANIFEST=manifest;globalThis.BillboardCRS.validateManifest(manifest);if(settings.proofsEnabled&&!settings.config.refundOnly)await sdk.initializeBrowserProver(undefined,{verifierOnly:remoteProving&&!!settings.remoteProver});})());
  warming=background('deployment',preparePublic());
  // Start native immutable circuit loading in this same worker, never a second SDK.
  background('kernels',Promise.resolve().then(()=>sdk.preloadPostingKernels()));
@@ -135,8 +136,9 @@ async function openAccount(raw){
   return metadata();})();return opening;
 }
 function startSession(){
+ if(provingChange)return provingChange.catch(()=>{}).then(startSession);
  if(!account||settings.config.refundOnly)throw workerFailure('ROLLING_SESSION_CONFIG');if(session)return session;if(creating)return creating;
- creating=background('private-session',createRollingWalletSession({onFeePricing:observeFeePricing,proverReady,pxePreparation:publicState.pxePreparation,sdk,routing,ethers,config:settings.config,boardArtifact:publicState.boardArtifact,privateFeeArtifact:publicState.privateFeeArtifact,getBokArtifact,account,accountPreparation,trustedQuery:settings.trustedQuery,remoteProver:settings.remoteProver,contextGuard:guard,claimStore:globalThis.makeClaimSecretStore(account.secretKey,account.salt),captureFundingWallet:captureWallet,fundingRelay:relay(),fundingContext:funding,onProgress:progress,proofsEnabled:settings.proofsEnabled}).then(value=>(session=value)));return creating;
+ creating=background('private-session',createRollingWalletSession({onFeePricing:observeFeePricing,proverReady,pxePreparation:publicState.pxePreparation,sdk,routing,ethers,config:settings.config,boardArtifact:publicState.boardArtifact,privateFeeArtifact:publicState.privateFeeArtifact,getBokArtifact,account,accountPreparation,trustedQuery:settings.trustedQuery,remoteProver:remoteProving?settings.remoteProver:undefined,contextGuard:guard,claimStore:globalThis.makeClaimSecretStore(account.secretKey,account.salt),captureFundingWallet:captureWallet,fundingRelay:relay(),fundingContext:funding,onProgress:progress,proofsEnabled:settings.proofsEnabled}).then(value=>(session=value)));return creating;
 }
 async function ensureSession(){await opening;const result=await startSession();await fundingCompletion;return result;}
 async function ensureRefundSession(){
@@ -152,7 +154,30 @@ async function earlyFunding(name,args){
  try{await guard();const result=await(name==='prepareStarter'?funding.prepareStarter(...args):funding.aggregate[name](...args));await guard();return result;}
  finally{fundingBusy=false;drained();}
 }
+async function setRemoteProving(enabled){
+ if(typeof enabled!=='boolean'||!settings)throw workerFailure('ROLLING_INVALID_ACTION');
+ if(provingChange||closing||fundingBusy||session?.busy)throw workerFailure('ROLLING_BUSY');
+ if(enabled===remoteProving)return enabled;
+ if(enabled&&!settings.remoteProver)throw workerFailure('ROLLING_REMOTE_PROVER_UNAVAILABLE');
+ provingChange=(async()=>{
+  // A failed cold local SRS load must still allow an explicit switch to remote.
+  await proverReady.catch(()=>{});await guard();
+  const pendingCreation=creating;let ready=session,creationFailed=false;
+  if(!ready&&pendingCreation)try{ready=await pendingCreation;}catch{creationFailed=true;}
+  if(ready)await ready.setRemoteProving(enabled?settings.remoteProver:undefined);
+  else if(settings.proofsEnabled&&!settings.config.refundOnly){
+   try{await sdk.initializeBrowserProver(undefined,{verifierOnly:enabled});}
+   catch(error){await sdk.initializeBrowserProver(undefined,{verifierOnly:remoteProving&&!!settings.remoteProver});throw error;}
+   proverReady=Promise.resolve();
+  }
+  if(creationFailed&&creating===pendingCreation)creating=undefined;
+  await guard();remoteProving=enabled;return enabled;
+ })();
+ try{return await provingChange;}finally{provingChange=undefined;}
+}
 async function invoke(method,args){
+ if(method==='setRemoteProving')return setRemoteProving(args[0]);
+ if(provingChange)await provingChange;
  if(method==='initialize')return initialize(args[0]);if(method==='deriveAccount')return deriveAccount(args[0]);if(method==='openAccount')return openAccount(args[0]);
  if(method==='close'){if(fundingBusy||session?.busy)throw workerFailure('ROLLING_BUSY');closing=true;stopPerformance();await Promise.allSettled([warming,opening,pxeArtifactsReady].filter(Boolean));await Promise.allSettled([creating].filter(Boolean));await Promise.allSettled([publicState?.scopePreparation?.result,publicState?.pxePreparation].filter(Boolean));for(const controller of operations.values())controller.abort();if(session)await session.close();funding?.close();publicState?.fundingProvider?.destroy();if(refundSession)await refundSession.close();derivedIdentity=undefined;accountPreparation=undefined;account=undefined;closed=true;return true;}
  if(!account)throw workerFailure('ROLLING_LOCKED');await guard();

@@ -1,3 +1,4 @@
+import {readRemoteProvingPreference} from './proving-preference.mjs';
 import {createSavedItems} from '../../shared/rolling/saved-items.mjs';
 // Public code and contract data may load in the background. Account creation,
 // wallet permissions and private sessions remain explicit user actions.
@@ -120,7 +121,7 @@ async function load(signal){
    onProgress:value=>progressObserver(value)});
   // Do not make wallet discovery wait for SDK parsing or deployment preparation.
   // Each worker command waits only for its own actual prerequisites.
-  const initialized=workerClient.initialize({profile,config,trustedQuery:query,remoteProver:remote,proofsEnabled:metadata.proofsEnabled,artifacts:metadata.artifacts,crs:metadata.crs,deploymentRegistration:config.refundOnly?null:descriptor(metadata.deploymentRegistration)});
+  const initialized=workerClient.initialize({profile,remoteProving:readRemoteProvingPreference(),config,trustedQuery:query,remoteProver:remote,proofsEnabled:metadata.proofsEnabled,artifacts:metadata.artifacts,crs:metadata.crs,deploymentRegistration:config.refundOnly?null:descriptor(metadata.deploymentRegistration)});
   initialized.catch(()=>{});
   return workerClient;
  })().finally(closeNativePreload);
@@ -192,7 +193,7 @@ async function load(signal){
   })().finally(()=>{creating=undefined;});
   return creating;
  }
- return Object.freeze({signInWallet,restoreAccount,canStartTestAccount,startingTestAccount,startedFreshAccount:()=>startedFreshAccount,invalidate:terminateWorker,account,savedItems,refundOnly:config.refundOnly===true,
+ return Object.freeze({async setRemoteProving(enabled){if(typeof enabled!=='boolean')throw failed();const client=await workerReady;workerGuard();return client.setRemoteProving(enabled);},signInWallet,restoreAccount,canStartTestAccount,startingTestAccount,startedFreshAccount:()=>startedFreshAccount,invalidate:terminateWorker,account,savedItems,refundOnly:config.refundOnly===true,
   backgroundStatus:()=>workerClient?.backgroundStatus??[],
   ...(config.publicRefundRpcUrl?{createRefundSession:openWorkerAccount}:{}),fundingWallets,fundingWalletStatus,connectFundingWallet,
   getAccount:()=>globalThis.walletState.aztec,createSession(options){if(config.refundOnly===true)return Promise.reject(failed());return openWorkerAccount(options);}

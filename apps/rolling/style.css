@@ -555,3 +555,14 @@ dialog::backdrop{background:rgb(15 23 42/.45);backdrop-filter:blur(2px);animatio
 .missing-parent p{margin:0 0 4px}
 .feed-conversation>.missing-parent::after{top:18px}
 @media(max-width:700px){.feed-conversation>.post{padding-left:14px;padding-right:14px}.feed-conversation>.feed-parent::after{left:33px}.missing-parent{padding-left:66px}}
+
+.proving-preference{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.proving-preference label{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;color:var(--ink);font-weight:600}
+.proving-preference input{appearance:none;position:relative;width:36px;height:22px;flex:none;margin:0;border:0;border-radius:20px;background:var(--muted);cursor:pointer}
+.proving-preference input::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:white;transition:transform .15s}
+.proving-preference input:checked{background:var(--brand)}
+.proving-preference input:checked::after{transform:translateX(14px)}
+.proving-preference input:disabled{opacity:.55;cursor:wait}
+.proving-mode{display:block;margin-top:5px;font-weight:400;font-size:12px}
+.proving-mode:empty{display:none}
+.proving-mode.error{color:var(--danger,#a23131)}

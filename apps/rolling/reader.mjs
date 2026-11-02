@@ -1,3 +1,4 @@
+import {createProvingPreference,mountProvingPreference} from './proving-preference.mjs';
 import {createAnalytics} from './analytics.mjs';
 import {createReaderUpdates} from './reader-updates.mjs';
 import {beginRollingMeasure} from './performance.mjs';
@@ -9,6 +10,8 @@ import {createMessageContent as richText,createInlineActionRegistry,savedPrefere
 import {captureRoutePosition,focusRoute,skipToContent,revealIncludedPost,createConversationNavigation} from './navigation.mjs';
 
 const analytics=createAnalytics();
+const provingPreference=createProvingPreference({apply:enabled=>prepareAccountTools().then(runtime=>runtime.setRemoteProving(enabled))});
+let provingControl;
 const feedObservation=createFeedObservation({report:name=>analytics.track(name)});
 const app=document.querySelector('#app'),positions=new Map(),feedPreferences=createFeedPreferences(),priorityTxs=new Set();
 const read=createRankedHomeReader({read:createPublicReader(),getPreferences:()=>feedPreferences.snapshot(privatePanel?.savedItemsSnapshot?.()),getPriorityTxs:()=>[...priorityTxs]});
@@ -212,9 +215,10 @@ function updateAccountButton(){
 function shell(title,{boardId=null}={}){
  document.title=title+' · rollingchat';
  const nav=(label,to,icon)=>link([el('span',{class:'nav-icon','aria-hidden':'true'},createIcon(icon)),label],to);
- const rail=el('aside',{class:'rail',id:'community-navigation'},link(createBrand(),'/home',{class:'brand'}),el('p',{class:'rail-label'},'Browse'),el('nav',{class:'nav-group','aria-label':'Community'},nav('Home','/home','home'),nav('Main board','/board/0','message'),nav('Explore boards','/directory','compass'),nav('Following','/following','users'),nav('Bookmarks','/bookmarks','bookmark')),el('p',{class:'rail-foot'},'Say it in public. Stay private.'));
+ const rail=el('aside',{class:'rail',id:'community-navigation'},link(createBrand(),'/home',{class:'brand'}),el('p',{class:'rail-label'},'Browse'),el('nav',{class:'nav-group','aria-label':'Community'},nav('Home','/home','home'),nav('Main board','/board/0','message'),nav('Explore boards','/directory','compass'),nav('Following','/following','users'),nav('Bookmarks','/bookmarks','bookmark')),el('div',{class:'rail-foot'},'Say it in public. Stay private.'));
  for(const entry of rail.querySelectorAll('nav a'))if(entry.hash.slice(1)===route||entry.hash==='#/directory'&&route.startsWith('/directory/')){entry.setAttribute('aria-current','page');entry.classList.add('active');}
  rail.querySelector('.rail-foot').append(el('br'),link('Help and privacy','/help'));
+ provingControl?.dispose();provingControl=mountProvingPreference(provingPreference);rail.querySelector('.rail-foot').append(provingControl.element);
  const closeMenu=()=>{rail.classList.remove('open');rail.inert=narrow.matches;document.querySelector('.workspace').inert=false;menu.setAttribute('aria-expanded','false');menu.focus();};
  const menu=button(createIcon('menu'),()=>{rail.inert=false;rail.classList.add('open');document.querySelector('.workspace').inert=true;menu.setAttribute('aria-expanded','true');rail.querySelector('a').focus();},{class:'menu-toggle','aria-label':'Open navigation','aria-expanded':'false','aria-controls':'community-navigation'});
  rail.append(button(createIcon('close'),closeMenu,{class:'mobile-close','aria-label':'Close navigation'}));rail.inert=narrow.matches;

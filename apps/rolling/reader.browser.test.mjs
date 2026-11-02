@@ -10,7 +10,7 @@ import {chromium} from 'playwright';
 const root=fileURLToPath(new URL('.',import.meta.url));
 const launchBrowser=()=>chromium.launch({headless:true,...(process.env.T04_CHROMIUM_EXECUTABLE?{executablePath:process.env.T04_CHROMIUM_EXECUTABLE}:{})});
 test('public reader: navigation, unsafe content, failure recovery and narrow keyboard menu',async t=>{
- const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);let unavailable=false,longLabels=false;
+ const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);let unavailable=false,longLabels=false;
  const scope={boardAddress:'0x'+'1'.repeat(64)},identity={id:'7',first:'River',last:'Lane'};
  const post={id:'10',record:{root:'10',parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'7'},text:'[Docs](https://example.com/docs?x=1&y=2)\nhttp://example.org/path [Unsafe](javascript:alert) [Data](data:text/html,hello) <img src=x onerror=alert(1)> 😀',timestamp:'1791734400',likes:'2',bot:null};
  const later={...post,id:'20',record:{...post.record,parent:'10'},text:'The linked reply is outside the first page.'};
@@ -63,8 +63,8 @@ test('public reader: navigation, unsafe content, failure recovery and narrow key
 
 // These public records and the action-recorder module are labelled doubles.
 // The renderer is real; this checks routing/presentation, never a transaction.
-async function socialFixture(t,{wallet='recorder',policies=[]}={}){
- const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css','avatar-upload.mjs']);
+async function socialFixture(t,{wallet='recorder',policies=[],proving=false}={}){
+ const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css','avatar-upload.mjs']);
  if(wallet==='real')files.add('wallet-panel.mjs');
  const reason='<img src=x onerror=alert(1)> [unsafe](javascript:alert(1))';
  const record={root:'10',parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'0'};
@@ -81,6 +81,9 @@ async function socialFixture(t,{wallet='recorder',policies=[]}={}){
    const data={schemaVersion:1,scope:{boardAddress:'0x'+'1'.repeat(64)},complete:true,checkpoint:{number:3,hash:'public'},revision:'1',names:{},boards:{'20':board},nextCursor:null,policies};
    res.end(JSON.stringify(url.pathname==='/api/directory'?{...data,boards:[board]}:['/api/candidates','/api/thread'].includes(url.pathname)?{...data,posts:[live]}:{...data,post:live,posts:[live,removed,rejected,malformed]}));return;
   }
+  if(url.pathname==='/wallet/runtime.mjs'&&proving){
+   res.writeHead(200,{'content-type':'text/javascript'});res.end(`export async function loadRollingWalletRuntime(){return {async setRemoteProving(value){(window.provingCalls??=[]).push(value);if(window.provingFailure)throw Object.assign(new Error('fixture failure'),{code:window.provingFailure});return value;}}}`);return;
+  }
   if(url.pathname==='/wallet-panel.mjs'&&['recorder','liked'].includes(wallet)){
    res.writeHead(200,{'content-type':'text/javascript'});res.end(`let liked=${wallet==='liked'};export function mountRollingWalletPanel({onPrivateChange}){window.changeLiked=value=>{liked=value;onPrivateChange();};return {initialize:async()=>{},privateStatus:()=>'complete',preferenceEnabled:()=>false,likeState:()=>liked,act:async value=>{(window.recordedActions??=[]).push(value);return {status:'confirmed'};},open(value){(window.recordedActions??=[]).push(value);},close(){},attachIdentityControls(){}}}`);return;
   }
@@ -90,8 +93,31 @@ async function socialFixture(t,{wallet='recorder',policies=[]}={}){
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
  const browser=await launchBrowser();t.after(()=>browser.close());const page=await browser.newPage(),requests=[],errors=[];
  page.on('request',request=>requests.push(new URL(request.url()).pathname));page.on('pageerror',error=>errors.push(error.message));
- t.after(()=>assert.deepEqual(errors,[]));await page.goto(`http://127.0.0.1:${server.address().port}/#/${wallet==='liked'?'post/10':'home'}`);await page.locator(wallet==='liked'?'#post-10':'#post-13').waitFor();return {page,requests,reason};
+ t.after(()=>assert.deepEqual(errors,[]));await page.goto(`http://127.0.0.1:${server.address().port}/#/${wallet==='liked'?'post/10':'home'}`);await page.locator(proving?'.proving-preference':wallet==='liked'?'#post-10':'#post-13').waitFor();return {page,requests,reason};
 }
+
+// The real sidebar and preference controller, with a labelled worker acknowledgement
+// double. This checks UI state/persistence, not local proof correctness.
+test('sidebar Remote proving switch persists acknowledged selections across navigation and reload',async t=>{
+ const {page}=await socialFixture(t,{proving:true});
+ const toggle=page.getByRole('switch',{name:'Remote proving',exact:true});
+ assert.equal(await toggle.isChecked(),true);
+ await toggle.click();await page.getByText('Local proving',{exact:true}).waitFor();
+ assert.equal(await page.evaluate(()=>localStorage.getItem('rolling.remote-proving.v1')),'local');
+ assert.deepEqual(await page.evaluate(()=>window.provingCalls),[false]);
+ await page.getByRole('link',{name:'Main board',exact:true}).first().click();
+ assert.equal(await toggle.isChecked(),false);
+ await page.reload();await page.getByText('Local proving',{exact:true}).waitFor();
+ assert.equal(await toggle.isChecked(),false);
+ await page.evaluate(()=>window.provingFailure='ROLLING_BUSY');
+ await toggle.click();await page.getByText('Finish your current action before switching.',{exact:true}).waitFor();
+ assert.equal(await toggle.isChecked(),false);
+ assert.equal(await page.evaluate(()=>localStorage.getItem('rolling.remote-proving.v1')),'local');
+ await page.evaluate(()=>window.provingFailure=undefined);
+ await toggle.click();await page.waitForFunction(()=>localStorage.getItem('rolling.remote-proving.v1')==='remote');
+ assert.equal(await toggle.isChecked(),true);
+ assert.equal(await page.getByText('Local proving',{exact:true}).count(),0);
+});
 
 test('labelled social records: removed navigation, literal reasons and distinct authored/removal/current policy provenance',async t=>{
  const {page,requests,reason}=await socialFixture(t);page.setDefaultTimeout(5000);
@@ -144,7 +170,7 @@ test('reader permits repeated paid likes and exposes no Unlike action',async t=>
 // are real. No wallet, proof or chain acceptance is inferred from these checks.
 async function pagingFixture(t,{observer='controlled',directory=false}={}){
  const state={calls:[],pending:[],hold:false,mode:'normal',active:0,peak:0,prepend:false};
- const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
+ const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
  const post=id=>({id:String(id),record:{root:String(id),parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'0'},text:'Public item '+id+'\n'+('Visible public text.\n'.repeat(20)),timestamp:'1',likes:'0'});
  const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');
@@ -232,7 +258,7 @@ test('native browser intersection loads a page near the end without a button cli
 
 // Labelled board API fixtures exercise the production reader, not chain history.
 async function boardFixture(t,{rejected=false}={}){
- const state={calls:[],mode:'normal'},files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
+ const state={calls:[],mode:'normal'},files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
  const hostile='<img src=x onerror=alert(1)> Local rules are data';
  const board={id:'20',name:'Workshop',slug:'workshop',description:'Build useful things.',creationVersion:'1',mainVersion:'2',mainRules:'Current parent rules',rules:hostile,rejected,rejection:rejected?{reason:'<script>rejected()</script>',mainVersion:'2'}:null};
  const post=(id,boardId)=>({id,record:{root:id,parent:'0',reference:'0',kind:'1',subboard:boardId,name_id:'0'},text:rejected&&boardId==='20'?null:'Board post '+id,timestamp:'1',likes:'0',mainVersion:'1',localVersion:boardId==='0'?'0':'1'});
@@ -294,7 +320,7 @@ test('unknown or malformed board route has no generic-feed fallback',async t=>{
 // Labelled private-session/public-HTTP doubles, real panel/reader/pure filter.
 // No proof, paid action or encrypted-chain recovery is represented by this fixture.
 async function privateViewFixture(t,{mutation=null,tombstone=null}={}){
- const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css','avatar-upload.mjs','wallet-panel.mjs']);
+ const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css','avatar-upload.mjs','wallet-panel.mjs']);
  const scope={chainId:'31337',rollupVersion:'1',boardAddress:'0x'+'1'.padStart(64,'0')},hash='0x'+'a'.repeat(64);
  const make=(id,block)=>({id,record:{root:'10',parent:id==='10'?'0':'10',reference:'0',kind:'1',subboard:'0',name_id:'0'},text:'Public content '+id,timestamp:'1',likes:'0',position:{blockNumber:String(block),txIndexWithinBlock:'0',logIndexWithinTx:'0',blockHash:hash}});
  const requests=[],feed=[],state={hold:false,pending:[]};
@@ -562,7 +588,7 @@ test('G18 real reader retains the name selector across navigation and opens crea
 
 
 test('public revision notification renders a Bok response without navigation or polling',async t=>{
- const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
+ const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
  const checkpoint={number:12,hash:'0x'+'a'.repeat(64)},scope={boardAddress:'0x'+'1'.repeat(64)};
  const request={id:'10',record:{root:'10',parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'0'},text:'@bok please reply',timestamp:'1791734400',likes:'0',bot:null};
  const response={...request,id:'11',record:{...request.record,parent:'10'},text:'Here is your answer.',bot:{}};
@@ -584,7 +610,7 @@ test('public revision notification renders a Bok response without navigation or 
 
 async function threadRefreshFixture(t,{total=32,hydrate=false,locked=false}={}){
  const state={total,revision:'1',calls:[],invalidPage:false,hold:false,pending:[],postMetadata:{}};
- const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
+ const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
  const checkpoint={number:12,hash:'0x'+'a'.repeat(64)},scope={boardAddress:'public'};
  let stream;const connected=Promise.withResolvers();
  const server=http.createServer(async(req,res)=>{

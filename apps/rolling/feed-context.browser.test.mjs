@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
-const files=new Set(['live.html','reader.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
+const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
 const post=(id,parent='0',root=id,extra={})=>({id,record:{root,parent,reference:'0',kind:parent==='0'?'0':'1',subboard:'0',name_id:'0'},text:'Message '+id,timestamp:'1791734400',likes:'0',tipKey:{x:'1',y:'2'},...extra});
 async function fixture(t){
  const parent=post('10','0','10',{record:{root:'10',parent:'0',reference:'0',kind:'0',subboard:'0',name_id:'7'},text:'The original question. '+('Full parent context with a long explanation. '.repeat(17))});
