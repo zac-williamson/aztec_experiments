@@ -180,3 +180,8 @@ test('pure qualification identity rejects changing and throwing coercions; scope
  const c=config(),scope=queryQualificationScope(c.service);c.service.chainId='1';c.service.rollupVersion='1';c.service.queryNode.rollupAddress='0x'+'03'.repeat(20);c.service.queryNode.maxLagSeconds=100;
  assert.deepEqual(scope,{chainId:'11155111',version:'3409706519',rollup:'0x'+'02'.repeat(20),serviceMode:'query-only',nodeProofs:'real',maxLagSeconds:2});assert(Object.isFrozen(scope));
 });
+
+test('mainnet query qualification retains real proof and explicit network binding',()=>{
+ const c=config();c.service.chainId='1';assert.deepEqual(validateQualification(c),{maxLagSeconds:2,recoveryTimeoutMs:180000});
+ c.service.proofs='disabled';assert.throws(()=>validateQualification(c));
+});

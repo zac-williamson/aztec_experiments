@@ -196,3 +196,9 @@ test('unconfirmed orphan reason and other manual failures remain critical',t=>{
  for(const errorCode of ['POST_ORPHANED','POST_CHANGED']){const job=lease(f.store);f.store.transition(job.key,job.lease.token,{state:'manual-review',errorCode});}
  assert.equal(f.store.status().health.manualAttention,2);
 });
+
+test('rolling moderator opens on mainnet without development privileges',t=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'rolling-mainnet-jobs-'));t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+ const store=openJobStore({filename:path.join(dir,'jobs.sqlite'),scope,modelVersion,profile:'rolling',development:false});
+ store.close();assert.throws(()=>openJobStore({filename:path.join(dir,'wrong.sqlite'),scope,modelVersion,profile:'rolling',development:true}));
+});

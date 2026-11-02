@@ -125,7 +125,7 @@ export function rollingOperatorConfig(value) {
  if(c.applicationProfile!=='rolling'||typeof c.development!=='boolean')throw rejected();
  for(const key of ['chainId','rollupVersion'])if(typeof c[key]!=='string'||! /^[1-9][0-9]{0,19}$/.test(c[key])||BigInt(c[key])>=2n**64n)throw rejected();
  for(const [key,n] of [['rollupAddress',40],['boardAddress',64],['operatorAddress',64]])if(typeof c[key]!=='string'||!new RegExp('^0x[0-9a-f]{'+n+'}$').test(c[key])||BigInt(c[key])===0n)throw rejected();
- if(c.development?c.chainId!=='31337':c.chainId!=='11155111')throw rejected();
+ if(c.development?c.chainId!=='31337':!['1','11155111'].includes(c.chainId))throw rejected();
  for(const key of ['nodeUrl','ethereumUrl']){
   if(typeof c[key]!=='string'||c[key].length>2048)throw rejected();
   let url;try{url=new URL(c[key]);}catch{throw rejected();}
@@ -392,7 +392,7 @@ export const sepoliaLiquidityContracts=Object.freeze({
 // development-chain privileges. Endpoint selection is fixed before signing.
 export function captureTestnetRouterPlan(input){
  const p=seedObject(input,['schemaVersion','chainId','rollupVersion','rollupAddress','nodeUrl','ethereumUrl','broadcastUrl','owner','nonce','expiresAt','gasLimit','maxFeePerGas','maxPriorityFeePerGas','boardAddress','bokAddress','collateralPortal','feePortal','bokPortal','weth','swapRouter','feeToken','bokToken','privateFpc','codeHashes']);
- if(p.schemaVersion!==1||p.chainId!=='11155111'||!Number.isSafeInteger(p.nonce)||p.nonce<0||!Number.isSafeInteger(p.expiresAt)||p.expiresAt<1)throw rejected();
+ if(p.schemaVersion!==1||!['1','11155111'].includes(p.chainId)||!Number.isSafeInteger(p.nonce)||p.nonce<0||!Number.isSafeInteger(p.expiresAt)||p.expiresAt<1)throw rejected();
  seedUint(p.rollupVersion,(1n<<32n)-1n);for(const k of ['gasLimit','maxFeePerGas','maxPriorityFeePerGas'])seedUint(p[k],(1n<<128n)-1n,k==='maxPriorityFeePerGas');
  if(BigInt(p.maxPriorityFeePerGas)>BigInt(p.maxFeePerGas))throw rejected();
  for(const k of ['rollupAddress','owner','collateralPortal','feePortal','bokPortal','weth','swapRouter','feeToken','bokToken'])seedAddress(p[k]);
@@ -429,7 +429,7 @@ export async function runTestnetRouterDeployment({plan:input,artifactSha256,stor
  * cannot perform an L1 payment. The private claim secret is a separate input. */
 export function captureTestnetBootstrapPlan(input){
  const p=seedObject(input,['schemaVersion','chainId','rollupVersion','rollupAddress','nodeUrl','ethereumUrl','actor','privateFpc','feePortal','feeToken','expiresAt','depositFrom','depositNonce','depositTxHash','claimAmount','claimSecretHash','messageHash','messageLeafIndex']);
- if(p.schemaVersion!==1||p.chainId!=='11155111'||!Number.isSafeInteger(p.expiresAt)||p.expiresAt<1||!Number.isSafeInteger(p.depositNonce)||p.depositNonce<0)throw rejected();
+ if(p.schemaVersion!==1||!['1','11155111'].includes(p.chainId)||!Number.isSafeInteger(p.expiresAt)||p.expiresAt<1||!Number.isSafeInteger(p.depositNonce)||p.depositNonce<0)throw rejected();
  seedUint(p.rollupVersion,(1n<<32n)-1n);seedUint(p.claimAmount);seedUint(p.messageLeafIndex,(1n<<254n)-1n,true);
  for(const k of ['rollupAddress','feePortal','feeToken','depositFrom'])seedAddress(p[k]);
  for(const k of ['actor','privateFpc','claimSecretHash','messageHash'])if(typeof p[k]!=='string'||!/^0x[0-9a-f]{64}$/.test(p[k])||BigInt(p[k])<=0n||BigInt(p[k])>=21888242871839275222246405745257275088548364400416034343698204186575808495617n)throw rejected();

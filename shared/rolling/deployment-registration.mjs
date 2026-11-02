@@ -8,7 +8,7 @@ const digest=value=>check(typeof value==='string'&&/^[0-9a-f]{64}$/.test(value))
 export function validateRollingRegistration(value,{config,artifactHashes,proofsEnabled}={}){
  keys(value,['schemaVersion','purpose','config','proofsEnabled','artifactHashes','instances','economics','configHash','publication']);
  check(value.schemaVersion===1&&value.purpose==='testnet-registration');
- check(['11155111','31337'].includes(value.config?.network?.chainId));
+ check(['1','11155111','31337'].includes(value.config?.network?.chainId));
  check(typeof value.proofsEnabled==='boolean'&&(value.proofsEnabled||value.config.network.chainId==='31337'));
  if(config!==undefined){
   const registered=structuredClone(value.config),runtime=structuredClone(config);

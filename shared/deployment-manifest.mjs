@@ -44,7 +44,7 @@ export async function preflightDeploymentNetwork(manifest,{node,provider,ethers,
  const realProofs=info&&Object.getOwnPropertyDescriptor(info,'realProofs');
  if(!realProofs||!Object.hasOwn(realProofs,'value')||typeof realProofs.value!=='boolean')fail('Native proof configuration unavailable');
  const proofsEnabled=realProofs.value;
- if(m.profile==='local-test'?(n.chainId!=='31337'||proofsEnabled):(n.chainId!=='11155111'||!proofsEnabled))fail('Native proof configuration differs from deployment profile');
+ if(m.profile==='local-test'?(n.chainId!=='31337'||proofsEnabled):(!['1','11155111'].includes(n.chainId)||!proofsEnabled))fail('Native proof configuration differs from deployment profile');
  if(String(info.l1ChainId)!==n.chainId||String(network.chainId)!==n.chainId||String(info.rollupVersion)!==n.rollupVersion||contracts.rollupAddress?.toString().toLowerCase()!==n.rollup)fail('Deployment network identity mismatch');
  for(const [key,name] of [['inboxAddress','inbox'],['outboxAddress','outbox']])if(contracts[key]&&contracts[key].toString().toLowerCase()!==n[name])fail('Node bridge identity mismatch');
  const rollup=new ethers.Contract(n.rollup,['function getInbox() view returns (address)','function getOutbox() view returns (address)'],provider);

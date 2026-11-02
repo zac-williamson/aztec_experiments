@@ -460,7 +460,7 @@ export async function bootstrapTestnetPrivateFee({plan:input,statePath,actorFile
   const sourceBinding=sha256(Buffer.concat([bytes,await fs.readFile(new URL('./operator.mjs',import.meta.url)),await fs.readFile(new URL('./operations.mjs',import.meta.url))]));
   const checkScope=async()=>{
    const [info,chain]=await Promise.all([node.getNodeInfo(),provider.getNetwork()]);
-   if(chain.chainId!==11155111n||info.realProofs!==true||String(info.l1ChainId)!==plan.chainId||String(info.rollupVersion)!==plan.rollupVersion||String(info.l1ContractAddresses.rollupAddress).toLowerCase()!==plan.rollupAddress||String(info.l1ContractAddresses.feeJuicePortalAddress).toLowerCase()!==plan.feePortal||String(info.l1ContractAddresses.feeJuiceAddress).toLowerCase()!==plan.feeToken)throw Error('Current proof-enabled testnet required');
+   if(chain.chainId!==BigInt(plan.chainId)||info.realProofs!==true||String(info.l1ChainId)!==plan.chainId||String(info.rollupVersion)!==plan.rollupVersion||String(info.l1ContractAddresses.rollupAddress).toLowerCase()!==plan.rollupAddress||String(info.l1ContractAddresses.feeJuicePortalAddress).toLowerCase()!==plan.feePortal||String(info.l1ContractAddresses.feeJuiceAddress).toLowerCase()!==plan.feeToken)throw Error('Current proof-enabled deployment network required');
   };
   const matchesTx=tx=>String(tx.data.constants.txContext.chainId)===new Fr(BigInt(plan.chainId)).toString()&&String(tx.data.constants.txContext.version)===new Fr(BigInt(plan.rollupVersion)).toString()&&String(tx.data.feePayer)===plan.actor;
   const reconcile=async record=>{
@@ -497,7 +497,7 @@ export async function bootstrapTestnetPrivateFee({plan:input,statePath,actorFile
     };}});
     const pxe=await rollingPxeOptions(false,async()=>({backend:BackendType.NativeUnixSocket,...await prepareNativeRuntime({}),threads:1}));
     wallet=await EmbeddedWallet.create(recordedNode,{ephemeral:true,pxe});
-    const account=await wallet.createSchnorrInitializerlessAccount(Fr.fromString(actor.secret),Fr.fromString(actor.salt),GrumpkinScalar.fromString(actor.signingKey),'current testnet operator');
+    const account=await wallet.createSchnorrInitializerlessAccount(Fr.fromString(actor.secret),Fr.fromString(actor.salt),GrumpkinScalar.fromString(actor.signingKey),'deployment operator');
     if(!account.address.equals(from))throw Error('Current actor key mismatch');
     const paymentMethod=new FeeJuicePaymentMethodWithClaim(from,{claimAmount:BigInt(plan.claimAmount),claimSecret:prepared.secret,messageLeafIndex:BigInt(plan.messageLeafIndex)});
     const call=prepared.publish?createPrivateFeeDeployment(wallet,raw):new BatchCall(wallet,[]);
@@ -527,7 +527,7 @@ export async function deployTestnetFundingRouter({plan:input,statePath,keyFile,q
   const expectedAddress=getCreateAddress({from:plan.owner,nonce:plan.nonce}).toLowerCase();
   const checkScope=async()=>{
    const [info,chain,broadcastChain,h,l2]=await Promise.all([node.getNodeInfo(),provider.getNetwork(),broadcaster.getNetwork(),provider.getBlock('latest'),node.getBlock('checkpointed')]);
-   if(chain.chainId!==11155111n||broadcastChain.chainId!==11155111n||info.realProofs!==true||String(info.l1ChainId)!==plan.chainId||String(info.rollupVersion)!==plan.rollupVersion||String(info.l1ContractAddresses.rollupAddress).toLowerCase()!==plan.rollupAddress||String(info.l1ContractAddresses.feeJuicePortalAddress).toLowerCase()!==plan.feePortal||String(info.l1ContractAddresses.feeJuiceAddress).toLowerCase()!==plan.feeToken||!h?.hash||!l2?.hash)throw Error('Current network identity unavailable');
+   if(chain.chainId!==BigInt(plan.chainId)||broadcastChain.chainId!==BigInt(plan.chainId)||info.realProofs!==true||String(info.l1ChainId)!==plan.chainId||String(info.rollupVersion)!==plan.rollupVersion||String(info.l1ContractAddresses.rollupAddress).toLowerCase()!==plan.rollupAddress||String(info.l1ContractAddresses.feeJuicePortalAddress).toLowerCase()!==plan.feePortal||String(info.l1ContractAddresses.feeJuiceAddress).toLowerCase()!==plan.feeToken||!h?.hash||!l2?.hash)throw Error('Current network identity unavailable');
    for(const [address,classId]of [[plan.boardAddress,boardClass],[plan.bokAddress,bokClass],[plan.privateFpc,String(feeInstance.currentContractClassId)]]){
     const instance=await node.getContract(AztecAddress.fromStringUnsafe(address),{number:l2.number,hash:String(l2.hash)});
     if(String(instance?.originalContractClassId)!==classId||String(instance?.currentContractClassId)!==classId||String(await computeContractAddressFromInstance(instance))!==address)throw Error('Current application class mismatch');
@@ -555,7 +555,7 @@ export async function deployTestnetFundingRouter({plan:input,statePath,keyFile,q
    prepare:async()=>{
     const key=JSON.parse((await readHostedPrivateFile(path.resolve(keyFile),65536)).toString('utf8'));signer=new Wallet(key.privateKey,provider);
     if(signer.address.toLowerCase()!==plan.owner||await provider.getTransactionCount(plan.owner,'latest')!==plan.nonce||await provider.getTransactionCount(plan.owner,'pending')!==plan.nonce||await broadcaster.getTransactionCount(plan.owner,'latest')!==plan.nonce||await broadcaster.getTransactionCount(plan.owner,'pending')!==plan.nonce)throw Error('Original deployer nonce changed');
-    const transaction={chainId:11155111n,type:2,nonce:plan.nonce,data:creation,value:0n,gasLimit:BigInt(plan.gasLimit),maxFeePerGas:BigInt(plan.maxFeePerGas),maxPriorityFeePerGas:BigInt(plan.maxPriorityFeePerGas)};
+    const transaction={chainId:BigInt(plan.chainId),type:2,nonce:plan.nonce,data:creation,value:0n,gasLimit:BigInt(plan.gasLimit),maxFeePerGas:BigInt(plan.maxFeePerGas),maxPriorityFeePerGas:BigInt(plan.maxPriorityFeePerGas)};
     if(await provider.estimateGas({...transaction,from:plan.owner})>transaction.gasLimit||await provider.getBalance(plan.owner)<transaction.gasLimit*transaction.maxFeePerGas)throw Error('Deployment gas capacity unavailable');
     return {transaction,metadata:{from:plan.owner,nonce:plan.nonce,address:expectedAddress}};
    },

@@ -17,7 +17,7 @@ function configOf(input){
  for(const key of ['router','collateralPortal','feePortal','bokPortal','usdc','usdcImplementation','weth','quoter','relayer'])check(hex(c[key],20));
  for(const key of ['routerCodeHash','usdcCodeHash','usdcImplementationCodeHash','quoterCodeHash','privateFpc'])check(hex(c[key]));
  for(const key of ['chainId','feeUsdc','maxGasWei','totalGasBudgetWei'])check(uint(c[key]));
- check(typeof c.development==='boolean'&&c.chainId===(c.development?'31337':'11155111')&&[100,500,3000,10000].includes(c.gasPoolFee)&&BigInt(c.maxGasWei)<=BigInt(c.totalGasBudgetWei));
+ check(typeof c.development==='boolean'&&(c.development?c.chainId==='31337':['1','11155111'].includes(c.chainId))&&[100,500,3000,10000].includes(c.gasPoolFee)&&BigInt(c.maxGasWei)<=BigInt(c.totalGasBudgetWei));
  return Object.freeze(c);
 }
 /** Trusted process only. A private signer-wide lease and total conservative gas

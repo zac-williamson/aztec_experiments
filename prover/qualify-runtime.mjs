@@ -72,7 +72,7 @@ export function validateQualification(config){
   const s=config.service;
   record(s,['serviceMode','proofs','host','port','chainId','rollupVersion','origins','queryNode']);
   requireCondition(s&&s.serviceMode==='query-only'&&s.proofs==='real'&&s.host==='127.0.0.1'&&s.port===0);
-  requireCondition(s.chainId==='11155111'&&typeof s.rollupVersion==='string'&&/^[1-9][0-9]{0,9}$/.test(s.rollupVersion)&&BigInt(s.rollupVersion)<2n**32n);
+  requireCondition(['1','11155111'].includes(s.chainId)&&typeof s.rollupVersion==='string'&&/^[1-9][0-9]{0,9}$/.test(s.rollupVersion)&&BigInt(s.rollupVersion)<2n**32n);
   requireCondition(Array.isArray(s.origins)&&s.origins.length===0);
   record(s.queryNode,['url','rollupAddress','maxLagSeconds']);
   requireCondition(typeof s.queryNode.url==='string'&&typeof s.queryNode.rollupAddress==='string');

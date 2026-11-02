@@ -64,7 +64,7 @@ test('rolling profile rejects getters coercions credentials and unsupported fiel
 });
 test('public rolling profile requires exact HTTPS query route and explicit nonzero network',()=>{
  const c={...config(),development:false,chainId:'11155111',nodeUrl:'https://query.example/v1/node',ethereumUrl:'https://l1.example/'};
- assert.equal(rollingOperatorConfig(c).chainId,'11155111');
+ assert.equal(rollingOperatorConfig(c).chainId,'11155111');assert.equal(rollingOperatorConfig({...c,chainId:'1'}).chainId,'1');assert.throws(()=>rollingOperatorConfig({...c,chainId:'8453'}));
  for(const patch of [{nodeUrl:'https://query.example/'},{nodeUrl:'http://query.example/v1/node'},{chainId:'0'},{rollupVersion:'18446744073709551616'},{rollupAddress:'0x'+'0'.repeat(40)},{applicationProfile:'legacy'}])assert.throws(()=>rollingOperatorConfig({...c,...patch}));
 });
 test('native development PXE disables proof setup without preparing native runtime',async()=>{
@@ -941,7 +941,7 @@ test('testnet router authority preserves exact network, dependencies, endpoints 
  const {captureTestnetRouterPlan,runTestnetRouterDeployment}=await import('../operations.mjs');
  const address=n=>'0x'+n.toString(16).padStart(40,'0');
  const plan={schemaVersion:1,chainId:'11155111',rollupVersion:'3409706519',rollupAddress:address(1),nodeUrl:'https://app.example/v1/node',ethereumUrl:'https://read.example/',broadcastUrl:'https://send.example/',owner:address(2),nonce:20,expiresAt:2000,gasLimit:'2000000',maxFeePerGas:'2000000000',maxPriorityFeePerGas:'1000000',boardAddress:field(1),bokAddress:field(2),collateralPortal:address(3),feePortal:address(4),bokPortal:address(5),weth:address(6),swapRouter:address(7),feeToken:address(8),bokToken:address(9),privateFpc:field(3),codeHashes:Object.fromEntries(['collateralPortal','feePortal','bokPortal','weth','swapRouter','feeToken','bokToken'].map(k=>[k,field(4)]))};
- assert.deepEqual(captureTestnetRouterPlan(plan),plan);
+ assert.deepEqual(captureTestnetRouterPlan(plan),plan);assert.equal(captureTestnetRouterPlan({...plan,chainId:'1'}).chainId,'1');assert.throws(()=>captureTestnetRouterPlan({...plan,chainId:'8453'}));
  for(const mutate of [p=>p.chainId='31337',p=>p.ethereumUrl='http://read.example/',p=>p.broadcastUrl+='?token=secret',p=>p.nodeUrl='https://app.example/other',p=>p.nonce=-1,p=>p.expiresAt=0,p=>p.privateFpc=field(0),p=>delete p.codeHashes.feeToken,p=>p.codeHashes.feeToken=field(0),p=>p.maxPriorityFeePerGas='3000000000',p=>p.extra=true]){const bad=structuredClone(plan);mutate(bad);assert.throws(()=>captureTestnetRouterPlan(bad));}
  const store=memory(),events=[];let now=1000;
  const args={plan,store,artifactSha256:'a'.repeat(64),now:()=>now,checkScope:async()=>events.push('scope'),prepare:async()=>{events.push('prepare');return {metadata:{address:address(10)}};},sign:async()=>{assert.equal(store.read().operations['deploy-funding-router'].phase,'preparing');events.push('sign');return signed;},broadcast:async bytes=>{assert.equal(store.read().operations['deploy-funding-router'].raw,bytes.raw);assert.equal(store.read().operations['deploy-funding-router'].broadcastAttempt.state,'prepared');events.push('send');throw Object.assign(Error('lost response'),{httpStatus:429});},reconcile:async saved=>{events.push('reconcile');assert.equal(saved.hash,signed.hash);return {status:'unresolved',canonical:false};}};
@@ -969,7 +969,7 @@ test('router reconciliation authenticates signed gas caps and finalized exact re
 
 const bootstrapPlan=()=>({schemaVersion:1,chainId:'11155111',rollupVersion:'3409706519',rollupAddress:'0x'+'11'.repeat(20),nodeUrl:'https://app.example/v1/node',ethereumUrl:'https://read.example/',actor:field(1),privateFpc:field(2),feePortal:'0x'+'22'.repeat(20),feeToken:'0x'+'33'.repeat(20),expiresAt:2000,depositFrom:'0x'+'44'.repeat(20),depositNonce:20,depositTxHash:field(3),claimAmount:'10000000000000000000',claimSecretHash:field(4),messageHash:field(5),messageLeafIndex:'12'});
 test('bootstrap binds only a current testnet claim, never a board or L1 spending authority',async()=>{
- const {captureTestnetBootstrapPlan}=await import('../operations.mjs');const plan=bootstrapPlan();assert.deepEqual(captureTestnetBootstrapPlan(plan),plan);
+ const {captureTestnetBootstrapPlan}=await import('../operations.mjs');const plan=bootstrapPlan();assert.deepEqual(captureTestnetBootstrapPlan(plan),plan);assert.equal(captureTestnetBootstrapPlan({...plan,chainId:'1'}).chainId,'1');assert.throws(()=>captureTestnetBootstrapPlan({...plan,chainId:'8453'}));
  for(const mutate of [p=>p.chainId='31337',p=>p.claimAmount='0',p=>p.messageLeafIndex='-1',p=>p.depositNonce=-1,p=>p.claimSecret='PRIVATE',p=>p.boardAddress=field(5),p=>p.nodeUrl='https://app.example/other',p=>p.ethereumUrl='https://read.example/?secret=x',p=>p.privateFpc=field(0)]){const bad=structuredClone(plan);mutate(bad);assert.throws(()=>captureTestnetBootstrapPlan(bad));}
 });
 test('bootstrap persists before proof and dispatch; every retained intent is keyless reconciliation',async()=>{
@@ -1021,4 +1021,13 @@ test('pruned constructor still rejects unavailable current instance and never fa
  const f=reconciliation(),seen=[];f.reads.head=async()=>({number:100,hash:field(100)});f.reads.block=async n=>({hash:field(n)});
  f.reads.instance=async(_,anchor)=>{seen.push(anchor.number);throw Error('Current world-state unavailable');};
  assert.equal((await reconcileRollingOperation(f)).status,'unresolved');assert.deepEqual(seen,[100]);
+});
+
+test('mainnet router signature is accepted only for the mainnet plan',async()=>{
+ const {matchTestnetRouterSigned}=await import('../operations.mjs');const {Wallet,Transaction}=await import('ethers');
+ const wallet=Wallet.createRandom(),plan={chainId:'1',owner:wallet.address.toLowerCase(),nonce:0,gasLimit:'100000',maxFeePerGas:'1000000000',maxPriorityFeePerGas:'0'},creation='0x60006000';
+ const raw=await wallet.signTransaction({chainId:1n,type:2,nonce:0,to:null,data:creation,value:0n,gasLimit:100000n,maxFeePerGas:1000000000n,maxPriorityFeePerGas:0n});
+ const record={phase:'submission-unknown',hash:Transaction.from(raw).hash,raw:raw.slice(2)};
+ assert.equal(matchTestnetRouterSigned({record,plan,creation,parse:Transaction.from}),true);
+ assert.equal(matchTestnetRouterSigned({record,plan:{...plan,chainId:'11155111'},creation,parse:Transaction.from}),false);
 });

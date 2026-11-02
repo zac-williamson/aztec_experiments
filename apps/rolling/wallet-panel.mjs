@@ -1653,7 +1653,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    const maximum=(isUsdc?decimal(b.maximumUsdc,6):compactAmount(b.maximumTotalWei,18,8,true))+currency;
    const usd=isUsdc?Number(decimal(b.maximumUsdc,6)).toFixed(2):q.usdEstimate;
    content.append(el('section',{class:'wallet-payment-total','aria-label':'Total payable'},el('span',{},'Total payable · maximum'),el('strong',{},usd?'≈ $'+usd+' USD':maximum),el('p',{class:'quiet',title:decimal(isUsdc?b.maximumUsdc:b.maximumTotalWei,isUsdc?6:18)+currency},usd?'Up to '+maximum:'USD estimate unavailable. This is the maximum payment.'),el('p',{class:'quiet'},'Includes your deposit, posting credit and payment fees.')),
-    paragraph('Sepolia testnet · test funds only.'),
+    paragraph(runtime.canStartTestAccount?'Test network · test funds only.':'Ethereum mainnet.'),
     paragraph(isUsdc?'Your wallet will ask for two signatures to approve this payment.':'Approve the payment in your wallet.'));
    const details=el('details',{class:'account-details wallet-cost-breakdown'},el('summary',{},'Cost breakdown'),
     fundingSummary('Refundable deposit',deposit+currency,'Held to discourage spam. Withdraw when your deposit is available.'),

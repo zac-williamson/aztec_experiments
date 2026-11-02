@@ -30,7 +30,7 @@ export const isUnsignedOrphanedJob=record=>record.job.state==='manual-review'&&
 
 export function openJobStore({filename,scope,modelVersion,maxAttempts=3,maxReconcileAttempts=20,retryDelayMs=30000,maxJobs=100000,now=Date.now,profile='legacy',development=false,leaseMs=profile==='rolling'?null:360000}){
  scope=validateScope(scope);
- if(!['legacy','rolling'].includes(profile)||typeof development!=='boolean'||(profile==='rolling'&&scope.l1ChainId!==(development?'31337':'11155111')))throw fail('Invalid moderation profile');
+ if(!['legacy','rolling'].includes(profile)||typeof development!=='boolean'||(profile==='rolling'&&(development?scope.l1ChainId!=='31337':!['1','11155111'].includes(scope.l1ChainId))))throw fail('Invalid moderation profile');
  if(typeof filename!=='string'||!path.isAbsolute(filename)||!hex(modelVersion)||![maxAttempts,maxReconcileAttempts,retryDelayMs,maxJobs].every(integer)||
   maxAttempts<1||maxAttempts>100||(profile==='rolling'?leaseMs!==null:!integer(leaseMs)||leaseMs<1||leaseMs>900000)||maxReconcileAttempts<1||maxReconcileAttempts>1000||retryDelayMs>3600000||maxJobs<1||maxJobs>100000||typeof now!=='function')throw fail('Invalid job store configuration');
  fs.mkdirSync(path.dirname(filename),{recursive:true,mode:0o700});

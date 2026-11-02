@@ -43,9 +43,9 @@ export function createPrivateBokEscrowFactory(sdk) {
   const {Contract,Fr,AztecAddress,TxHash,getContractClassFromArtifact,deriveStorageSlotInMap,getFunctionReturnType,isTrustedProver} = sdk;
   assert.equal(typeof lease?.assertHeld, 'function'); assert.equal(typeof store?.read, 'function'); assert.equal(typeof store?.write, 'function');
   assert.equal(typeof development, 'boolean'); assert(['real','disabled'].includes(proofMode));
-  assert(proofMode === (development ? 'disabled' : 'real'), 'Native proof policy requires disabled development and real testnet');
+  assert(proofMode === (development ? 'disabled' : 'real'), 'Native proof policy requires disabled development and real public networks');
   const chainId = String(integer(network.chainId, 64)), version = String(integer(network.rollupVersion, 64));
-  assert(BigInt(chainId) > 0n && BigInt(version) > 0n); assert.equal(chainId, development ? '31337' : '11155111');
+  assert(BigInt(chainId) > 0n && BigInt(version) > 0n); assert(development ? chainId === '31337' : ['1','11155111'].includes(chainId), 'Unsupported deployment network');
   const rollup = hex(String(network.rollupAddress).toLowerCase(),20); assert(BigInt(rollup)>0n,'Zero rollup address');
   const addr = AztecAddress.fromStringUnsafe(hex(address)), op = AztecAddress.fromStringUnsafe(hex(operator));
   const boardAddress = hex(board), id = hex(requestId), invocation = hex(target);
