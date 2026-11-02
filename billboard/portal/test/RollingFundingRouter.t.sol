@@ -17,6 +17,13 @@ contract FundingWrapped is ERC20 {
  function withdraw(uint256 n) external {_burn(msg.sender,n);(bool ok,)=msg.sender.call{value:n}("");require(ok);}
 }
 contract FundingDex {
+ bytes public lastPath;
+ function exactOutput(FundingSwapRouter.ExactOutputParams calldata p) external payable returns(uint256 n){
+ require(!fail,"No liquidity");require(p.path.length==66,"Two-hop path");lastPath=p.path;
+ n=p.amountOut*10;require(n<=p.amountInMaximum,"Slippage");
+ IERC20(address(bytes20(p.path[46:66]))).transferFrom(msg.sender,address(this),n);
+ IERC20(address(bytes20(p.path[0:20]))).transfer(p.recipient,p.amountOut-(lie?1:0));
+ }
  bool public fail; bool public lie; function configure(bool f,bool l) external {fail=f;lie=l;}
  function exactOutputSingle(FundingSwapRouter.ExactOutputSingleParams calldata p) external payable returns(uint256 n){
  require(!fail,"No liquidity"); n=p.amountOut*10; require(n<=p.amountInMaximum,"Slippage");
@@ -134,6 +141,13 @@ contract RollingUsdcFundingRouterTest {
  require(address(router).balance==0 && weth.balanceOf(address(router))==0 && feeToken.balanceOf(address(router))==0 && usdc.balanceOf(address(router))==0,"Retained principal"); }
  function feeOnlyPlan() private view returns(RollingFundingRouter.UsdcPlan memory p) {
  p=plan();p.collateral=RollingFundingRouter.UsdcSwap(0,0,0);p.collateralSecretHash=bytes32(0);p.bokAmount=0;p.bokCommitment=bytes32(0);p.bokSecretHash=bytes32(0);
+ }
+ function testMainnetUsdcUsesReverseTwoHopAndExactAccounting() public {
+ vm.chainId(1);setUp();RollingFundingRouter.UsdcPlan memory p=feeOnlyPlan();p.fee.poolFee=10000;
+ (,bytes memory auth)=signatures(p);vm.prank(relayer);router.fundUsdc(p,hex"",auth);
+ require(keccak256(dex.lastPath())==keccak256(abi.encodePacked(address(feeToken),uint24(10000),address(weth),uint24(500),address(usdc))),"Incorrect route");
+ require(usdc.balanceOf(alice)==100 ether-1050 && fee.amount()==100,"Exact fee/debit");
+ require(usdc.allowance(address(router),address(dex))==0 && usdc.balanceOf(address(router))==0,"No retained allowance/funds");
  }
  function testFeeOnlyUsdcUsesOneAuthorizationNoEthAndNoCollateralConsent() public {
  RollingFundingRouter.UsdcPlan memory p=feeOnlyPlan();(,bytes memory auth)=signatures(p);vm.prank(relayer);router.fundUsdc(p,hex"",auth);

@@ -21,6 +21,8 @@ interface FundingFeePortal {
 // Uniswap SwapRouter02 IV3SwapRouter, deliberately NOT legacy ISwapRouter's deadline tuple.
 interface FundingSwapRouter {
     struct ExactOutputSingleParams { address tokenIn; address tokenOut; uint24 fee; address recipient; uint256 amountOut; uint256 amountInMaximum; uint160 sqrtPriceLimitX96; }
+    struct ExactOutputParams { bytes path; address recipient; uint256 amountOut; uint256 amountInMaximum; }
+    function exactOutput(ExactOutputParams calldata) external payable returns (uint256);
     function exactOutputSingle(ExactOutputSingleParams calldata) external payable returns (uint256);
 }
 /// @notice One router for signup, posting credit, and exact-output Bok credit purchases. Cross-chain claims remain asynchronous.
@@ -178,7 +180,13 @@ contract RollingFundingRouter is ReentrancyGuard {
         require(maximum>0 && (poolFee==100 || poolFee==500 || poolFee==3000 || poolFee==10000),"Invalid swap bound");
         uint256 beforeOutput=output.balanceOf(address(this)); uint256 beforeInput=input.balanceOf(address(this));
         input.forceApprove(address(swapRouter),maximum);
-        spent=swapRouter.exactOutputSingle(FundingSwapRouter.ExactOutputSingleParams(address(input),address(output),poolFee,address(this),amount,maximum,0));
+        if (chainId==1 && address(input)==address(bokToken) && address(output)==address(feeToken)) {
+            // Exact-output paths run backwards: AZTEC <- WETH <- USDC.
+            spent=swapRouter.exactOutput(FundingSwapRouter.ExactOutputParams(
+                abi.encodePacked(address(output),poolFee,address(weth),uint24(500),address(input)),address(this),amount,maximum));
+        } else {
+            spent=swapRouter.exactOutputSingle(FundingSwapRouter.ExactOutputSingleParams(address(input),address(output),poolFee,address(this),amount,maximum,0));
+        }
         input.forceApprove(address(swapRouter),0);
         require(spent>0 && spent<=maximum && input.balanceOf(address(this))==beforeInput-spent && output.balanceOf(address(this))==beforeOutput+amount,"Swap balance mismatch");
     }

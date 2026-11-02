@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Interface,keccak256,TypedDataEncoder,AbiCoder,encodeBytes32String} from 'ethers';
+import {Interface,keccak256,TypedDataEncoder,AbiCoder,encodeBytes32String,solidityPacked} from 'ethers';
 import {prepareAggregateFunding,validateAggregateFundingQuote,encodeAggregateFundingTransaction,aggregateFundingTransaction,aggregateFundingAbi,prepareAggregateUsdcFunding,aggregateUsdcFundingTransaction} from './aggregate-funding.mjs';
 const address=n=>'0x'+n.toString(16).padStart(40,'0'),field=n=>'0x'+n.toString(16).padStart(64,'0');
 const r=new Interface(aggregateFundingAbi), p=new Interface(['function depositNonces(address) view returns(uint256)','function depositsEnabled() view returns(bool)','function getDeposit(address) view returns(uint128)','function MIN_DEPOSIT() view returns(uint256)','function MAX_DEPOSIT() view returns(uint256)']);
 const b=new Interface(['function active() view returns(bool)']);
-const q=new Interface(['function quoteExactOutputSingle((address tokenIn,address tokenOut,uint256 amount,uint24 fee,uint160 sqrtPriceLimitX96)) returns(uint256,uint160,uint32,uint256)']);
+const q=new Interface(['function quoteExactOutputSingle((address tokenIn,address tokenOut,uint256 amount,uint24 fee,uint160 sqrtPriceLimitX96)) returns(uint256,uint160,uint32,uint256)','function quoteExactOutput(bytes,uint256) returns(uint256,uint160[],uint32[],uint256)']);
 function fixture(options={}) {
  const scope={chainId:'11155111',router:address(1),routerCodeHash:keccak256('0x6000'),collateralPortal:address(2),feePortal:address(3),bokPortal:address(4),weth:address(5),swapRouter:address(6),feeToken:address(7),bokToken:address(8),privateFpc:field(9),quoter:address(10),quoterCodeHash:keccak256('0x6000')};
  const allocation={asset:'ETH',collateralWei:'1000000',feeAmount:'100',bokAmount:'200',feePoolFee:3000,bokPoolFee:500,slippageBps:100,collateralSecretHash:field(11),feeSecretHash:field(12),bokCommitment:field(13),bokSecretHash:field(14)};
@@ -60,7 +60,7 @@ function usdcFixture(options={}) {
   if(call.method==='eth_getBalance'){f.calls.push(call);assert.equal(call.params[0],f.input.relay.address,'Only RELAYER requires ETH');return options.relayEmpty?'0x0':'0xffffff';}
   if(call.method==='eth_call'){
    const {to,data}=call.params[0];
-   if(to===s.quoter){f.calls.push(call);const parsed=q.parseTransaction({data});assert.equal(parsed.args[0].tokenIn.toLowerCase(),s.bokToken);assert([s.weth,s.feeToken].includes(parsed.args[0].tokenOut.toLowerCase()));if(options.noLiquidity)throw Error('No route');return q.encodeFunctionResult('quoteExactOutputSingle',[parsed.args[0].amount*10n,1,0,100]);}
+   if(to===s.quoter){f.calls.push(call);const parsed=q.parseTransaction({data});if(parsed.name==='quoteExactOutput'){assert.equal(s.chainId,'1');assert.equal(parsed.args[0],solidityPacked(['address','uint24','address','uint24','address'],[s.feeToken,f.input.allocation.feePoolFee,s.weth,500,s.bokToken]));return q.encodeFunctionResult('quoteExactOutput',[parsed.args[1]*10n,[1n,1n],[0,0],200]);}assert.equal(parsed.args[0].tokenIn.toLowerCase(),s.bokToken);assert([s.weth,s.feeToken].includes(parsed.args[0].tokenOut.toLowerCase()));if(options.noLiquidity)throw Error('No route');return q.encodeFunctionResult('quoteExactOutputSingle',[parsed.args[0].amount*10n,1,0,100]);}
    if(to===s.bokToken){f.calls.push(call);const parsed=usdc.parseTransaction({data});const values={implementation:options.badImplementation?address(72):s.usdcImplementation,DOMAIN_SEPARATOR:options.badDomain?field(3):TypedDataEncoder.hashDomain({...s.usdcDomain,chainId:s.chainId,verifyingContract:s.bokToken}),balanceOf:options.poor?1n:999999999n,authorizationState:options.spent===true};return usdc.encodeFunctionResult(parsed.name,[values[parsed.name]]);}
    if(to===s.router && r.parseTransaction({data}).name==='usdcAuthorizationNonce'){
     f.calls.push(call);const plan=r.parseTransaction({data}).args[0],hash=keccak256(AbiCoder.defaultAbiCoder().encode([r.getFunction('fundUsdc').inputs[0]],[plan]));

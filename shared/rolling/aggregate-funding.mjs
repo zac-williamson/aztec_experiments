@@ -1,4 +1,4 @@
-import {Interface, AbiCoder, keccak256, TypedDataEncoder, encodeBytes32String, toUtf8Bytes} from 'ethers';
+import {Interface, AbiCoder, keccak256, TypedDataEncoder, encodeBytes32String, toUtf8Bytes, solidityPacked} from 'ethers';
 
 // Allow time to read the cost and approve both wallet prompts. Slippage and
 // on-chain deadlines still bound execution; a stale quote is never refreshed silently.
@@ -20,7 +20,7 @@ const router = new Interface(aggregateFundingAbi);
 const portal = new Interface(['function depositNonces(address) view returns(uint256)','function depositsEnabled() view returns(bool)',
   'function getDeposit(address) view returns(uint128)','function MIN_DEPOSIT() view returns(uint256)','function MAX_DEPOSIT() view returns(uint256)']);
 const bok = new Interface(['function active() view returns(bool)']);
-const quoter = new Interface(['function quoteExactOutputSingle((address tokenIn,address tokenOut,uint256 amount,uint24 fee,uint160 sqrtPriceLimitX96)) returns(uint256 amountIn,uint160 sqrtPriceX96After,uint32 initializedTicksCrossed,uint256 gasEstimate)']);
+const quoter = new Interface(['function quoteExactOutputSingle((address tokenIn,address tokenOut,uint256 amount,uint24 fee,uint160 sqrtPriceLimitX96)) returns(uint256 amountIn,uint160 sqrtPriceX96After,uint32 initializedTicksCrossed,uint256 gasEstimate)','function quoteExactOutput(bytes path,uint256 amountOut) returns(uint256 amountIn,uint160[] sqrtPriceX96AfterList,uint32[] initializedTicksCrossedList,uint256 gasEstimate)']);
 const ZERO_FIELD='0x'+'0'.repeat(64);
 const P=21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 const prepared=new WeakMap();
@@ -112,7 +112,7 @@ export async function prepareAggregateFunding(input,{provider}={}) {
     async()=>blockSnapshot(await request('eth_getBlockByNumber',['latest',false])),
   ]);
   const tag=block.number;
-  const call=async(address,abi,name,args=[])=>{const data=await request('eth_call',[{to:address,data:abi.encodeFunctionData(name,args)},tag],address===s.quoter&&abi===quoter&&name==='quoteExactOutputSingle');try{return abi.decodeFunctionResult(name,data);}catch{fail('PUBLIC_READ_FAILED');}};
+  const call=async(address,abi,name,args=[])=>{const data=await request('eth_call',[{to:address,data:abi.encodeFunctionData(name,args)},tag],address===s.quoter&&abi===quoter&&['quoteExactOutputSingle','quoteExactOutput'].includes(name));try{return abi.decodeFunctionResult(name,data);}catch{fail('PUBLIC_READ_FAILED');}};
   const quote=async(token,amount,poolFee)=>{
     const q=(await call(s.quoter,quoter,'quoteExactOutputSingle',[[s.weth,token,amount,poolFee,0]]))[0];
     check(q>0n,'LIQUIDITY_UNQUALIFIED');return {amount,maxEth:((q*BigInt(10000+a.slippageBps)+9999n)/10000n).toString(),poolFee,quotedEth:q.toString()};
@@ -211,7 +211,7 @@ export async function prepareAggregateUsdcFunding(input,{provider}={}) {
   const request=async(method,params,quoting=false)=>{try{return await provider.request({method,params});}catch(error){publicReadFailure(error,quoting);}};
   check(quantity(await request('eth_chainId',[]))===BigInt(s.chainId),'CHAIN');
   const block=blockSnapshot(await request('eth_getBlockByNumber',['latest',false])),tag=block.number;
-  const call=async(address,abi,name,args=[])=>{const value=await request('eth_call',[{to:address,data:abi.encodeFunctionData(name,args)},tag],address===s.quoter&&abi===quoter&&name==='quoteExactOutputSingle');try{return abi.decodeFunctionResult(name,value);}catch{fail('PUBLIC_READ_FAILED');}};
+  const call=async(address,abi,name,args=[])=>{const value=await request('eth_call',[{to:address,data:abi.encodeFunctionData(name,args)},tag],address===s.quoter&&abi===quoter&&['quoteExactOutputSingle','quoteExactOutput'].includes(name));try{return abi.decodeFunctionResult(name,value);}catch{fail('PUBLIC_READ_FAILED');}};
   const domain={...s.usdcDomain,chainId:s.chainId,verifyingContract:s.bokToken};
   const [,,minimum,maximum,nonce]=await together([
     ()=>together([[s.router,s.routerCodeHash],[s.quoter,s.quoterCodeHash],[s.bokToken,s.usdcCodeHash],[s.usdcImplementation,s.usdcImplementationCodeHash]].map(([address,expected])=>async()=>{
@@ -227,7 +227,7 @@ export async function prepareAggregateUsdcFunding(input,{provider}={}) {
     async()=>check((await call(s.bokToken,usdcAbi,'DOMAIN_SEPARATOR'))[0]===TypedDataEncoder.hashDomain(domain),'USDC_DOMAIN'),
   ]);
   check(BigInt(a.collateralWei)>=minimum&&BigInt(a.collateralWei)<=maximum,'COLLATERAL_BOUNDS');
-  const quote=async(token,amount,poolFee)=>{const quoted=(await call(s.quoter,quoter,'quoteExactOutputSingle',[[s.bokToken,token,amount,poolFee,0]]))[0];check(quoted>0n,'LIQUIDITY_UNQUALIFIED');return {amount,maxUsdc:((quoted*BigInt(10000+a.slippageBps)+9999n)/10000n).toString(),poolFee,quotedUsdc:quoted.toString()};};
+  const quote=async(token,amount,poolFee)=>{const multiHop=s.chainId==='1'&&token===s.feeToken;const quoted=(await call(s.quoter,quoter,multiHop?'quoteExactOutput':'quoteExactOutputSingle',multiHop?[solidityPacked(['address','uint24','address','uint24','address'],[token,poolFee,s.weth,500,s.bokToken]),amount]:[[s.bokToken,token,amount,poolFee,0]]))[0];check(quoted>0n,'LIQUIDITY_UNQUALIFIED');return {amount,maxUsdc:((quoted*BigInt(10000+a.slippageBps)+9999n)/10000n).toString(),poolFee,quotedUsdc:quoted.toString()};};
   const [collateral,fee]=await together([()=>hasCollateral?quote(s.weth,a.collateralWei,a.collateralPoolFee):{amount:'0',maxUsdc:'0',poolFee:0,quotedUsdc:'0'},()=>quote(s.feeToken,a.feeAmount,a.feePoolFee)]);
   const deadline=((await pendingTime(request,block))+FUNDING_AUTHORIZATION_SECONDS).toString(),validAfter='0';
   const plan={beneficiary:w.address,relayer:relay.address,collateral:{amount:a.collateralWei,maxUsdc:collateral.maxUsdc,poolFee:collateral.poolFee},collateralSecretHash:a.collateralSecretHash,
