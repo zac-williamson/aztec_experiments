@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 2 November: owner requested first-visit welcome popup with approved wording and restoration of sidebar remote/local proving switch. Focused UI lane; measurement agents now authorized to measure 20-character adequately-funded signed-in fee estimation components and audit local/remote execution. No contract changes; performance campaign otherwise paused.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 2 November: c5243ae5 welcome + sidebar remote/local proving published through scoped UI operator34f1b9da. Stage/live asset/runtime checks passed, actual rolling.chat Chrome confirmed approved welcome, dismissed-on-reload and sidebar switch. Focused2browser+14unit/serving checks passed; predecessor synthetic Home pagination test independently also fails. Fee timing investigation currently running isolated 20-character funded-account browser measurement, no estimator changes published.
 
 ## Ready internal work
 

@@ -4,6 +4,8 @@ Current handover: 29 October 2026. The owner's current request takes precedence 
 
 ## Live work and next action
 
+**Welcome and proving controls are live (`c5243ae5`, 2 November):** first-visit popup with owner-approved copy, plus persistent Remote proving switch at the bottom of the sidebar. Off selects real local proving. Focused browser/worker checks and live browser verification passed. [Evidence](docs/WELCOME_PROVING_20261102.md).
+
 UI update **7a59cca2 is live (2 November)**: worker fee estimates, two-decimal credits, confirmed heart gifts, conversation Back, connected parent/reply feed cards, and removal of archive/analytics controls. Published by owner-directed focused UI release with staging/live asset and runtime checks; actual public-browser checks passed. No new full transaction journey is claimed. See [UI release evidence](docs/COMPOSER_UX_20261102.md).
 
 Fast-click Reply is fixed and published: `6e5f02ab`, promoted 29 October at 08:49 UTC, all seven real release flows passed. [Exact evidence and limits](docs/FAST_REPLY_20261029.md). This supersedes the earlier operations handover statement that the defect remained unchanged. Performance work remains paused.
