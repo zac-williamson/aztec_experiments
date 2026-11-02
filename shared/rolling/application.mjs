@@ -392,12 +392,13 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
     return {board:deployment.board.address,post:new sdk.Fr(BigInt(post)),
       key:{x:new sdk.Fr(BigInt(key.x)),y:new sdk.Fr(BigInt(key.y))},ephemeral:sdk.Fr.random()};
   }
-  async function payment(action,record,{ordinaryProof=false,likeProof=false,deferredBalance=false}={}){
+  async function payment(action,record,{ordinaryProof=false,likeProof=false,deferredBalance=false,preview=false}={}){
+    const previewOwner=preview?{scope:getOperationScope(),wallet:session.wallet,pxe:session.wallet.pxe,node:session.node}:null;
     const claim=await verifiedFeeClaim(action,record);
     const paidLike=action?.type==='like'?await paidLikeArguments(action):undefined;
     const prepared=await sdk.preparePrivateFeePayment({wallet:session.wallet,node:session.node,owner:session.owner,
       privateFeeAddress:fixed.fee,privateFeeArtifact:deployment.privateFee.artifact,expectedChainId:scope.chainId,expectedVersion:scope.version,gasSettings:record?.feeGasSettings??fixed.gas,feePricing:record?.feeGasSettings&&!record?.fundingFeeCap?'fixed':'network',...(record?.fundingFeeCap?{maximumFee:record.fundingFeeCap}:{}),measure,
-      creditScope:{board:deployment.board.address,artifact:deployment.board.artifact,cache:creditCache},...(claim?{claim}:{}),...(paidLike?{paidLike}:{}),...((ordinaryProof||likeProof||deferredBalance)&&!action?{creditCheck:'deferred-balance'}:{})});
+      creditScope:{board:deployment.board.address,artifact:deployment.board.artifact,cache:creditCache,...(previewOwner?{reuseAtAnchor:()=>Boolean(previewOwner.scope?.synchronized&&getOperationScope()===previewOwner.scope&&session.wallet===previewOwner.wallet&&session.wallet.pxe===previewOwner.pxe&&session.node===previewOwner.node)}:{})},...(claim?{claim}:{}),...(paidLike?{paidLike}:{}),...((ordinaryProof||likeProof||deferredBalance)&&!action?{creditCheck:'deferred-balance'}:{})});
     if(prepared.gasSettings){const prices=serializePrivateFeeGasSettings(prepared.gasSettings);if(record)record.feeGasSettings=prices;try{onFeePricing(prices);}catch{/* Display metadata cannot affect payment. */}}
     return prepared;
   }
@@ -1040,12 +1041,29 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
         const board=await contract(),nonce=field(sdk.Fr.random().toString(),true);
         if(action.type==='bok'){await ensureBok({bind:true});check(bok,'ROLLING_BOK_UNAVAILABLE');}
         await previewGuard();
-        const args=plain(await argumentsFor(action,board,nonce,{atomicBok:action.type==='bok'}));
-        await previewGuard();
+        // Synchronization already fetched main-board policy at this native
+        // anchor. Reuse it only within the same wallet/operation and exact hash.
+        const policy=operation&&preparedPolicies.get(operation);if(operation)preparedPolicies.delete(operation);
+        let postingAnchor,preparedPolicy;
+        if(policy){
+          postingAnchor=await balanceAnchor();
+          check(policy.wallet===session.wallet&&policy.pxe===session.wallet.pxe&&policy.node===session.node&&policy.number===postingAnchor.blockNumber&&policy.hash===postingAnchor.blockHash,'ROLLING_CONTEXT_CHANGED');
+          preparedPolicy={mainVersion:policy.mainVersion,localVersion:0};
+        }
+        const earlier=operation&&preparedPayments.get(operation);if(operation)preparedPayments.delete(operation);
+        const earlyPayment=earlier?.phase==='metadata'&&earlier.payment.creditCheck==='deferred-balance'&&earlier.wallet===session.wallet&&earlier.pxe===session.wallet.pxe&&earlier.node===session.node?earlier.payment:null;
+        // Only public payment metadata ran before sync. Native credit and
+        // history discovery now share the synchronized anchor and wallet lease.
+        const values=await Promise.allSettled([
+          ()=>argumentsFor(action,board,nonce,{atomicBok:action.type==='bok',postingAnchor,preparedPolicy}),
+          async()=>earlyPayment?earlyPayment.withAvailableCredit(action.type==='like'?await paidLikeArguments(action):undefined):payment(action,undefined,{preview:true}),
+        ].map(read=>Promise.resolve().then(read)));
+        const failure=values.find(value=>value.status==='rejected');if(failure)throw failure.reason;
+        await previewGuard();check(session.operationScope?.()===operation,'ROLLING_CONTEXT_CHANGED');
+        const args=plain(values[0].value),prepared=values[1].value;
         const record={action,args,nonce,method:methods[action.type]};
         await bindDraftBok(record,true);await previewGuard();
         const selected=await interaction(await selectedContract(record),record);await previewGuard();
-        const prepared=await payment(action,record);await previewGuard();
         const result=await sdk.estimatePrivateFeeActualCost({wallet:session.wallet,node:session.node,interaction:selected.call,prepared,from:session.owner,guard:previewGuard});
         await previewGuard();
         check(typeof result?.estimatedFee==='string','ROLLING_INVALID_RESPONSE');
@@ -1074,7 +1092,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       await fence();check(Number.isSafeInteger(result?.anchor?.number)&&result.anchor.number>0&&Number.isSafeInteger(result.value)&&result.value>=0&&result.value<=0xffffffff,'ROLLING_INVALID_RESPONSE');
       preparedPolicies.set(scope,{...context,number:result.anchor.number,hash:hashText(result.anchor.hash),mainVersion:result.value});
     },
-    async prefetchContext({predecessor=false,ordinaryPayment=false,likePayment=false,deferredPayment=false}={}){
+    async prefetchContext({predecessor=false,ordinaryPayment=false,likePayment=false,deferredPayment=false,preview=false}={}){
       await localGuard();const owner=getOperationScope();
       const results=await Promise.allSettled([
         guard,
@@ -1088,7 +1106,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
           // Early payment preparation uses public metadata and local class
           // registration, with no private balance utility or action arguments.
           const context={wallet:session.wallet,pxe:session.wallet.pxe,node:session.node};
-          const prepared=await measure('action.payment-prefetch',()=>payment(undefined,undefined,{ordinaryProof:ordinaryPayment,likeProof:likePayment,deferredBalance:deferredPayment}));
+          const prepared=await measure('action.payment-prefetch',()=>payment(undefined,undefined,{ordinaryProof:ordinaryPayment,likeProof:likePayment,deferredBalance:deferredPayment,preview}));
           await localGuard();check(getOperationScope()===owner&&session.wallet===context.wallet&&session.wallet.pxe===context.pxe&&session.node===context.node,'ROLLING_CONTEXT_CHANGED');
           preparedPayments.set(owner,{phase:'metadata',payment:prepared,...context});
         },

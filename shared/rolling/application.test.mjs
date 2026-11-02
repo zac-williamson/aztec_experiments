@@ -3746,3 +3746,16 @@ test('draft cost cancellation never saves an action',async()=>{
  await assert.rejects(f.restart().estimateDraftFee({type:'post',deposit:'9',content:'Preview only'},{signal:controller.signal}),{code:'ROLLING_ABORTED'});
  assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
 });
+
+test('draft preview consumes synchronized policy and deferred metadata once, with scope-bound credit reuse',async()=>{
+ const f=fixture();let scope={preparationReads:[]},metadata=0,credits=0,reuse;f.options.accountSession.operationScope=()=>scope;
+ f.options.sdk.preparePrivateFeePayment=async input=>{metadata++;assert.equal(input.creditCheck,'deferred-balance');reuse=input.creditScope.reuseAtAnchor;assert.equal(reuse(),false);
+  return {creditCheck:'deferred-balance',withAvailableCredit:async()=>{credits++;assert.equal(reuse(),true);return {creditCheck:'read-balance',availableCredit:100n,metadata:{maximumFee:'100'}};}};
+ };
+ f.options.sdk.estimatePrivateFeeActualCost=async input=>{await input.guard();assert.equal(input.prepared.availableCredit,100n);return {estimatedFee:'42'};};
+ f.app=f.restart();await f.app.prefetchContext({preview:true,deferredPayment:true});assert.equal(credits,0);
+ await f.app.prefetchPostingPolicy(async read=>({anchor:{number:1,hash:hex(42)},value:await read({number:1,hash:hex(42)})}));scope.synchronized=true;
+ assert.deepEqual(await f.app.estimateDraftFee({type:'post',deposit:'9',content:'Twenty ASCII letters'}),{estimatedFee:'42'});
+ assert.equal(f.state.policyReads.length,1);assert.equal(metadata,1);assert.equal(credits,1);assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
+ scope={synchronized:true};assert.equal(reuse(),false);
+});

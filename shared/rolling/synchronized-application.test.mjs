@@ -372,16 +372,16 @@ test('thread content and Bok budgets are captured before synchronization yields'
  const pending=app.prepare(input);input.contents[0]='changed';input.budgets[1]='0';gate.resolve();
  assert.deepEqual(await pending,{type:'thread',deposit:'1',contents:['first','second'],budgets:['0','250000']});
 });
-test('draft estimate synchronizes and discovers without predecessor, cooldown or payment preparation',async()=>{
+test('draft estimate overlaps metadata and sync without predecessor or cooldown',async()=>{
  const scope={synchronized:false},events=[],gate=Promise.withResolvers();
  const application=Object.fromEntries(names.map(name=>[name,()=>assert.fail('Unexpected '+name)]));
  application.estimateDraftFee=async action=>{await scope.contractStateReady;events.push(action.content);return {estimatedFee:'42'};};
  const wrapped=createSynchronizedRollingApplication({application,operationScope:()=>scope,contextGuard:async()=>{},
   synchronize:async options=>{assert.equal(options.ordinaryPost,true);events.push('sync');},
   prepareContractState:async({method})=>{assert.equal(method,'post');events.push('discovery');await gate.promise;},
-  prepareContext:()=>assert.fail('Preview prepared payment metadata or journal'),preparePredecessorAnchor:()=>assert.fail('Preview read journal'),beforePostingPrepare:()=>assert.fail('Preview waited cooldown')});
- const pending=wrapped.estimateDraftFee({type:'post',content:'draft'});await new Promise(setImmediate);assert.deepEqual(events,['sync','discovery']);
- gate.resolve();assert.deepEqual(await pending,{estimatedFee:'42'});assert.deepEqual(events,['sync','discovery','draft']);assert.equal(scope.contractStateReady,undefined);
+  prepareContext:options=>{assert.equal(options.preview,true);assert.equal(options.deferredPayment,true);assert.equal(options.predecessor,false);events.push('metadata');},preparePredecessorAnchor:()=>assert.fail('Preview read journal'),beforePostingPrepare:()=>assert.fail('Preview waited cooldown')});
+ const pending=wrapped.estimateDraftFee({type:'post',content:'draft'});await new Promise(setImmediate);assert.deepEqual(events,['sync','metadata','discovery']);
+ gate.resolve();assert.deepEqual(await pending,{estimatedFee:'42'});assert.deepEqual(events,['sync','metadata','discovery','draft']);assert.equal(scope.contractStateReady,undefined);
 });
 
 test('cancelled draft drains synchronization without starting contract discovery',async()=>{

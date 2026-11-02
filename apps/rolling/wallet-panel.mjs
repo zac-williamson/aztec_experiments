@@ -112,7 +112,7 @@ export function formatCredits(value,{roundUp=false}={}){
 export function createDraftFeePreview({estimate,paint,delay=250}){
  let key=null,timer=null,controller=null;
  const cancel=()=>{clearTimeout(timer);timer=null;controller?.abort();controller=null;key=null;};
- return {cancel,update(action,context){
+ const preview={cancel,update(action,context){
   if(!action){cancel();paint({state:'idle'});return;}
   const next=JSON.stringify([action,context]);if(next===key)return;
   cancel();key=next;const captured=structuredClone(action),active=controller=new AbortController();
@@ -124,9 +124,16 @@ export function createDraftFeePreview({estimate,paint,delay=250}){
     if(active.signal.aborted||controller!==active)return;
     if(typeof result?.estimatedFee!=='string'||!/^(0|[1-9][0-9]*)$/.test(result.estimatedFee))throw Error('Invalid estimate');
     paint({state:'ready',estimatedFee:result.estimatedFee});
-   }catch{if(!active.signal.aborted&&controller===active)paint({state:'unavailable'});}
+   }catch(error){
+    if(!active.signal.aborted&&controller===active){
+     // Internal wallet preemption is not a failed draft. Queue the same exact
+     // draft again; the worker waits for the foreground owner to finish.
+     if(error?.code==='ROLLING_ABORTED'){key=null;preview.update(captured,context);}
+     else paint({state:'unavailable'});
+    }
+   }
   },delay);
- }};
+ }};return preview;
 }
 export function compactAmount(value,decimals,places,roundUp=false){
  const amount=BigInt(value);if(amount<0n||!Number.isInteger(decimals)||!Number.isInteger(places)||places<1||decimals<places)throw Error('Invalid display amount');
@@ -1216,7 +1223,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  function chooseAction(type,name){
   if(busy||!unlocked()||intent||blocked)return;
   clearOperationFeedback();view='action';clearProfileDraft();draft={type,subboard:'0',content:'',name:type==='subboard'?'':name??selectedName};
-  if(COMPOSER_TYPES.has(type))requestBokBalance(true);
+  if(type==='bok')requestBokBalance();
   if(viewReady()&&!name){render();requestComposerPreparation();}else void work(loadView);
  }
  function namesView(){
@@ -1902,7 +1909,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    draft=next;}
   // Refunds can arrive while the composer is closed. Refresh this optional
   // snapshot in the background; typing and the unlocked session remain intact.
-  if(!dialog.open&&view==='action'&&COMPOSER_TYPES.has(draft.type))requestBokBalance(true);
+  if(!dialog.open&&view==='action'&&draft.type==='bok')requestBokBalance();
   if(!dialog.open){composerOpening++;returnFocus=document.activeElement;render();dialog.showModal();updatePostingBalance();closeButton.focus();}
   else render();
   if(!initializationPending)void initialize();

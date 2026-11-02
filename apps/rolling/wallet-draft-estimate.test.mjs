@@ -31,3 +31,16 @@ test('closing drains native phase and invalidates queued estimates',async()=>{
  const last=assert.rejects(f.scheduler.estimate({content:'latest'}),{code:'ROLLING_ABORTED'}),close=f.scheduler.cancelAndDrain();
  assert(f.busy);f.release.resolve();await Promise.all([first,last,close]);assert.equal(f.runs,1);assert.equal(f.busy,false);
 });
+
+test('composer warmup waits for the current quote without aborting it',async()=>{
+ const f=fixture(),quote=f.scheduler.estimate({content:'first'});await f.entered.promise;
+ const warmup=f.scheduler.background(()=>f.acquire(async()=>{f.events.push('warmup');}));
+ await new Promise(setImmediate);assert.deepEqual(f.events,['first']);
+ f.release.resolve();assert.deepEqual(await quote,{estimatedFee:'42'});await warmup;
+ assert.deepEqual(f.events,['first','warmup']);assert.equal(f.busy,false);
+});
+test('cancelled waiting warmup never acquires the wallet',async()=>{
+ const f=fixture(),quote=f.scheduler.estimate({content:'first'});await f.entered.promise;
+ const controller=new AbortController(),warmup=f.scheduler.background(()=>assert.fail('cancelled warmup ran'),{signal:controller.signal});
+ controller.abort();f.release.resolve();await quote;await warmup;assert.equal(f.busy,false);
+});

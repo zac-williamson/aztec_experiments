@@ -59,7 +59,7 @@ test('typing @bok and editing/removing it stays immediate while a shared balance
  assert.equal(f.document.querySelector('textarea'),editor);assert.equal(editor.value,'@bok this draft is still editable');assert.equal(f.reads(),1);
  assert.equal(f.document.querySelector('input[type=checkbox]'),null);assert(f.host.textContent.includes('Add credit'));
 });
-test('reopening a composer refreshes refunded Bok credit without replacing the draft or loading the account',{timeout:3000},async t=>{
+test('reopening a composer keeps cached Bok credit until an explicit refresh',{timeout:3000},async t=>{
  const refund=Promise.withResolvers();
  const f=await fixture(t,{balanceRead:count=>count===1?Promise.resolve({available:true,availableCredit:'326486'}):refund.promise});
  await f.document.until(()=>f.host.textContent.includes('0.326486 USDC available'));const before=f.core();
@@ -67,7 +67,9 @@ test('reopening a composer refreshes refunded Bok credit without replacing the d
  const editor=f.document.querySelector('textarea');editor.value='@bok keep my edited reply';editor.fire('input');
  const budget=f.document.querySelector('.bok-invitation').querySelector('input');budget.value='0.5';budget.fire('input');
  assert.equal(editor.disabled,false);assert.equal(f.document.querySelector('dialog').getAttribute('aria-busy'),'false');
- assert.equal(f.document.querySelector('[data-action-review]').disabled,true);assert(f.host.textContent.includes('0.326486 USDC available · updating'));
+ assert.equal(f.document.querySelector('[data-action-review]').disabled,true);assert(f.host.textContent.includes('0.326486 USDC available'));
+ await Promise.resolve();assert.equal(f.reads(),1);
+ f.host.querySelectorAll('button').find(b=>b.textContent==='Refresh balance').fire('click');
  await Promise.resolve();assert.equal(f.reads(),2);assert.deepEqual(f.core(),before);
  editor.value+=' while the balance updates';editor.fire('input');assert.equal(f.reads(),2);
  refund.resolve({available:true,availableCredit:'709008'});
@@ -75,13 +77,15 @@ test('reopening a composer refreshes refunded Bok credit without replacing the d
  assert.equal(f.document.querySelector('textarea'),editor);assert.equal(editor.value,'@bok keep my edited reply while the balance updates');
  assert.equal(budget.value,'0.5');assert(f.host.textContent.includes('0.709008 USDC available'));assert.equal(f.reads(),2);assert.deepEqual(f.core(),before);
 });
-test('account-page Write a post also refreshes credit without reopening the account',{timeout:3000},async t=>{
+test('account-page Write a post does not force unrelated Bok balance discovery',{timeout:3000},async t=>{
  const refund=Promise.withResolvers();
  const f=await fixture(t,{defaults:{},balanceRead:count=>count===1?Promise.resolve({available:true,availableCredit:'3'}):refund.promise});
  await f.document.until(()=>f.host.textContent.includes('0.000003 USDC available'));const before=f.core();
  f.document.querySelectorAll('button').find(b=>b.textContent==='Write a post').fire('click');
  const editor=f.document.querySelector('textarea');assert(editor);assert.equal(editor.disabled,false);
- await Promise.resolve();assert.equal(f.reads(),2);assert.deepEqual(f.core(),before);
+ await Promise.resolve();assert.equal(f.reads(),1);assert.deepEqual(f.core(),before);
+ f.host.querySelectorAll('button').find(b=>b.textContent==='Refresh balance').fire('click');
+ await Promise.resolve();assert.equal(f.reads(),2);
  refund.resolve({available:true,availableCredit:'7'});await f.document.until(()=>f.host.textContent.includes('0.000007 USDC available'));
  assert.equal(f.document.querySelector('textarea'),editor);assert.deepEqual(f.core(),before);
 });
@@ -1441,4 +1445,14 @@ test('closed composer does not restart fee previews when a balance read complete
  assert.equal(f.panel.close(),true);f.balance.resolve({available:true,availableCredit:'1000000'});
  await f.document.until(()=>f.host.textContent.includes('1 USDC available'));
  await new Promise(resolve=>setTimeout(resolve,300));assert.equal(estimates,0);
+});
+
+test('internally preempted fee preview automatically retries the unchanged draft',async()=>{
+ let attempts=0;const ready=Promise.withResolvers(),painted=[];
+ const preview=createDraftFeePreview({delay:0,paint:value=>{painted.push(value);if(value.state==='ready')ready.resolve();},estimate:async action=>{
+  assert.equal(action.content,'unchanged');if(++attempts===1)throw Object.assign(Error('wallet preempted'),{code:'ROLLING_ABORTED'});return {estimatedFee:'42'};
+ }});
+ preview.update({type:'post',content:'unchanged'},'same account');await ready.promise;
+ assert.equal(attempts,2);assert.equal(painted.some(value=>value.state==='unavailable'),false);
+ assert.deepEqual(painted.at(-1),{state:'ready',estimatedFee:'42'});preview.cancel();
 });

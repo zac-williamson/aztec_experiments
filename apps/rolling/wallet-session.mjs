@@ -385,6 +385,13 @@ export function createDraftFeeScheduler({isBusy,whenIdle,run}){
  async function cancelAndDrain(){generation++;const pending=active;if(pending){pending.controller.abort();await pending.done;}}
  return {
   get active(){return active!==null;},cancelAndDrain,
+  async background(work,{signal}={}){
+   // Warmup borrows an idle wallet; it must never cancel a visible quote.
+   while(active||isBusy()||foregroundWaiting){
+    await (active?.done??whenIdle());if(signal?.aborted)return;
+   }
+   if(signal?.aborted)return;return work();
+  },
   async foreground(work){
    if(active){foregroundWaiting++;try{await cancelAndDrain();}finally{foregroundWaiting--;}}
    return work();
@@ -435,7 +442,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
   finally{busy=false;operationScope=null;finish();}
  };
  const draftFees=createDraftFeeScheduler({isBusy:()=>busy,whenIdle:()=>operationDone,
-  run:(action,options)=>acquire(()=>synchronized.estimateDraftFee(action,options))});
+  run:(action,options)=>acquire(()=>{operationScope.preparationReads=[];return synchronized.estimateDraftFee(action,options);})});
  const locked=work=>draftFees.foreground(()=>acquire(work));
  async function fundingRead(name,args,adoptedProvider){
   const provider=adoptedProvider??(fundingProvider??=new ethers.JsonRpcProvider(selected.network.ethRpcUrl));
@@ -680,7 +687,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
  async function preparePostingState(deposit,{refreshFeeCredit=false,signal}={}){
   if(typeof refreshFeeCredit!=='boolean'||signal!==undefined&&!(signal instanceof AbortSignal))throw fail('ROLLING_INVALID_ACTION');
   if(typeof deposit!=='string'||!(/^(?:[1-9][0-9]{0,76}|0x[0-9a-f]{64})$/.test(deposit))||BigInt(deposit)===0n)throw fail('ROLLING_INVALID_ACTION');
-  return locked(async()=>{
+  return draftFees.background(()=>acquire(async()=>{
   await guardRoute();if(signal?.aborted)return;
   const results=await Promise.allSettled([()=>pxe.sync(),()=>app.prefetchContext()].map(read=>Promise.resolve().then(read)));
   const failure=results.find(result=>result.status==='rejected');if(failure)throw failure.reason;
@@ -697,7 +704,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
   // Optional display refresh shares this exact native sync and account lease.
   // It never changes payment readiness; Post still validates its own payment.
   if(refreshFeeCredit){const credit=await app.readPrivateFeeCredit();await guardRoute();return credit;}
- });}
+ }),{signal});}
  return Object.freeze({application,setRemoteProving(value){const next=value?structuredClone(value):undefined;return locked(async()=>{
    await guardRoute();if(typeof pxe.setRemoteProver!=='function')throw fail('ROLLING_REMOTE_PROVER_UNAVAILABLE');
    try{await pxe.setRemoteProver(next);}catch(error){await pxe.setRemoteProver(remote);throw error;}

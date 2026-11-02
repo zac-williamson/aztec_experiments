@@ -84,7 +84,7 @@ export function createSynchronizedRollingApplication({application,synchronize,co
     // Name completion still discovers native ownership after this fresh sync.
     // Only its public Board class/initialization reads may warm at the anchor.
     const ownedNames=Boolean(scope)&&name==='ownedIdentities';
-    const reads=[()=>synchronize({ordinaryPolicy,ordinaryPost,...(accountStatus?{accountStatus:true}:{}),...(ownedNames?{ownedNames:true}:{}),...(snapshotAncestry?{snapshotAncestry:true}:{})})];if(scope&&prepareContext&&!preview)reads.push(()=>prepareContext({predecessor:name==='prepare',
+    const reads=[()=>synchronize({ordinaryPolicy,ordinaryPost,...(accountStatus?{accountStatus:true}:{}),...(ownedNames?{ownedNames:true}:{}),...(snapshotAncestry?{snapshotAncestry:true}:{})})];if(scope&&prepareContext)reads.push(()=>prepareContext({...(preview?{preview:true,deferredPayment:true}:{}),predecessor:name==='prepare',
       ...(preparing&&Array.isArray(scope.preparationReads)&&immediate&&['post','reply','quote','repost'].includes(captured[0]?.type)?{ordinaryPayment:true}:{}),
       ...(preparing&&Array.isArray(scope.preparationReads)&&immediate&&['like'].includes(captured[0]?.type)?{likePayment:true}:{}),
       ...(preparing&&Array.isArray(scope.preparationReads)&&immediate&&['name','bio','avatar','subboard'].includes(captured[0]?.type)?{deferredPayment:true}:{})}));
