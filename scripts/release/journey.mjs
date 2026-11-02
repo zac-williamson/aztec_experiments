@@ -52,7 +52,15 @@ export async function createTestWalletBridge({wallet,provider,allowedTargets,cap
 }
 // These helpers operate the actual modal, including after account restoration.
 // Direct post/reply/Bok submission has one button; there is no second confirmation.
-export const journeyFailureSteps=Object.freeze(['setup','fund-ETH','fund-USDC','signup-ETH','signup-USDC','close-account','post-compose','post-submit','post-inclusion','reply-compose','reply-submit','reply-inclusion','like','reload','bok-compose','bok-credit','bok-submit','bok-inclusion','bok-reply','final-check']);
+const signupSteps=Object.freeze(['open','connect','quote','payment','credit','evidence']);
+export async function observeJourneySignupStep(asset,step,operation,{remaining,emit=value=>console.log(JSON.stringify(value)),now=Date.now}={}){
+ if(!['ETH','USDC'].includes(asset)||!signupSteps.includes(step)||typeof operation!=='function'||typeof remaining!=='function')throw failure('RELEASE_JOURNEY_STEP');
+ const started=now();
+ const report=state=>emit({event:'release-signup-step',asset,step,state,elapsedMs:Math.max(0,now()-started),remainingMs:Math.max(0,remaining())});
+ report('started');
+ try{const result=await operation();report('complete');return result;}catch(error){report('failed');throw error;}
+}
+export const journeyFailureSteps=Object.freeze([...['ETH','USDC'].flatMap(asset=>signupSteps.map(step=>'signup-'+asset+'-'+step)),'setup','fund-ETH','fund-USDC','signup-ETH','signup-USDC','close-account','post-compose','post-submit','post-inclusion','reply-compose','reply-submit','reply-inclusion','like','reload','bok-compose','bok-credit','bok-submit','bok-inclusion','bok-reply','final-check']);
 const actionTimeout=remaining=>Math.min(90000,remaining());
 // Inclusion can reveal a post before the panel finishes its local operation.
 // Its existing busy signal, even while hidden, owns readiness for the next action.
@@ -105,7 +113,10 @@ export async function openJourneyReply(page,card,message,remaining){
 }
 export async function clickJourneyLike(page,card,remaining){
  await waitForJourneyAccountIdle(page,remaining);
- await card.getByRole('button',{name:'Like · 20 credits',exact:true}).click({timeout:actionTimeout(remaining)});
+ await card.getByRole('button',{name:'Gift 20.00 credits',exact:true}).click({timeout:actionTimeout(remaining)});
+ const confirmation=page.getByRole('dialog',{name:'Gift 20.00 credits to the author?',exact:true});
+ await confirmation.getByRole('button',{name:'Gift 20.00 credits',exact:true}).click({timeout:actionTimeout(remaining)});
+ await confirmation.waitFor({state:'hidden',timeout:actionTimeout(remaining)});
 }
 export async function reloadJourneyPage(page,remaining){
  await waitForJourneyAccountIdle(page,remaining);
@@ -175,17 +186,22 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
     const hashesSince=async start=>{const values=await Promise.all(submissions.slice(start));if(values.some(v=>v===null))throw failure('RELEASE_SUBMISSION_INVALID');return values.flat();};
     page.on('pageerror',()=>pageErrors++);
     page.on('response',r=>{if(r.request().method()==='POST'&&r.url().startsWith(runtime.remoteProver.url)&&r.ok())proofs++;});
-    failureStep='signup-'+asset;await page.goto(cfg.stagingOrigin+'/#/new-account',{waitUntil:'domcontentloaded'});
-    // This route opens the account modal itself; the navigation button behind
-    // it is inert. Scope every signup control to that actual dialog.
-    const dialog=page.locator('dialog.account-dialog');await dialog.waitFor({state:'visible',timeout:actionTimeout(remaining)});
-    await dialog.getByRole('button',{name:'Connect CI test wallet',exact:true}).click({timeout:actionTimeout(remaining)});
-    await selectJourneySignupAsset(page,asset,remaining);
-    await dialog.getByRole('button',{name:'Confirm payment',exact:true}).click({timeout:actionTimeout(remaining)});
-    await dialog.getByText(/Your posting balance is (ready|set up)/).waitFor({timeout:remaining()});
-    const signupHashes=await hashesSince(0);if(!signupHashes.length)throw failure('RELEASE_SUBMISSION_MISSING');
-    for(const hash of signupHashes)await evidence.require([hash],()=>true,remaining);
-    if(asset==='USDC'&&await provider.getBalance(wallet.address)!==0n)throw failure('RELEASE_GASLESS_FIXTURE');
+    const signup=(step,operation)=>{failureStep='signup-'+asset+'-'+step;return observeJourneySignupStep(asset,step,operation,{remaining});};
+    const dialog=page.locator('dialog.account-dialog');
+    await signup('open',async()=>{
+     await page.goto(cfg.stagingOrigin+'/#/new-account',{waitUntil:'domcontentloaded'});
+     await dialog.waitFor({state:'visible',timeout:actionTimeout(remaining)});
+    });
+    // This route opens the account modal; its background navigation is inert.
+    await signup('connect',()=>dialog.getByRole('button',{name:'Connect CI test wallet',exact:true}).click({timeout:actionTimeout(remaining)}));
+    await signup('quote',()=>selectJourneySignupAsset(page,asset,remaining));
+    await signup('payment',()=>dialog.getByRole('button',{name:'Confirm payment',exact:true}).click({timeout:actionTimeout(remaining)}));
+    await signup('credit',()=>dialog.getByText(/Your posting balance is (ready|set up)/).waitFor({timeout:remaining()}));
+    await signup('evidence',async()=>{
+     const signupHashes=await hashesSince(0);if(!signupHashes.length)throw failure('RELEASE_SUBMISSION_MISSING');
+     for(const hash of signupHashes)await evidence.require([hash],()=>true,remaining);
+     if(asset==='USDC'&&await provider.getBalance(wallet.address)!==0n)throw failure('RELEASE_GASLESS_FIXTURE');
+    });
     await record('signup-'+asset);
     failureStep='close-account';await closeJourneyAccountPanel(page,remaining);
     if(asset==='USDC'){result.proofResponses+=proofs;if(!proofs||pageErrors)throw failure('RELEASE_BROWSER_ERRORS');continue;}
@@ -197,7 +213,17 @@ export async function runTestnetJourney(file,{onStage=async()=>{},expectedOrigin
      const start=submissions.length,kind=buyBokCredit?'bok':'post';
      failureStep=kind+'-compose';await openJourneyComposer(page,message,remaining);
      if(buyBokCredit){failureStep='bok-credit';await buyJourneyBokCredit(page,remaining);}
-     failureStep=kind+'-submit';await submitJourneyComposer(page,kind,remaining);
+     failureStep=kind+'-submit';
+     if(kind==='post'){
+      // Exercise the actual worker preview before the first real send. A
+      // maximum, placeholder or failed estimate cannot satisfy this check.
+      await page.waitForFunction(()=>{
+       const cost=document.querySelector('dialog[open] [data-estimated-cost]');
+       return cost?.getAttribute('aria-busy')==='false'&&/^\d+\.\d{2} credits$/.test(cost.textContent);
+      },null,{timeout:remaining()});
+      console.log(JSON.stringify({event:'release-fee-preview',status:'ready'}));
+     }
+     await submitJourneyComposer(page,kind,remaining);
      failureStep=kind+'-inclusion';
      const {card,receipt}=await waitForJourneyPost(page,message,remaining);
      const hashes=await hashesSince(start);if(!hashes.includes(receipt.hash))throw failure('RELEASE_INCLUSION');

@@ -90,6 +90,16 @@ main{min-width:0;animation:rise var(--t) var(--ease) both}
 .page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
 .page-head>div{min-width:0}
 .page-head>.button{flex-shrink:0}
+.conversation-heading{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:12px;align-items:center}
+.conversation-heading h1{grid-column:2;margin:0}
+.conversation-heading .intro{grid-column:2}
+.conversation-back{grid-column:1;grid-row:1;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ink)}
+.conversation-back:hover{background:var(--surface-2)}
+.conversation-back .icon{width:24px;height:24px}
+.tip-confirmation{width:min(400px,calc(100% - 32px))}
+.tip-confirmation h2{font-size:22px;margin:0 0 12px}
+.tip-confirmation p{color:var(--muted)}
+.gift-button{min-width:40px;justify-content:center}
 .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line)}
 .tabs a{position:relative;display:inline-flex;align-items:center;height:44px;padding:0 14px;color:var(--muted);font-size:15px;font-weight:600;text-decoration:none;border-radius:var(--radius) var(--radius) 0 0;transition:color var(--t-fast),background var(--t-fast)}
 .tabs a:hover{color:var(--ink);background:var(--surface-2);text-decoration:none}
@@ -437,6 +447,7 @@ dialog::backdrop{background:rgb(15 23 42/.45);backdrop-filter:blur(2px);animatio
 .composer-rules p{margin:8px 0}.composer-rules .post-body{font-size:14px}
 .composer-cost{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;margin:12px 0 4px;color:var(--muted);font-size:13px}
 .composer-cost strong{color:var(--ink);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cost-pending{display:inline-block;width:5.5em;height:1em;vertical-align:-.12em;border-radius:4px;background:var(--line-strong);filter:blur(3px);opacity:.65}
 .composer-cost small{font-size:11px}
 .credit-presets,.credit-total{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .account-dialog .credit-presets .button{min-height:36px;padding:0 16px;margin:0}

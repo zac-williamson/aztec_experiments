@@ -80,7 +80,7 @@ export {default as portalRuntimeMetadata} from './portal-runtime.json' with {typ
 
 export {deriveBoardDepositSecret,recoverBoardDepositSecret} from './deposit-custody.mjs';
 
-export {estimatePrivateFeeTransaction,sendPrivateFeeTransaction} from './private-fee-estimation.mjs';
+export {estimatePrivateFeeActualCost,estimatePrivateFeeTransaction,sendPrivateFeeTransaction} from './private-fee-estimation.mjs';
 export {consumePrivateFeeSimulationValidation} from './private-fee-validation.mjs';
 export {provingEnabledForNode} from './proving-policy.mjs';
 

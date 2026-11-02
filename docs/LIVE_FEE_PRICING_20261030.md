@@ -1,6 +1,7 @@
 # Live fee pricing — 30 October 2026
 
-Status: source implemented and independently reviewed; not yet published.
+Status: candidate `82d3414c` is pushed and sealed on the application server;
+clean CI passed, but publication is pending the installed real-testnet gate.
 
 The signup blocker compared current minimum fees to a deployment-time configured
 price and required a site update when that static price was lower. Fresh actions
@@ -9,13 +10,14 @@ prices. Existing approved budgets remain binding; a required increase produces a
 new quote rather than silently spending more. SDK preparation, signup, top-ups,
 worker metadata and registration checks were audited together.
 
-The gateway mistakenly applied full private-state readiness inspection before
+The separately investigated gateway applies full private-state readiness inspection before
 fee-only reads. Normal inspection reads node identity, chain tips, world-state
-status, the L1 sync timestamp and canonical block anchors. Fee-only requests now
-read the native fee cache directly using a separate SDK batching queue. Required
-chain/version/rollup headers on that same response preserve network identity.
-Mixed/state/send requests retain their prior policy. No extra fee cache, poller,
-fixed price or clock-based readiness policy was added.
+status, the L1 sync timestamp and canonical block anchors. An optimization is
+retained on `codex/fee-gateway-fast-path-20261030`, but is **not included in this
+application release**. Gateway source remains identical to the live baseline.
+The measured gateway overhead was milliseconds; it did not explain the long
+connection stalls below. This deployment changes neither contracts nor node
+infrastructure.
 
 ## Observations, not an end-to-end performance claim
 
@@ -37,13 +39,39 @@ succeeded after applying the repository's existing dependency bootstrap.
 Independent fast_reply_review approved the current diff; flow_scope_efficiency
 reviewed the fee path and found the shared SDK batching-queue coupling.
 
-Remaining: publish the qualified prover source overlay, publish the rebuilt SDK
-and app through the installed release route, run affected real flows, and measure
-warm browser fee acquisition. The installed app prepare step currently copies
-the baseline SDK and does not rebuild changed SDK source; its existing release
-policy also requires separately qualifying prover changes. Resolve these actual
-publication dependencies without weakening source/provenance checks or changing
-contracts. No runtime or infrastructure mutation was made during this diagnosis.
+The installed app preparation step now accepts an independently built SDK from
+a root-owned revision directory, verifies every declared output, and checks all
+source inputs against the candidate before sealing it. The rebuilt SDK has
+2,115 input hashes and 71 outputs; only the two intended fee-pricing source
+inputs differ from the live baseline. The three checked-in browser SDK consumers
+were refreshed in `82d3414c` after CI correctly rejected their stale bytes.
+
+Remaining: complete the installed release gate, including
+fresh ETH and USDC signup and actual Aztec posting, before publishing. No gateway
+or contract change is necessary for this pricing fix.
+
+## Release execution
+
+Full CI `41053416243` passed for `82d3414c`, including clean builds, byte-for-byte
+reproducibility and the committed SDK consumer checks. The first installed
+journey passed ETH signup, post, reply, paid like and reload, then timed out at
+`bok-reply`. It did not reach USDC signup and did not promote the candidate.
+
+The exact Bok error was `BB_OPERATOR_FEE_BALANCE_INSUFFICIENT`. Its public
+FeeJuice balance was 13.2845318755286 FEE, below the SDK's full transaction
+reservation at the then-current network price. This was not a depleted user
+balance or the removed static signup-price gate. An operator-only top-up bridged
+200 testnet FEE and claimed them using the existing `claim-fees` command:
+
+- Sepolia deposit: `0x1c3bdaf951eb53200b234086de8b83acdf1c785597e44a03144b62f3723b9dbe`.
+- Aztec claim: `0x0a75d98a1f71e71e26f8b449d0e72eb3746d12e170ce7716f923d84f66aebfad`, checkpointed.
+- Observed operator balance afterward: 208.4361010830244 FEE.
+- Bok completed the blocked reply and returned to ready with zero active work.
+
+The empty repository allocation used by the disposable reply-only check was
+released after confirming its remote branch remained at the original commit,
+with no generated revisions. No GitHub content or application contracts changed.
+Release workflow `41057436972`, attempt 2, is rerunning the genuine journey.
 
 ## Follow-up: reproduced long stalls traced before HTTP
 
@@ -104,3 +132,12 @@ application execution latency. No endpoint, retry policy, node or infrastructure
 configuration was changed based on the unproven CloudFront-fault hypothesis.
 
 [Fresh-browser and control evidence](../execution/evidence/G21/stable6/live-fee-pricing/fresh-browser-and-control-trace.json).
+
+## 2 November resumption
+
+The second installed release attempt passed ETH signup, post, reply, paid like,
+reload and Bok, then exhausted the shared nine-minute journey budget during USDC
+signup (`RELEASE_JOURNEY_TIMEOUT`). The prior diagnostics did not record which
+USDC substep was active. The candidate was not promoted; live remained `6e5f02ab`.
+The next UI candidate includes these pricing fixes and adds sanitized signup
+substep timings. Do not infer an on-chain payment failure from this watchdog.

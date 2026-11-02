@@ -197,7 +197,7 @@ globalThis.addEventListener('message',event=>{
   localGuard();if(closing)throw workerFailure('ROLLING_CONTEXT_CHANGED');const args=message.args,callbacks=message.callbacks??[];
   if(!Array.isArray(callbacks)||callbacks.some(name=>!CALLBACKS.includes(name)))throw workerFailure();
   if(callbacks.length||message.signal){const index=args.length>1?1:0;const options=args[index]??{};if(!options||typeof options!=='object'||Array.isArray(options))throw workerFailure();args[index]={...options,...Object.fromEntries(callbacks.map(name=>[name,(...values)=>name==='onPrepared'?ask('callback',{operationId:message.id,name,args:values}):send({type:'callback',id:message.id,name,args:values})])),...(message.signal?{signal:controller.signal}:{})};}
-  const visible=!['initialize','deriveAccount','openAccount','close','observeIncluded','withdrawal.observe','withdrawal.waitUntilReady'].includes(message.method)&&(!message.method.startsWith('funding.')||message.method==='funding.advanceClaim');
+  const visible=!['application.estimateDraftFee','initialize','deriveAccount','openAccount','close','observeIncluded','withdrawal.observe','withdrawal.waitUntilReady'].includes(message.method)&&(!message.method.startsWith('funding.')||message.method==='funding.advanceClaim');
   if(visible)foreground++;
   return Promise.resolve().then(()=>invoke(message.method,args)).finally(()=>{if(visible)foreground--;});
  }).then(value=>structuredClone(value)).then(value=>send({type:'result',id:message.id,value,...(settings?{metadata:metadata()}:{})}),error=>send({type:'result',id:message.id,error:errorRecord(error)})).finally(()=>operations.delete(message.id));

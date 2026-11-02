@@ -2,7 +2,7 @@ import {executeRollingAction} from './wallet-action.mjs';
 // Labelled DOM and session doubles. No browser, crypto, RPC or real account.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mountRollingWalletPanel,runTopupPayment,compactAmount,fundingProgressMessage} from './wallet-panel.mjs';
+import {mountRollingWalletPanel,runTopupPayment,compactAmount,formatCredits,createDraftFeePreview,fundingProgressMessage} from './wallet-panel.mjs';
 function dom(t){
  let document;const observers=new Set(),changed=()=>{for(const fn of observers)fn();};
  class Element{
@@ -240,7 +240,7 @@ test('submission rejection retains the exact draft and unresolved action without
 });
 
 test('composer shows two compact fee numbers without extra account reads or review disclaimer',{timeout:3000},async t=>{
- const f=await fixture(t);const summary=f.document.querySelector('.composer-cost');assert(summary);assert.equal(summary.querySelectorAll('strong').length,2);assert(summary.textContent.includes('Balance 1'));assert(summary.textContent.includes('Max cost 0.001'));assert(!f.document.body.textContent.includes('Published content cannot be erased'));
+ const f=await fixture(t);const summary=f.document.querySelector('.composer-cost');assert(summary);assert.equal(summary.querySelectorAll('strong').length,2);assert(summary.textContent.includes('Balance 1'));assert(summary.textContent.includes('Estimated cost:'));assert(!f.document.body.textContent.includes('Published content cannot be erased'));
  assert.deepEqual(f.core(),{sessions:1,status:1,names:0,moderator:0});f.balance.resolve({available:true,availableCredit:'0'});
 });
 test('main name dropdown loads names on request and leaves Create available without signup reads',{timeout:3000},async t=>{
@@ -546,10 +546,10 @@ test('a bounded fee reservation failure explains the outcome without exposing pr
 test('ordinary and Bok composers show their respective maximum posting costs',{timeout:3000},async t=>{
  const f=await fixture(t,{ordinaryLimit:'200000000000000'});await f.started.promise;f.balance.resolve({available:true,availableCredit:'1000000'});
  await f.document.until(()=>f.host.textContent.includes('1 USDC available'));
- assert(f.document.querySelector('.composer-cost').textContent.includes('Max cost 0.0002'));
+ assert(f.document.querySelector('.composer-cost').textContent.includes('Estimated cost:'));assert(!f.document.querySelector('.composer-cost').textContent.includes('Max cost'));
  const editor=f.document.querySelector('textarea');editor.value='@bok help';editor.fire('input');
- assert(f.document.querySelector('.composer-cost').textContent.includes('Max cost 0.001'));
- editor.value='Ordinary post';editor.fire('input');assert(f.document.querySelector('.composer-cost').textContent.includes('Max cost 0.0002'));
+ assert(f.document.querySelector('.composer-cost').textContent.includes('Estimated cost:'));assert(!f.document.querySelector('.composer-cost').textContent.includes('Max cost'));
+ editor.value='Ordinary post';editor.fire('input');assert(f.document.querySelector('.composer-cost').textContent.includes('Estimated cost:'));assert(!f.document.querySelector('.composer-cost').textContent.includes('Max cost'));
 });
 
 test('native insufficient-credit failure keeps a usable composer and its draft',{timeout:3000},async t=>{
@@ -684,7 +684,7 @@ for(const [type,values] of [
  const f=await fixture(t,{defaults:{type},moderator:true,posting:{},balanceRead:async()=>({available:true,availableCredit:'0'}),ordinaryLimit:'9000000000000000'});
  const controls=f.document.querySelectorAll('input,textarea').filter(n=>n.getAttribute('type')!=='hidden');
  for(const [i,value]of Object.values(values).entries()){controls[i].value=value;controls[i].fire('input');}
- const action=f.document.querySelector('[data-action-review]');assert.notEqual(action.textContent,'Review cost');assert.equal(action.disabled,false);assert(f.document.querySelector('.composer-cost').textContent.includes('0.001'));
+ const action=f.document.querySelector('[data-action-review]');assert.notEqual(action.textContent,'Review cost');assert.equal(action.disabled,false);assert(f.document.querySelector('.composer-cost').textContent.includes('Estimated cost:'));
  action.fire('click');await f.document.until(()=>f.submissions.length===1&&!f.document.querySelector('dialog').open);
  assert.deepEqual(f.prepared(),{type,...values});assert.deepEqual(f.prepareOptions,[{immediate:true}]);assert.equal(f.submissions.length,1);
 });
@@ -1026,7 +1026,7 @@ for(const mode of ['success','no-collateral','zero-credit','native-failure','acc
   assert.equal(f.document.querySelectorAll('button').some(b=>b.textContent==='Write a post'),mode==='success');
   if(mode==='no-collateral')assert(f.document.querySelectorAll('button').some(b=>b.textContent==='Set up posting'));
   if(mode==='zero-credit')assert(f.document.body.textContent.includes('Your deposit is already in place.'));
-  f.panel.close();f.panel.open({});f.document.querySelectorAll('button').find(b=>b.textContent==='Add posting credit').fire('click');assert(f.document.querySelectorAll('strong').some(n=>n.textContent===(mode==='zero-credit'?'0':'2')));
+  f.panel.close();f.panel.open({});f.document.querySelectorAll('button').find(b=>b.textContent==='Add posting credit').fire('click');assert(f.document.querySelectorAll('strong').some(n=>n.textContent===(mode==='zero-credit'?'0.00':'2.00')));
   if(mode==='success'){f.panel.close();assert.equal((await f.panel.act({type:'like',post:'42'})).status,'confirmed');assert.equal(f.submissions.length,1);}
  }else{
   await f.document.until(()=>f.document.querySelector('dialog').getAttribute('aria-busy')==='false');assert(!f.document.body.textContent.includes('Posting credit added'));assert.equal(f.core().status,1);
@@ -1337,7 +1337,7 @@ test('successful posting-credit claim survives unavailable display read and refr
  assert.match(identity.textContent,/Updating/);assert.equal(identity.querySelector('[data-posting-credit]').title,undefined);
  await entered.promise;assert.equal(payments,1);assert.equal(claims,1);assert.equal(reads,2);
  refreshed.resolve({availableCredit:'539000000000000000000'});
- await f.document.until(()=>identity.querySelector('[data-posting-credit]')?.textContent==='539');
+ await f.document.until(()=>identity.querySelector('[data-posting-credit]')?.textContent==='539.00');
  assert.equal(payments,1);assert.equal(claims,1);assert.equal(reads,2);assert.equal(f.core().status,1);
 });
 
@@ -1397,4 +1397,48 @@ test('opening a tip dialog retains its captured recipient key through form submi
  const tipKey={x:'1',y:'2'};f.panel.close();f.panel.open({type:'like',post:'9',tipKey});tipKey.x='99';
  const send=await f.document.until(()=>f.document.querySelector('[data-action-review]'));send.fire('click');
  await f.document.until(()=>f.submissions.length===1);assert.deepEqual(f.prepared().tipKey,{x:'1',y:'2'});
+});
+
+test('credits use exact BigInt two-decimal rounding, independently of ETH precision',()=>{
+ for(const [input,expected] of [['0','0.00'],['1','0.00'],['2394999999999999999','2.39'],['2395000000000000000','2.40'],['999999999999999999999999999999999999','1000000000000000000.00']])assert.equal(formatCredits(input),expected);
+ assert.equal(compactAmount('1',18,8,true),'0.00000001');
+ assert.equal(formatCredits('4004000000000000000',{roundUp:true}),'4.01');
+});
+test('fee preview coalesces typing, drops stale results and aborts without waiting for network completion',async()=>{
+ const calls=[],painted=[],started=Promise.withResolvers();
+ const preview=createDraftFeePreview({delay:0,paint:value=>painted.push(value),estimate:(action,options)=>{
+  const result=Promise.withResolvers();calls.push({action,options,result});started.resolve();return result.promise;
+ }});
+ preview.update({type:'post',content:'a'},'account');preview.update({type:'post',content:'latest'},'account');
+ await started.promise;assert.equal(calls.length,1);assert.equal(calls[0].action.content,'latest');
+ preview.update({type:'post',content:'new draft'},'account');assert.equal(calls[0].options.signal.aborted,true);
+ calls[0].result.resolve({estimatedFee:'9990000000000000000'});
+ await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal(calls.length,2);assert(!painted.some(v=>v.state==='ready'));
+ calls[1].result.resolve({estimatedFee:'2400000000000000000'});await new Promise(setImmediate);
+ assert.deepEqual(painted.at(-1),{state:'ready',estimatedFee:'2400000000000000000'});
+ preview.cancel();assert.equal(calls[1].options.signal.aborted,true);
+});
+test('composer shows blur while estimating, keeps Post enabled, and cancels preview on Post',{timeout:3000},async t=>{
+ const begun=Promise.withResolvers(),result=Promise.withResolvers();let signal;
+ const f=await fixture(t,{posting:{submit:async()=>{}}});
+ f.balance.resolve({available:true,availableCredit:'1000000'});
+ f.session.application.estimateDraftFee=(action,options)=>{signal=options.signal;begun.resolve(action);return result.promise;};
+ const editor=f.document.querySelector('textarea');editor.value='The exact draft';editor.fire('input');
+ await f.document.until(()=>f.document.querySelector('.cost-pending'));assert.equal(editor.disabled,false);
+ assert.equal(f.document.querySelector('[data-action-review]').disabled,false);
+ const action=await begun.promise;assert.equal(action.content,'The exact draft');
+ f.document.querySelector('[data-action-review]').fire('click');
+ assert.equal(signal.aborted,true);await f.document.until(()=>f.submissions.length===1&&!f.document.querySelector('dialog').open);
+ assert.equal(f.prepared().content,'The exact draft');
+ result.resolve({estimatedFee:'2400000000000000000'});
+});
+
+test('closed composer does not restart fee previews when a balance read completes',{timeout:3000},async t=>{
+ const f=await fixture(t);let estimates=0;
+ f.session.application.estimateDraftFee=async()=>{estimates++;return {estimatedFee:'2400000000000000000'};};
+ const editor=f.document.querySelector('textarea');editor.value='A draft';editor.fire('input');
+ assert.equal(f.panel.close(),true);f.balance.resolve({available:true,availableCredit:'1000000'});
+ await f.document.until(()=>f.host.textContent.includes('1 USDC available'));
+ await new Promise(resolve=>setTimeout(resolve,300));assert.equal(estimates,0);
 });

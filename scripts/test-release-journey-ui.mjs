@@ -9,7 +9,7 @@ import {fileURLToPath} from 'node:url';
 import {chromium} from 'playwright';
 import {closeJourneyAccountPanel,openJourneyMainBoard,journeyPostCard,waitForJourneyPost,selectJourneySignupAsset,openJourneyComposer,submitJourneyComposer,buyJourneyBokCredit,openJourneyReply,clickJourneyLike,reloadJourneyPage} from './release/journey.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const fixture=`<!doctype html><html><head><meta charset="utf-8"></head><body><nav aria-label="Community"><a href="#/home">Home</a><a href="#/board/0">Main board</a></nav><section id="feed"></section><button id="write">Write a post</button><article id="action-card"><button id="reply">Reply</button><button id="like">Like · 20 credits</button></article>
+const fixture=`<!doctype html><html><head><meta charset="utf-8"></head><body><nav aria-label="Community"><a href="#/home">Home</a><a href="#/board/0">Main board</a></nav><section id="feed"></section><button id="write">Write a post</button><article id="action-card"><button id="reply">Reply</button><button id="like">Gift 20.00 credits</button></article>
 <script type="module">
 import {mountRollingWalletPanel} from '/apps/rolling/wallet-panel.mjs';
 import {executeRollingAction} from '/apps/rolling/wallet-action.mjs';
@@ -62,14 +62,21 @@ let publicPosts=[],priorityTxs=[];
 window.showPublicPosts=(posts=publicPosts,priorities=priorityTxs)=>{
  publicPosts=posts;priorityTxs=priorities;
  const items=location.hash==='#/board/0'?[...posts].reverse():createFeedRanking({items:posts,now:1000,seed:'ui-regression',priorityTxs}).page().items;
- document.querySelector('#feed').replaceChildren(...items.map(post=>{const article=document.createElement('article');article.className='post';article.id='post-'+post.id;article.textContent=post.text;const like=document.createElement('button');like.textContent='Like · 20 credits';like.onclick=()=>calls.liked=post.id;article.append(like);return article;}));
+ document.querySelector('#feed').replaceChildren(...items.map(post=>{const article=document.createElement('article');article.className='post';article.id='post-'+post.id;article.textContent=post.text;const like=document.createElement('button');like.textContent='Gift 20.00 credits';like.onclick=()=>calls.liked=post.id;article.append(like);return article;}));
  document.querySelector('#write').toggleAttribute('data-board-compose',location.hash==='#/board/0');
 };
 addEventListener('hashchange',()=>showPublicPosts());
 window.panel=mountRollingWalletPanel({loadRuntime:async()=>runtime});
 document.querySelector('#write').onclick=()=>panel.open({type:'post',subboard:'0'});
 document.querySelector('#reply').onclick=()=>{calls.replyClicks++;panel.open({type:'reply',parent:'10',root:'10',subboard:'0'});};
-document.querySelector('#like').onclick=()=>{calls.likeClicks++;void panel.act({type:'like',post:'10'});};
+document.querySelector('#like').onclick=()=>{
+ calls.likeClicks++;
+ // Selector fixture only: production reader confirmation/cancellation has its own tests.
+ const dialog=document.createElement('dialog');dialog.setAttribute('aria-labelledby','gift-title');
+ const title=document.createElement('h2');title.id='gift-title';title.textContent='Gift 20.00 credits to the author?';
+ const gift=document.createElement('button');gift.textContent='Gift 20.00 credits';gift.onclick=()=>{dialog.close();dialog.remove();void panel.act({type:'like',post:'10'});};
+ dialog.append(title,gift);document.body.append(dialog);dialog.showModal();
+};
 panel.open({});
 </script></body></html>`;
 async function setup(t,{locked=false,fundingConnected=true,deferredActions=false,fundingSignup=false,ethFundingAvailable=false}={}){
@@ -133,7 +140,7 @@ test('release uses chronological Main board and pins Like to the original receip
  await openJourneyMainBoard(page,remaining);
  assert.deepEqual(await page.locator('article.post').evaluateAll(nodes=>nodes.map(n=>n.id)),['post-2','post-1']);
  const old=page.locator('article.post').filter({hasText:tag}).first();assert.equal(await old.getAttribute('id'),'post-2','old text locator silently retargets the reply even on Main board');
- await journeyPostCard(page,'post-1').getByRole('button',{name:'Like · 20 credits',exact:true}).click();
+ await journeyPostCard(page,'post-1').getByRole('button',{name:'Gift 20.00 credits',exact:true}).click();
  assert.equal(await page.evaluate(()=>calls.liked),'1');
  assert.throws(()=>journeyPostCard(page,'post-1, article'),{code:'RELEASE_INCLUSION'});
 });

@@ -6,7 +6,7 @@ Objective state: **running**. Completed packages: 29/59.
 
 ## In progress
 
-- **Same-owner signup restart and stuck-deposit refund (G21)** — 30 October: live network fee pricing implemented and independently reviewed. Owner requests immediate app publication. Gateway optimization retained separately; prover stays unchanged. Root preparing exact-revision rebuilt SDK for installed release route, then genuine ETH/USDC signup acceptance.
+- **Same-owner signup restart and stuck-deposit refund (G21)** — 2 November: owner requests nonblocking worker estimated fees with blurred pending state, two-decimal FEE displays, confirmed 20-credit heart tips, and conversation Back arrow. Implementing coherent UI changes; prior dynamic-pricing release outcome under inspection. Performance campaign remains paused.
 
 ## Ready internal work
 

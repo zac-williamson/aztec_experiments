@@ -2,7 +2,7 @@ import {capturePaidLikeAction} from './application.mjs';
 import {captureThreadAction} from './thread-action.mjs';
 // The caller owns the account lock, PXE lifetime and trusted-route guard.
 // autoSync:false synchronizes once per account flow, and again after chain state changes.
-const methods=['readFundingState','readWithdrawalReadiness','readBokAccounting','readBalances','readWithdrawal','readModeratorStatus','readBokStatus','readPrivateFeeCredit','prepareBokPost','prepareBokRelease','readAccountStatus','readProfile','ownedIdentities','prepare','submitPrepared','cancelPrepared','reconcile','inspectRecovery','prepareReplacement','prepareInterrupted','resumeSaved'];
+const methods=['estimateDraftFee','readFundingState','readWithdrawalReadiness','readBokAccounting','readBalances','readWithdrawal','readModeratorStatus','readBokStatus','readPrivateFeeCredit','prepareBokPost','prepareBokRelease','readAccountStatus','readProfile','ownedIdentities','prepare','submitPrepared','cancelPrepared','reconcile','inspectRecovery','prepareReplacement','prepareInterrupted','resumeSaved'];
 // This financial confirmation must bind the caller's selection before the
 // synchronization await, not retain a mutable object until the raw app runs.
 function savedResumeArguments(args){
@@ -45,19 +45,26 @@ const boardStateMethods=Object.freeze({thread:'post_thread',name:'register_name'
 export function createSynchronizedRollingApplication({application,synchronize,contextGuard,operationScope=()=>null,prepareContext,prepareContractState,preparePredecessorAnchor,beforePostingPrepare}){
  if(typeof synchronize!=='function'||typeof contextGuard!=='function'||prepareContext!==undefined&&typeof prepareContext!=='function'||prepareContractState!==undefined&&typeof prepareContractState!=='function'||preparePredecessorAnchor!==undefined&&typeof preparePredecessorAnchor!=='function'||beforePostingPrepare!==undefined&&typeof beforePostingPrepare!=='function')throw Error('Rolling synchronization unavailable');
  const refreshPostingAnchor=Symbol('refresh-posting-anchor');
- const calls=methods.map(name=>{
+ const calls=methods.filter(name=>name!=='estimateDraftFee'||typeof application?.[name]==='function').map(name=>{
   if(typeof application?.[name]!=='function')throw Error('Rolling application unavailable');
   const call=application[name].bind(application);
   return [name,async(...args)=>{
    if(name==='readFundingState'&&args.length!==0)throw Object.assign(Error('Invalid Rolling action'),{code:'ROLLING_INVALID_ACTION'});
-   const captured=name==='prepare'&&args[0]?.type==='like'?[capturePaidLikeAction(args[0]),...args.slice(1)]:name==='prepare'&&args[0]?.type==='thread'?[captureThreadAction(args[0]),...args.slice(1)]:name==='readAccountStatus'?accountStatusArguments(args):name==='resumeSaved'?savedResumeArguments(args):name==='prepareBokRelease'?bokReleaseArguments(args):['readBalances','readBokAccounting'].includes(name)?balanceArguments(args,name==='readBalances'):args;
+   const captured=['prepare','estimateDraftFee'].includes(name)&&args[0]?.type==='like'?[capturePaidLikeAction(args[0]),...args.slice(1)]:['prepare','estimateDraftFee'].includes(name)&&args[0]?.type==='thread'?[captureThreadAction(args[0]),...args.slice(1)]:name==='readAccountStatus'?accountStatusArguments(args):name==='resumeSaved'?savedResumeArguments(args):name==='prepareBokRelease'?bokReleaseArguments(args):['readBalances','readBokAccounting'].includes(name)?balanceArguments(args,name==='readBalances'):args;
+   const preview=name==='estimateDraftFee';
+   const checkContext=preview?async()=>{
+    const cancelled=()=>{if(captured[1]?.signal?.aborted)throw Object.assign(Error('Draft estimate cancelled'),{code:'ROLLING_ABORTED'});};
+    cancelled();await contextGuard();cancelled();
+   }:contextGuard;
    for(;;){
-   const stateMethod=name==='prepare'&&Object.hasOwn(boardStateMethods,captured[0]?.type)?boardStateMethods[captured[0].type]:undefined;
-   await contextGuard();
+   const preparing=name==='prepare'||preview;
+   const immediate=preview||captured[1]?.immediate===true;
+   const stateMethod=preparing&&Object.hasOwn(boardStateMethods,captured[0]?.type)?boardStateMethods[captured[0].type]:undefined;
+   await checkContext();
    const scope=operationScope();let ordinaryPost=false;
    if(name==='readFundingState'&&(!scope||!scope.synchronized)){
     const metadata=await call({beforeSync:true});
-    await contextGuard();
+    await checkContext();
     if(operationScope()!==scope)throw Object.assign(Error('Rolling operation changed'),{code:'ROLLING_CONTEXT_CHANGED'});
     // Do not mark this operation synchronized: bridge readiness and the next
     // real preparation still require their normal fresh native anchor.
@@ -68,37 +75,37 @@ export function createSynchronizedRollingApplication({application,synchronize,co
    if(name!=='readModeratorStatus'&&(!scope||!scope.synchronized)){
     // The native sync and public readiness reads are independent. Neither
     // failure may release the account lease while its sibling is still running.
-    ordinaryPost=Boolean(scope)&&name==='prepare'&&captured[1]?.immediate===true&&['post','reply','quote','repost'].includes(captured[0]?.type);
+    ordinaryPost=Boolean(scope)&&preparing&&immediate&&['post','reply','quote','repost'].includes(captured[0]?.type);
     const ordinaryPolicy=ordinaryPost&&(captured[0].subboard===undefined||/^(0|0x0{64})$/.test(captured[0].subboard));
     const accountStatus=Boolean(scope)&&name==='readAccountStatus'&&captured[0]?.opening===true;
     // Likes use the same verified captured-anchor ancestry as account reads.
     // Only this owned immediate action changes synchronization strategy.
-    const snapshotAncestry=Boolean(scope)&&name==='prepare'&&captured[1]?.immediate===true&&['like'].includes(captured[0]?.type);
+    const snapshotAncestry=Boolean(scope)&&preparing&&immediate&&['like'].includes(captured[0]?.type);
     // Name completion still discovers native ownership after this fresh sync.
     // Only its public Board class/initialization reads may warm at the anchor.
     const ownedNames=Boolean(scope)&&name==='ownedIdentities';
-    const reads=[()=>synchronize({ordinaryPolicy,ordinaryPost,...(accountStatus?{accountStatus:true}:{}),...(ownedNames?{ownedNames:true}:{}),...(snapshotAncestry?{snapshotAncestry:true}:{})})];if(scope&&prepareContext)reads.push(()=>prepareContext({predecessor:name==='prepare',
-      ...(name==='prepare'&&Array.isArray(scope.preparationReads)&&captured[1]?.immediate===true&&['post','reply','quote','repost'].includes(captured[0]?.type)?{ordinaryPayment:true}:{}),
-      ...(name==='prepare'&&Array.isArray(scope.preparationReads)&&captured[1]?.immediate===true&&['like'].includes(captured[0]?.type)?{likePayment:true}:{}),
-      ...(name==='prepare'&&Array.isArray(scope.preparationReads)&&captured[1]?.immediate===true&&['name','bio','avatar','subboard'].includes(captured[0]?.type)?{deferredPayment:true}:{})}));
+    const reads=[()=>synchronize({ordinaryPolicy,ordinaryPost,...(accountStatus?{accountStatus:true}:{}),...(ownedNames?{ownedNames:true}:{}),...(snapshotAncestry?{snapshotAncestry:true}:{})})];if(scope&&prepareContext&&!preview)reads.push(()=>prepareContext({predecessor:name==='prepare',
+      ...(preparing&&Array.isArray(scope.preparationReads)&&immediate&&['post','reply','quote','repost'].includes(captured[0]?.type)?{ordinaryPayment:true}:{}),
+      ...(preparing&&Array.isArray(scope.preparationReads)&&immediate&&['like'].includes(captured[0]?.type)?{likePayment:true}:{}),
+      ...(preparing&&Array.isArray(scope.preparationReads)&&immediate&&['name','bio','avatar','subboard'].includes(captured[0]?.type)?{deferredPayment:true}:{})}));
     const results=await Promise.allSettled(reads.map(read=>Promise.resolve().then(read)));
     const failure=results.find(result=>result.status==='rejected');if(failure)throw failure.reason;
     if(scope&&operationScope()!==scope)throw Object.assign(Error('Rolling operation changed'),{code:'ROLLING_CONTEXT_CHANGED'});
     if(scope)scope.synchronized=true;
    }
-   await contextGuard();
-   const overlapMethod=ordinaryPost?'post':scope&&captured[1]?.immediate===true&&['like','name','bio','avatar','subboard'].includes(captured[0]?.type)?stateMethod:undefined;
+   await checkContext();
+   const overlapMethod=ordinaryPost?'post':scope&&immediate&&['like','name','bio','avatar','subboard'].includes(captured[0]?.type)?stateMethod:undefined;
    if(scope&&stateMethod&&prepareContractState&&!overlapMethod){
     await prepareContractState({method:stateMethod});
     if(operationScope()!==scope)throw Object.assign(Error('Rolling operation changed'),{code:'ROLLING_CONTEXT_CHANGED'});
-    await contextGuard();
+    await checkContext();
    }
    const invoke=async()=>{
-    if(beforePostingPrepare&&name==='prepare'&&captured[1]?.immediate===true&&['post','reply','quote','repost','thread','bok'].includes(captured[0]?.type)){
+    if(beforePostingPrepare&&!preview&&preparing&&immediate&&['post','reply','quote','repost','thread','bok'].includes(captured[0]?.type)){
      // The existing native discovery barrier owns this exact synchronized scope.
      // No workflow intent exists while readiness is inspected or chain time waits.
      if(scope?.contractStateReady)await scope.contractStateReady;
-     const ready=await beforePostingPrepare(captured[0]);await contextGuard();
+     const ready=await beforePostingPrepare(captured[0]);await checkContext();
      if(operationScope()!==scope)throw Object.assign(Error('Rolling operation changed'),{code:'ROLLING_CONTEXT_CHANGED'});
      if(ready===false){
       if(!scope||scope.synchronized!==false)throw Object.assign(Error('Rolling operation changed'),{code:'ROLLING_CONTEXT_CHANGED'});
@@ -110,7 +117,7 @@ export function createSynchronizedRollingApplication({application,synchronize,co
    let result;
    if(overlapMethod&&prepareContractState){
     // Capture the synchronized header before discovery owns the native queue.
-    if(preparePredecessorAnchor){await preparePredecessorAnchor();await contextGuard();if(operationScope()!==scope)throw Object.assign(Error('Rolling operation changed'),{code:'ROLLING_CONTEXT_CHANGED'});}
+    if(preparePredecessorAnchor&&!preview){await preparePredecessorAnchor();await checkContext();if(operationScope()!==scope)throw Object.assign(Error('Rolling operation changed'),{code:'ROLLING_CONTEXT_CHANGED'});}
     const ready=Promise.resolve().then(()=>prepareContractState({method:overlapMethod}));
     scope.contractStateReady=ready;
     // Predecessor authority can run during native discovery. The application
@@ -118,7 +125,7 @@ export function createSynchronizedRollingApplication({application,synchronize,co
     try{
      const results=await Promise.allSettled([ready,Promise.resolve().then(invoke)]);
      const failed=results.find(value=>value.status==='rejected');if(failed)throw failed.reason;
-     await contextGuard();if(operationScope()!==scope)throw Object.assign(Error('Rolling operation changed'),{code:'ROLLING_CONTEXT_CHANGED'});
+     await checkContext();if(operationScope()!==scope)throw Object.assign(Error('Rolling operation changed'),{code:'ROLLING_CONTEXT_CHANGED'});
      result=results[1].value;
     }finally{if(scope.contractStateReady===ready)delete scope.contractStateReady;}
    }else result=await invoke();

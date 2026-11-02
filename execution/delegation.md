@@ -627,3 +627,6 @@ Root owns publication. Gateway source restored to live bytes; optional optimizat
 retained on codex/fee-gateway-fast-path-20261030. deployment_review approved the
 exact-revision root-prepared SDK importer and its focused tests. Existing wallet
 provenance, protected paths, full build and real release gate remain unchanged.
+
+## 2 November — requested UI changes
+Root integrates conversation navigation, fee presentation and tip confirmation. fast_reply_review implements read-only worker estimation in isolated /private/tmp/rolling-estimate-worker; deployment_review investigates the prior release failure read-only. No contract deployment or historical performance campaign.

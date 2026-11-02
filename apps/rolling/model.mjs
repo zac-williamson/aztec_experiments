@@ -110,6 +110,7 @@ const ICONS = {
   sparkle: 'M12 3l1.9 5.6 5.6 1.9-5.6 1.9L12 18l-1.9-5.6-5.6-1.9 5.6-1.9z M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z',
   eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
   'chevron-left': 'M15 18l-6-6 6-6',
+  'arrow-left': 'M19 12H5 M12 19l-7-7 7-7',
   'chevron-up': 'M6 15l6-6 6 6',
   'chevron-down': 'M6 9l6 6 6-6',
   check: 'M20 6 9 17l-5-5',
@@ -122,7 +123,8 @@ const ICONS = {
 const svgNode = (tag, attrs) => { const node = document.createElementNS(SVG, tag); for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value); return node; };
 export function createIcon(name, className = '') {
   const svg = svgNode('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', focusable: 'false', class: `icon icon-${name}${className ? ' ' + className : ''}` });
-  svg.append(svgNode('path', { d: ICONS[name] ?? ICONS.dot }));
+  svg.append(svgNode('path', { d: ICONS[name === 'heart-dollar' ? 'heart' : name] ?? ICONS.dot }));
+  if (name === 'heart-dollar') svg.append(svgNode('path', { d: 'M14.5 8H11a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9.5 M12 6.5v11', 'stroke-width': '1.5' }));
   return svg;
 }
 // The wordmark: "rolling" in ink, "chat" in brand violet, beside the rolling-bubble tile.

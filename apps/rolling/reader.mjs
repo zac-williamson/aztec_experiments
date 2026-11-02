@@ -6,13 +6,14 @@ import {createRankedHomeReader} from './home-reader.mjs';
 import {createFeedPreferences,createFeedObservation} from './feed-preferences.mjs';
 import {createPublicAvatar,createPublicProfile} from './profile-view.mjs';
 import {createMessageContent as richText,createInlineActionRegistry,savedPreferenceControl,savedReaderSelection,savedReaderRoute,createIcon,createBrand,createSkeletonFeed,createThreadView,boardTone,boardInitial} from './model.mjs';
-import {captureRoutePosition,focusRoute,skipToContent,revealIncludedPost} from './navigation.mjs';
+import {captureRoutePosition,focusRoute,skipToContent,revealIncludedPost,createConversationNavigation} from './navigation.mjs';
 
 const analytics=createAnalytics();
 const feedObservation=createFeedObservation({report:name=>analytics.track(name)});
 const app=document.querySelector('#app'),positions=new Map(),feedPreferences=createFeedPreferences(),priorityTxs=new Set();
 const read=createRankedHomeReader({read:createPublicReader(),getPreferences:()=>feedPreferences.snapshot(privatePanel?.savedItemsSnapshot?.()),getPriorityTxs:()=>[...priorityTxs]});
 const currentRoute=()=>savedReaderRoute(location.hash==='#/new-account'?'/home':location.hash.slice(1)||'/home');
+const conversationNavigation=createConversationNavigation();
 let controller,sequence=0,route=currentRoute(),main,renderedRoute,loadedPages=1,loadedThreadEnd=false,renderActive=0,activeThread=null;
 // Collapse choices per conversation survive paging, live refresh and Back.
 const threadStates=new Map();
@@ -95,7 +96,20 @@ function removalPolicy(value){
 }
 function preferenceControl(label,kind,target){return savedPreferenceControl(label,privatePanel?.preferenceEnabled?.(kind,target),privatePanel?.privateStatus?.()??'locked',!!savedItemsLoad);}
 // Action buttons keep their icon through every relabel; the text node stays the accessible name.
-const labelled=(node,value)=>node.replaceChildren(...(node.dataset.icon?[createIcon(node.dataset.icon)]:[]),value);
+const labelled=(node,value)=>node.replaceChildren(...(node.dataset.icon?[createIcon(node.dataset.icon)]:[]),node.dataset.icon==='heart-dollar'?el('span',{class:'sr-only'},value):value);
+let tipConfirmation;
+function confirmTip(){
+ if(tipConfirmation)return Promise.resolve(false);
+ return new Promise(resolve=>{
+  const dialog=el('dialog',{class:'tip-confirmation','aria-labelledby':'tip-confirmation-title'},el('h2',{id:'tip-confirmation-title'},'Gift 20.00 credits to the author?'),el('p',{},'Network fees are additional.'));
+  tipConfirmation=dialog;
+  const finish=confirmed=>{dialog.close();dialog.remove();tipConfirmation=null;resolve(confirmed);};
+  dialog.append(el('div',{class:'dialog-actions'},button('Cancel',()=>finish(false)),button('Gift 20.00 credits',()=>finish(true),{class:'button primary'})));
+  dialog.addEventListener('cancel',event=>{event.preventDefault();finish(false);});
+  dialog.addEventListener('close',()=>{if(tipConfirmation===dialog){dialog.remove();tipConfirmation=null;resolve(false);}});
+  document.body.append(dialog);dialog.showModal();
+ });
+}
 function updatePreferenceControl(node,blocked=false){const state=preferenceControl(node.dataset.privateSetting,Number(node.dataset.kind),node.dataset.target);labelled(node,state.label);node.disabled=blocked||state.disabled;if(state.busy)node.setAttribute('aria-busy','true');else node.removeAttribute('aria-busy');}
 function updatePreferenceControls(){for(const node of app.querySelectorAll('[data-private-setting]')){const retained=inlineActions.snapshot(node.dataset.inlineAction);if(retained)node.renderInlineAction(retained);else updatePreferenceControl(node);}}
 const inlineActions=createInlineActionRegistry({perform:async(captured,onIncluded)=>{
@@ -108,7 +122,7 @@ function updateLikeControls(){
  for(const node of app.querySelectorAll('[data-like-post]')){
   const retained=inlineActions.snapshot(node.dataset.inlineAction);
   if(retained)node.renderInlineAction(retained);
-  else{node.disabled=false;labelled(node,'Like · 20 credits');}
+  else{node.disabled=false;labelled(node,'Gift 20.00 credits');}
  }
 }
 function socialButton(label,action,attrs={}){
@@ -116,12 +130,17 @@ function socialButton(label,action,attrs={}){
  // The target identity excludes the toggle value: a rerender must not offer
  // its inverse while this exact target's previous operation still owns it.
  const target=action(),key=JSON.stringify([target.type,target.post??null,target.kind??null,target.target??null,target.thread??null]);
- const node=button(label,()=>{if(attrs['data-private-setting']&&typeof action().enabled!=='boolean'&&(privatePanel?.privateStatus?.()??'locked')==='locked'){void openWallet();return;}void inlineActions.run(key,action);},{...attrs,'data-inline-action':key});
+ const node=button(label,async()=>{
+  const captured=structuredClone(action());
+  if(attrs['data-private-setting']&&typeof captured.enabled!=='boolean'&&(privatePanel?.privateStatus?.()??'locked')==='locked'){void openWallet();return;}
+  if(captured.type==='like'&&!await confirmTip())return;
+  void inlineActions.run(key,()=>captured);
+ },{...attrs,'data-inline-action':key});
  if(attrs['data-icon'])labelled(node,label);
  node.renderInlineAction=({state,captured,result},notify=false)=>{
   feedback?.remove();feedback=null;
   node.disabled=['pending','unknown'].includes(state)||state==='included'&&!result;
-  if(state==='pending'){node.setAttribute('aria-busy','true');labelled(node,({like:'Sending 20 credits…'})[captured.type]??'Saving…');return;}
+  if(state==='pending'){node.setAttribute('aria-busy','true');labelled(node,({like:'Sending 20.00 credits…'})[captured.type]??'Saving…');return;}
   if(state==='included'&&!result){node.setAttribute('aria-busy','true');labelled(node,'Confirmation pending');if(notify)announce('Change included. Confirmation pending.');return;}
   node.removeAttribute('aria-busy');
   if(attrs['data-private-setting'])updatePreferenceControl(node,node.disabled);else labelled(node,label);
@@ -177,7 +196,7 @@ function postCard(post,data,{feedMetrics=false}={}){
  }
  article.append(richText(post.text),el('div',{class:'post-actions'},
   button([createIcon('reply'),'Reply'],()=>openWallet({type:'reply',parent:post.id,root:r.root,subboard:r.subboard},{context:{author,excerpt:text(post.text).slice(0,200)}})),
-  socialButton('Like · 20 credits',()=>({type:'like',post:post.id,tipKey:post.tipKey}),{'data-icon':'heart',title:'Send 20 posting credits to the author, plus the network fee. You can send another tip after this one completes.'}),el('span',{class:'action likes'},`${text(post.likes)} ${post.likes==='1'?'like':'likes'}`),preferenceButton('Bookmark',1,post.id,undefined,'bookmark'),
+  socialButton('Gift 20.00 credits',()=>({type:'like',post:post.id,tipKey:post.tipKey}),{'data-icon':'heart-dollar',class:'button gift-button',title:'Gift 20.00 credits to the author'}),el('span',{class:'action likes'},`${text(post.likes)} ${post.likes==='1'?'like':'likes'}`),preferenceButton('Bookmark',1,post.id,undefined,'bookmark'),
   more(button([createIcon('quote'),'Quote'],()=>openWallet({type:'quote',reference:post.id,subboard:r.subboard})),
    button([createIcon('repeat'),'Repost'],()=>openWallet({type:'repost',reference:post.id,subboard:r.subboard})),provenance),
   link([createIcon('message'),'View conversation'],'/thread/'+r.root,{class:'post-link'})));
@@ -202,6 +221,10 @@ function shell(title,{boardId=null}={}){
  rail.addEventListener('keydown',event=>{if(event.key==='Escape')closeMenu();if(event.key==='Tab'&&rail.classList.contains('open')){const targets=[...rail.querySelectorAll('a,button')],first=targets[0],last=targets.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}});
  // A route returning to a saved position skips entrance motion: the restore measures the anchor's box, which a transform would shift.
  main=el('main',{id:'content',tabindex:'-1',...(positions.get(route)?{class:'restored'}:{})},el('header',{class:'page-head'},el('div',{},el('h1',{tabindex:'-1'},title),el('p',{class:'intro'},title==='Home'?'Conversations for you, from across the community.':title==='Conversation'?'Join in with a reply.':'Public conversations. Private participation.'))));
+ if(/^\/(thread|post)\//.test(route)){
+  const heading=main.querySelector('.page-head>div');heading.classList.add('conversation-heading');
+  heading.prepend(button(createIcon('arrow-left'),()=>conversationNavigation.back(),{class:'conversation-back','aria-label':'Back',title:'Back'}));
+ }
  if(boardId!==null||route==='/home')main.querySelector('.page-head').append(button([createIcon('pen'),'Write a post'],()=>openWallet({type:'post',subboard:boardId??'0'}),{class:'button primary',...(boardId!==null?{'data-board-compose':'',disabled:''}:{})}));
  const bokBalance=el('section',{class:'bok-balance','aria-label':'Bok balance',hidden:''});
  const postingName=el('div',{class:'posting-name','data-posting-name':''});main.insertBefore(postingName,main.querySelector('.page-head').nextSibling);
@@ -437,7 +460,7 @@ addEventListener('pagehide',()=>{sequence++;controller?.abort();updates.stop();}
 addEventListener('pageshow',event=>{updates.start();if(event.persisted){feedObservation.reset();render();}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void updates.flush();});
 document.querySelector('.skip').addEventListener('click',skipToContent);
-addEventListener('hashchange',()=>{positions.set(route,capturePosition());if(positions.size>40)positions.delete(positions.keys().next().value);route=currentRoute();render();});
+addEventListener('hashchange',()=>{conversationNavigation.changed();positions.set(route,capturePosition());if(positions.size>40)positions.delete(positions.keys().next().value);route=currentRoute();render();});
 narrow.addEventListener('change',()=>{const rail=document.querySelector('.rail'),workspace=document.querySelector('.workspace');if(rail){rail.classList.remove('open');rail.inert=narrow.matches;workspace.inert=false;document.querySelector('.menu-toggle')?.setAttribute('aria-expanded','false');}});
 updates.start();
 // Account-independent worker preparation starts with the page, not with a panel

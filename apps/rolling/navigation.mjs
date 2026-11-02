@@ -1,3 +1,27 @@
+// Mark only this application's history entries. history.length also counts
+// unrelated sites, so it cannot tell a directly opened conversation where to go.
+export function createConversationNavigation(browser = window) {
+  const key = 'rollingNavigation';
+  let index = 0, returning = false;
+  const record = (initial = false) => {
+    const saved = browser.history.state?.[key];
+    index = saved?.hash === browser.location.hash && Number.isSafeInteger(saved.index) && saved.index >= 0
+      ? saved.index : initial ? 0 : index + 1;
+    browser.history.replaceState({...browser.history.state, [key]: {index, hash: browser.location.hash}}, '');
+    returning = false;
+  };
+  record(true);
+  return {
+    changed: () => record(),
+    back() {
+      if (returning) return;
+      returning = true;
+      if (index > 0) browser.history.back();
+      else browser.location.replace('#/home');
+    }
+  };
+}
+
 // Keep a public post and its viewport offset, rather than only a pixel position
 // in a feed that may have gained newer rows while another route was open.
 export function captureRoutePosition(pages, browser = window) {

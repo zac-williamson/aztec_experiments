@@ -90868,6 +90868,7 @@ Partial Address: ${this.partialAddress.toString()}
     encodeAggregateFundingTransaction: () => encodeAggregateFundingTransaction,
     encodeArguments: () => encodeArguments,
     ensureOnboardingFees: () => ensureOnboardingFees,
+    estimatePrivateFeeActualCost: () => estimatePrivateFeeActualCost,
     estimatePrivateFeeTransaction: () => estimatePrivateFeeTransaction,
     extractApplicationNullifier: () => extractApplicationNullifier,
     fundPrivateFees: () => fundPrivateFees,
@@ -193290,6 +193291,22 @@ mod tests {
       remaining -= extra * rates[i];
     }
     return new Gas(...values);
+  }
+  async function estimatePrivateFeeActualCost(input2) {
+    const simulator = input2.simulator ?? createPrivateFeeSimulator(input2.wallet, input2.node);
+    let measured;
+    const capture = { ...simulator, async public(...args) {
+      await input2.guard?.();
+      const result = await simulator.public(...args);
+      await input2.guard?.();
+      if (args[3] === true) measured = result;
+      return result;
+    } };
+    await estimatePrivateFeeTransaction({ ...input2, deferSimulation: false, ordinaryPost: void 0, qualifiedLike: void 0, simulator: capture });
+    await input2.guard?.();
+    const fee2 = measured?.publicOutput?.txEffect?.transactionFee?.toBigInt?.();
+    if (!successful(measured ?? {}) || typeof fee2 !== "bigint" || fee2 < 0n || fee2 >= 1n << 128n) throw fail14("BB_SIMULATION_FAILED");
+    return { estimatedFee: fee2.toString() };
   }
   async function estimatePrivateFeeTransaction({ wallet, node: node2, interaction, prepared: prepared2, from, guard = () => {
   }, deferSimulation = false, ordinaryPost, qualifiedLike, measure = (_stage, operation) => operation(), simulator = createPrivateFeeSimulator(wallet, node2) }) {

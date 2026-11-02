@@ -9402,13 +9402,13 @@
       "evidence": "evidence/G21.json",
       "evidence_mode": "historical",
       "blocker": null,
-      "checkpoint": "30 October: live network fee pricing implemented and independently reviewed. Owner requests immediate app publication. Gateway optimization retained separately; prover stays unchanged. Root preparing exact-revision rebuilt SDK for installed release route, then genuine ETH/USDC signup acceptance.",
-      "execution_lane": "root UI implementation and existing CI publication; independent fast_reply_review",
+      "checkpoint": "2 November: owner requests nonblocking worker estimated fees with blurred pending state, two-decimal FEE displays, confirmed 20-credit heart tips, and conversation Back arrow. Implementing coherent UI changes; prior dynamic-pricing release outcome under inspection. Performance campaign remains paused.",
+      "execution_lane": "root UI integration; isolated worker-estimation implementation; independent release diagnosis and review",
       "owner": "root",
       "branch": "codex/rolling-chat-draft3",
       "verification_method": "Native claim/cancel exclusion, Solidity custody/refund proofs, client and browser checks, coherent artifact verification, independent review, then fresh testnet signup and publication.",
       "priority": 0,
-      "next_action": "Retain reply target across local sender completion; test rapid clicks, dismissal, account changes and unresolved outcomes; independent review, integration gate, push and verify deployed release. Performance campaigns remain paused."
+      "next_action": "Implement requested UX; focused browser/worker checks and independent review; commit, push and publish through installed release route."
     }
   ],
   "specification": {

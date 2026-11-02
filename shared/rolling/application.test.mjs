@@ -3727,3 +3727,22 @@ test('new immediate action approves the current payment maximum rather than depl
  const app=f.restart();const prepared=await app.prepare({type:'bio',name:'3',expectedVersion:'0',content:'Current fees'},{immediate:true});
  assert.equal(prepared.maximumFee,'300');await app.submitPrepared(prepared.intentId);assert.equal(f.state.sends,1);
 });
+
+for(const kind of ['post','thread','thread-bok'])test('draft cost uses exact constructor without action journal: '+kind,async()=>{
+ const f=kind==='post'?fixture():threadFixture({bok:kind==='thread-bok'});
+ const action=kind==='post'?{type:'post',deposit:'9',content:'Preview only',name:'0',subboard:'0'}:{...threadAction(),...(kind==='thread-bok'?{budgets:['0','400','0']}:{})};
+ for(const key of Object.keys(f.options.accountSession.journal))f.options.accountSession.journal[key]=()=>assert.fail('Preview accessed financial journal');
+ f.options.privateStore={read:()=>assert.fail('Preview read action record'),compareAndSwap:()=>assert.fail('Preview wrote action record')};
+ let call;f.options.sdk.estimatePrivateFeeActualCost=async input=>{await input.guard();call=input.interaction;return {estimatedFee:'42'};};
+ assert.deepEqual(await f.restart().estimateDraftFee(action),{estimatedFee:'42'});
+ assert.equal(f.state.sends,0);assert.equal(f.values.size,0);assert.equal(f.state.estimates,0);
+ if(kind==='post'){assert.equal(call.name,'post');assert.equal(call.args[2].length,12);}
+ else if(kind==='thread')assert.equal(call.name,'post_thread');
+ else{assert.equal(call.name,'batch');assert.deepEqual(call.interactions.map(value=>value.name),['authorize_request','post_thread']);}
+});
+test('draft cost cancellation never saves an action',async()=>{
+ const f=fixture(),controller=new AbortController();
+ f.options.sdk.estimatePrivateFeeActualCost=async input=>{controller.abort();await input.guard();return {estimatedFee:'42'};};
+ await assert.rejects(f.restart().estimateDraftFee({type:'post',deposit:'9',content:'Preview only'},{signal:controller.signal}),{code:'ROLLING_ABORTED'});
+ assert.equal(f.values.size,0);assert.equal(f.state.sends,0);
+});

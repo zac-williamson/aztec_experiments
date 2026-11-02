@@ -32,6 +32,25 @@ function allocate(budget,lower,caps,prices){
  for(let i=0;i<2;i++)if(rates[i]){const extra=min(BigInt(caps[dimensions[i]]-values[i]),remaining/rates[i]);values[i]+=Number(extra);remaining-=extra*rates[i];}
  return new Gas(...values);
 }
+// Display-only measurement. Reuse the native estimator's exact payload and
+// credit selection, but return the simulated charge rather than its gas ceiling.
+// No proof, transaction journal or broadcast is reachable from this function.
+export async function estimatePrivateFeeActualCost(input){
+ const simulator=input.simulator??createPrivateFeeSimulator(input.wallet,input.node);
+ let measured;
+ const capture={...simulator,async public(...args){
+  await input.guard?.();const result=await simulator.public(...args);await input.guard?.();
+  if(args[3]===true)measured=result;
+  return result;
+ }};
+ await estimatePrivateFeeTransaction({...input,deferSimulation:false,ordinaryPost:undefined,qualifiedLike:undefined,simulator:capture});
+ await input.guard?.();
+ // Native AVM prices its next-block globals at base + priority (capped by
+ // maxFeesPerGas), and includes the full reserved teardown allocation.
+ const fee=measured?.publicOutput?.txEffect?.transactionFee?.toBigInt?.();
+ if(!successful(measured??{})||typeof fee!=='bigint'||fee<0n||fee>=1n<<128n)throw fail('BB_SIMULATION_FAILED');
+ return {estimatedFee:fee.toString()};
+}
 export async function estimatePrivateFeeTransaction({wallet,node,interaction,prepared,from,guard=()=>{},deferSimulation=false,ordinaryPost,qualifiedLike,measure=(_stage,operation)=>operation(),simulator=createPrivateFeeSimulator(wallet,node)}){
  let qualifiedApplication,qualifiedProfile,checkQualified;
  if(qualifiedLike!==undefined){

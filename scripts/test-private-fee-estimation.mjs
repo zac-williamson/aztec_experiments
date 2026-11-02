@@ -1,5 +1,6 @@
 import test,{after} from 'node:test';
 import assert from 'node:assert/strict';
+import {computeTransactionFee} from '@aztec-labs/stdlib/fees';
 import {Gas,GasFees,GasSettings} from '@aztec-labs/stdlib/gas';
 import {ExecutionPayload,TxSimulationResult} from '@aztec-labs/stdlib/tx';
 import {RevertCode} from '@aztec-labs/stdlib/avm';
@@ -9,7 +10,7 @@ import {AztecAddress} from '@aztec-labs/stdlib/aztec-address';
 import {Fr} from '@aztec-labs/foundation/curves/bn254';
 import {BarretenbergSync} from '@aztec-foundation/bb.js';
 import {PrivateFeePaymentMethod,PrivateMintAndPayFeePaymentMethod} from '../shared/private-fee-payment.mjs';
-import {estimatePrivateFeeTransaction,sendPrivateFeeTransaction} from '../shared/private-fee-estimation.mjs';
+import {estimatePrivateFeeActualCost,estimatePrivateFeeTransaction,sendPrivateFeeTransaction} from '../shared/private-fee-estimation.mjs';
 import {createPrivateFeeSimulator} from '../shared/private-fee-simulation.mjs';
 import {consumePrivateFeeSimulationValidation} from '../shared/private-fee-validation.mjs';
 const anchorBlockHeader={hash:async()=>new Fr(91)};
@@ -363,4 +364,24 @@ for(const network of [undefined,{daGas:-1,l2Gas:900},{daGas:90,l2Gas:NaN},{daGas
  const h=fixture();h.input.prepared.networkGasLimits=network;
  await assert.rejects(estimatePrivateFeeTransaction(h.input),{code:'PRIVATE_FEE_CONFIGURATION_REQUIRED'});
  assert.equal(h.calls.length,0);assert.equal(h.sends.length,0);
+});
+
+function draftFixture(options){
+ const h=fixture(options);
+ const credit={owner:h.input.from,notes:[{secret:new Fr(1),key:{x:new Fr(2),y:new Fr(3)},blinding:new Fr(4),value:h.input.prepared.availableCredit,nonce:new Fr(5)}]};
+ h.input.prepared.paymentMethod=new PrivateFeePaymentMethod(h.payer,1n,credit);return h;
+}
+for(const available of [500n,5000n])test('draft cost returns strict simulated charge, never reservation or send, credit='+available,async()=>{
+ const h=draftFixture({available}),simulate=h.input.simulator.public;let expected;
+ h.input.simulator.public=async(...args)=>{
+  const result=await simulate(...args),gas=args[2],used=result.gasUsed.totalGas.sub(result.gasUsed.teardownGas).add(gas.teardownGasLimits);
+  const fee=computeTransactionFee(new GasFees(1n,1n),gas,used);result.publicOutput.txEffect.transactionFee=fee;if(args[3])expected=fee.toBigInt().toString();return result;
+ };
+ const result=await estimatePrivateFeeActualCost(h.input);assert.deepEqual(result,{estimatedFee:expected});
+ assert.equal(h.calls.at(-1).enforce,true);assert(BigInt(result.estimatedFee)<h.calls.at(-1).gas.getFeeLimit().toBigInt());assert.equal(h.sends.length,0);
+});
+test('draft cost rejects missing measurement and cancellation without sending',async()=>{
+ const missing=draftFixture();await assert.rejects(estimatePrivateFeeActualCost(missing.input),{code:'BB_SIMULATION_FAILED'});assert.equal(missing.sends.length,0);
+ const cancelled=draftFixture();cancelled.input.guard=()=>{throw Object.assign(Error('cancelled'),{code:'ROLLING_ABORTED'});};
+ await assert.rejects(estimatePrivateFeeActualCost(cancelled.input),{code:'ROLLING_ABORTED'});assert.equal(cancelled.calls.length,0);assert.equal(cancelled.sends.length,0);
 });

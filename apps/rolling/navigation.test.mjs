@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {captureRoutePosition, focusRoute, skipToContent, revealIncludedPost} from './navigation.mjs';
+import {captureRoutePosition, focusRoute, skipToContent, revealIncludedPost, createConversationNavigation} from './navigation.mjs';
 function browserFixture() {
   const calls = [];
   const target = {focus: options => calls.push(['post-focus', options]), scrollIntoView: options => calls.push(['post-scroll', options])};
@@ -62,4 +62,29 @@ test('included post reveal requires exact connected transaction and scrolls only
  node.isConnected=false;assert.equal(revealIncludedPost({id:'17',txHash},browser),false);assert.deepEqual(calls,[]);
  node.isConnected=true;modal=true;assert.equal(revealIncludedPost({id:'17',txHash},browser),false);modal=false;visible=false;assert.equal(revealIncludedPost({id:'17',txHash},browser),false);visible=true;assert.deepEqual(calls,[]);assert.equal(revealIncludedPost({id:'17',txHash},browser),true);assert.deepEqual(calls,[['focus',{preventScroll:true}],['scroll',{block:'nearest'}]]);
  calls.length=0;top=100;bottom=300;revealIncludedPost({id:'17',txHash},browser);assert.deepEqual(calls,[['focus',{preventScroll:true}]]);
+});
+
+// Browser history fixture includes a previous external page: Back must not use
+// history.length as evidence that the preceding entry belongs to this app.
+function historyFixture(hash='#/home'){
+ const entries=[{hash:'external',state:null},{hash,state:{other:'retained'}}];let cursor=1;
+ const browser={location:{get hash(){return entries[cursor].hash;},replace(hash){entries[cursor].hash=hash;}},history:{
+  get state(){return entries[cursor].state;},replaceState(state){entries[cursor].state=state;},back(){cursor--;}
+ }};
+ const visit=hash=>{entries.splice(++cursor);entries.push({hash,state:null});};
+ return {browser,visit,position:()=>cursor};
+}
+test('conversation Back follows nested app entries, survives reload, and preserves other history state',()=>{
+ const f=historyFixture(),nav=createConversationNavigation(f.browser);
+ assert.equal(f.browser.history.state.other,'retained');
+ f.visit('#/thread/10');nav.changed();f.visit('#/thread/10/20');nav.changed();
+ const reloaded=createConversationNavigation(f.browser);reloaded.back();
+ assert.equal(f.browser.location.hash,'#/thread/10');reloaded.changed();reloaded.back();
+ assert.equal(f.browser.location.hash,'#/home');assert.equal(f.position(),1);
+});
+test('direct conversation uses Home, never external history; rapid Back clicks traverse only one entry',()=>{
+ const f=historyFixture('#/thread/10'),nav=createConversationNavigation(f.browser);
+ nav.back();assert.equal(f.browser.location.hash,'#/home');assert.equal(f.position(),1);
+ nav.changed();f.visit('#/thread/10');nav.changed();nav.back();nav.back();
+ assert.equal(f.position(),1);
 });

@@ -378,6 +378,36 @@ export async function createRollingRefundSession({sdk,ethers,config,boardArtifac
  return Object.freeze({mode:'refund-only',withdrawal:wrapped,application:{async readAccountStatus(){return refunded?{status:'refunded',intent:null}:{status:'recovering',intent:await wrapped.inspect()};}},get busy(){return busy;},async close(){if(busy)throw fail('ROLLING_BUSY');closed=true;provider.destroy();}});
 }
 
+// Low-priority drafts share the existing native wallet. A foreground request
+// cancels speculative work and waits for its current native phase to drain.
+export function createDraftFeeScheduler({isBusy,whenIdle,run}){
+ let active=null,generation=0,foregroundWaiting=0;
+ async function cancelAndDrain(){generation++;const pending=active;if(pending){pending.controller.abort();await pending.done;}}
+ return {
+  get active(){return active!==null;},cancelAndDrain,
+  async foreground(work){
+   if(active){foregroundWaiting++;try{await cancelAndDrain();}finally{foregroundWaiting--;}}
+   return work();
+  },
+  async estimate(input,{signal}={}){
+   if(signal!==undefined&&!(signal instanceof AbortSignal))throw fail('ROLLING_INVALID_ACTION');
+   const action=structuredClone(input),selected=++generation,controller=new AbortController(),cancel=()=>controller.abort();
+   signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)cancel();
+   const check=()=>{if(controller.signal.aborted||selected!==generation)throw fail('ROLLING_ABORTED');};
+   let pending;
+   try{
+    if(active){const previous=active;previous.controller.abort();await previous.done;}
+    check();while(isBusy()||foregroundWaiting){await whenIdle();check();}
+    let finish;pending={controller,done:new Promise(resolve=>{finish=resolve;}),finish:()=>finish()};active=pending;
+    check();const result=await run(action,{signal:controller.signal});check();return result;
+   }finally{
+    signal?.removeEventListener('abort',cancel);
+    if(pending){if(active===pending)active=null;pending.finish();}
+   }
+  },
+ };
+}
+
 export async function createRollingWalletSession({sdk,routing,ethers,config,boardArtifact,privateFeeArtifact,bokArtifact,getBokArtifact,account,accountPreparation,
  trustedQuery,remoteProver,fundingContext,proverReady,pxePreparation,contextGuard,claimStore,captureFundingWallet,fundingRelay,onProgress=()=>{},onFeePricing=()=>{},locks=globalThis.navigator?.locks,proofsEnabled=true}){
  if(typeof proofsEnabled!=='boolean'||(!proofsEnabled&&String(config?.network?.chainId)!=='31337')||typeof contextGuard!=='function'||typeof locks?.request!=='function'||!account||!trustedQuery||!routing)throw fail('ROLLING_SESSION_CONFIG');
@@ -389,19 +419,24 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
  const lockName='billboard-wallet:'+captured.address;
  let operationScope=null;const predecessorAnchors=new WeakMap();
  let pxe,store,fundingProvider,closed=false,busy=false,app,closing,privateNode,privateWallet,initializeAccount,aggregate,prepareStarter,topups,withdrawal,depositRefunds;
+ let operationDone=Promise.resolve();
  const assertCaptured=()=>{
   if(closed||captured.secretKey!==account.secretKey||captured.salt!==String(account.salt)||captured.address!==String(account.address))throw fail('ROLLING_CONTEXT_CHANGED');
  };
  const guard=async()=>{assertCaptured();await contextGuard();assertCaptured();};
- const locked=async work=>{
-  if(busy)throw fail('ROLLING_BUSY');busy=true;operationScope={synchronized:false};
+ const acquire=async work=>{
+  if(busy)throw fail('ROLLING_BUSY');
+  let finish;operationDone=new Promise(resolve=>{finish=resolve;});busy=true;operationScope={synchronized:false};
   try{return await locks.request(lockName,{ifAvailable:true},async lock=>{
    if(!lock)throw fail('ROLLING_OTHER_TAB');await guard();const owner=operationScope;
    try{return await work();}
    finally{await Promise.allSettled(owner.preparationReads??[]);}
   });}
-  finally{busy=false;operationScope=null;}
+  finally{busy=false;operationScope=null;finish();}
  };
+ const draftFees=createDraftFeeScheduler({isBusy:()=>busy,whenIdle:()=>operationDone,
+  run:(action,options)=>acquire(()=>synchronized.estimateDraftFee(action,options))});
+ const locked=work=>draftFees.foreground(()=>acquire(work));
  async function fundingRead(name,args,adoptedProvider){
   const provider=adoptedProvider??(fundingProvider??=new ethers.JsonRpcProvider(selected.network.ethRpcUrl));
   // Early worker funding may overlap native construction. It can borrow this
@@ -476,7 +511,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
      return owner?.synchronized&&owner.contractStateReady&&anchor?.pxe===pxe&&anchor.node===node&&anchor.wallet===privateWallet?anchor.header:pxe.getSyncedBlockHeader();
     }});
    begin('wallet-bind');
-   await guard();const wallet=routing.createAztecWallet(sdk,pxe,node,node,silent,secret,{contextGuard:guard,transactionJournal:journal,progress:(stage,details)=>{const value=projectRollingTransactionProgress(stage,details);if(value)void Promise.resolve().then(()=>onProgress?.(value)).catch(()=>{});}});
+   await guard();const wallet=routing.createAztecWallet(sdk,pxe,node,node,silent,secret,{contextGuard:guard,transactionJournal:journal,progress:(stage,details)=>{if(draftFees.active)return;const value=projectRollingTransactionProgress(stage,details);if(value)void Promise.resolve().then(()=>onProgress?.(value)).catch(()=>{});}});
    if(wallet.aztecNode!==node||wallet.pxe!==pxe||!routing.isPrivateWalletForNode(wallet,node))throw fail('ROLLING_PRIVATE_ROUTE');
    begin('account-manager');
    await guard();wallet._accountManager=await sdk.AccountManager.create(wallet,secret,accountContract,{salt});
@@ -600,7 +635,8 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
   });emit('complete');return result;}catch(error){emit('failed',error);throw error;}
  }
 
- const application=Object.freeze({...Object.fromEntries(Object.entries(synchronized).map(([name,call])=>[name,(...args)=>refreshMethods[name]?observedRead(name,call,args):locked(async()=>{const result=name==='submitPrepared'&&(topups||aggregate)?await submitWithFundingCheckpoint({application:synchronized,topups,aggregate,intentId:args[0]}):await call(...args);if(name==='reconcile'&&['included','confirmed'].includes(result?.status)){const kind=result.action?.type==='claim-bok'?'bok':result.action?.type==='claim-private-fee'?'private-fee':null;if(kind&&topups?.[kind])await topups[kind].recordClaimCompletion(result);else if(result.action?.type==='claim-deposit'&&aggregate)await aggregate.recordClaimCompletion(result);}return result;})])),
+ const application=Object.freeze({...Object.fromEntries(Object.entries(synchronized).filter(([name])=>name!=='estimateDraftFee').map(([name,call])=>[name,(...args)=>refreshMethods[name]?observedRead(name,call,args):locked(async()=>{const result=name==='submitPrepared'&&(topups||aggregate)?await submitWithFundingCheckpoint({application:synchronized,topups,aggregate,intentId:args[0]}):await call(...args);if(name==='reconcile'&&['included','confirmed'].includes(result?.status)){const kind=result.action?.type==='claim-bok'?'bok':result.action?.type==='claim-private-fee'?'private-fee':null;if(kind&&topups?.[kind])await topups[kind].recordClaimCompletion(result);else if(result.action?.type==='claim-deposit'&&aggregate)await aggregate.recordClaimCompletion(result);}return result;})])),
+  estimateDraftFee:(...args)=>draftFees.estimate(...args),
   executeAction(input,options={}){const action=structuredClone(input),onPrepared=options.onPrepared,postingRules=options.postingRules===undefined?undefined:structuredClone(options.postingRules),signal=options.signal;
    if(signal!==undefined&&!(signal instanceof AbortSignal))throw fail('ROLLING_INVALID_ACTION');
    return locked(()=>{
@@ -662,7 +698,13 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
   // It never changes payment readiness; Post still validates its own payment.
   if(refreshFeeCredit){const credit=await app.readPrivateFeeCredit();await guardRoute();return credit;}
  });}
- return Object.freeze({application,prepareOpening:fundingContext?(options,openingPreparation)=>{const captured=structuredClone(options);return locked(()=>fundingContext.prepareOpening(()=>synchronized.readAccountStatus({opening:true}),captured,openingPreparation));}:undefined,preparePostingState,observeIncluded:input=>observeIncludedTransaction({sdk,node:privateNode,contextGuard:guardRoute},input),get ordinaryPostingFeeLimit(){return sdk.ordinaryPostFeeLimit(latestFeeSettings).toString();},get postingFeeLimit(){return privateFeeCap();},bokConfigured:selected.bok!==undefined,depositRefunds:refunds,withdrawal:Object.freeze({observe:()=>withdrawal.observe(),waitUntilReady:options=>withdrawal.waitUntilReady(options),...Object.fromEntries(['prepare','prepareSaved','confirm','recover','cancel'].map(name=>[name,async(...args)=>{const captured=structuredClone(args);return locked(()=>withdrawal[name](...captured));}]))}),topup,funding:aggregate?Object.freeze({prepareStarter:options=>locked(()=>prepareStarter(options)),usdcAvailable:selected.aggregateFunding.usdcRelayAddress!==undefined,...continuation(aggregate),get defaultPrivateFeeCap(){return fundingContext?.defaultPrivateFeeCap??privateFeeCap();},...Object.fromEntries(['prepare','confirm','recover','inspect','checkpointClaim','reviewRevertedClaim'].map(name=>[name,(...args)=>locked(()=>aggregate[name](...args))]))}):null,get busy(){return busy;},close(){
+ return Object.freeze({application,prepareOpening:fundingContext?(options,openingPreparation)=>{const captured=structuredClone(options);return locked(()=>fundingContext.prepareOpening(()=>synchronized.readAccountStatus({opening:true}),captured,openingPreparation));}:undefined,preparePostingState,observeIncluded:input=>observeIncludedTransaction({sdk,node:privateNode,contextGuard:guardRoute},input),get ordinaryPostingFeeLimit(){return sdk.ordinaryPostFeeLimit(latestFeeSettings).toString();},get postingFeeLimit(){return privateFeeCap();},bokConfigured:selected.bok!==undefined,depositRefunds:refunds,withdrawal:Object.freeze({observe:()=>withdrawal.observe(),waitUntilReady:options=>withdrawal.waitUntilReady(options),...Object.fromEntries(['prepare','prepareSaved','confirm','recover','cancel'].map(name=>[name,async(...args)=>{const captured=structuredClone(args);return locked(()=>withdrawal[name](...captured));}]))}),topup,funding:aggregate?Object.freeze({prepareStarter:options=>locked(()=>prepareStarter(options)),usdcAvailable:selected.aggregateFunding.usdcRelayAddress!==undefined,...continuation(aggregate),get defaultPrivateFeeCap(){return fundingContext?.defaultPrivateFeeCap??privateFeeCap();},...Object.fromEntries(['prepare','confirm','recover','inspect','checkpointClaim','reviewRevertedClaim'].map(name=>[name,(...args)=>locked(()=>aggregate[name](...args))]))}):null,get busy(){return busy&&!draftFees.active;},async close(){
+  if(closing)return closing;
+  if(busy&&!draftFees.active)return Promise.reject(fail('ROLLING_BUSY'));
+  // Closing invalidates queued drafts immediately; an active native phase
+  // drains before its PXE is disposed, and no new foreground call may enter.
+  if(draftFees.active){closed=true;await draftFees.cancelAndDrain();}
+  else void draftFees.cancelAndDrain();
   if(closing)return closing;
   if(busy)return Promise.reject(fail('ROLLING_BUSY'));
   if(closed&&!pxe&&!store)return Promise.resolve();

@@ -907,6 +907,31 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
     // Deadline and refund amounts remain authoritative contract simulation rules.
     await guard();
   }
+  // Shared construction for preview and real posting; authorizations remain
+  // private calls in the in-memory batch until an actual transaction is sent.
+  async function bindDraftBok(record,immediate){
+    const {action,args,nonce}=record;
+      if(action.type==='thread'&&action.budgets?.some(value=>value!=='0')){
+        await ensureBok({bind:true});check(bok,'ROLLING_BOK_UNAVAILABLE');
+        const requests=[];
+        for(let i=0;i<action.contents.length;i++){
+          const budget=action.budgets[i];if(budget==='0')continue;
+          const requestId=field(sdk.Fr.random().toString(),true),target=await bokInvocationTarget(args[2][i],args[1][i],action.contents[i]);
+          requests.push({index:i,requestId,target,budget});args[5][i]=bok.pluginId;args[6][i]=requestId;
+        }
+        if(!immediate)check(await bokCredit()>=requests.reduce((sum,request)=>sum+BigInt(request.budget),0n),'ROLLING_BOK_CREDIT_INSUFFICIENT');
+        record.threadBok={scope:clone(bok),requests};
+      }
+      if(action.type==='bok'){
+        const budget=uint128(action.budget);check(budget>0n);
+        const available=immediate?null:await bokCredit();if(available!==null)check(available>=budget,'ROLLING_BOK_CREDIT_INSUFFICIENT');
+        const draft=args[2],requestId=field(sdk.Fr.random().toString(),true);
+        const target=await bokInvocationTarget(draft,nonce,action.content);
+        record.bok={scope:clone(bok),phase:'authorize',requestId,target,budget:String(budget),availableCredit:available===null?null:String(available),postArgs:args};
+        record.args=[requestId,target,String(budget)];
+        if(immediate){record.bok.phase='atomic';record.method='post_with_bok';record.args=[...args,bok.pluginId,requestId];}
+      }
+  }
   async function selectedContract(record){return ['claim-private-fee','like'].includes(record.action.type)?null:record.bok?.phase==='authorize'||['claim-bok','withdraw-bok','cancel-bok-request','expire-bok-request'].includes(record.action.type)?bokContract():contract();}
   async function interaction(board,record){
     check((['post','atomic'].includes(record.bok?.phase)?'post_with_bok':methods[record.action.type])===record.method,'ROLLING_INTENT_CHANGED');
@@ -1002,6 +1027,31 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
     check(Number(block?.header?.globalVariables?.blockNumber)===anchor.blockNumber&&hashText(block.blockHash)===anchor.blockHash,'ROLLING_CONTEXT_CHANGED');await guard();
   }
   return Object.freeze({
+    async estimateDraftFee(input,{signal}={}){
+      check(signal===undefined||signal instanceof AbortSignal,'ROLLING_INVALID_ACTION');
+      const action=input?.type==='thread'?captureThreadAction(input):input?.type==='like'?capturePaidLikeAction(input):clone(input);
+      check(['post','reply','quote','repost','thread','bok','like','name','bio','avatar','subboard'].includes(action?.type),'ROLLING_INVALID_ACTION');
+      const previewGuard=async()=>{if(signal?.aborted)throw fail('ROLLING_ABORTED');await guard();if(signal?.aborted)throw fail('ROLLING_ABORTED');};
+      return exclusive(async()=>{
+        await previewGuard();
+        const operation=session.operationScope?.();
+        if(operation?.contractStateReady)await operation.contractStateReady;
+        await previewGuard();check(session.operationScope?.()===operation,'ROLLING_CONTEXT_CHANGED');
+        const board=await contract(),nonce=field(sdk.Fr.random().toString(),true);
+        if(action.type==='bok'){await ensureBok({bind:true});check(bok,'ROLLING_BOK_UNAVAILABLE');}
+        await previewGuard();
+        const args=plain(await argumentsFor(action,board,nonce,{atomicBok:action.type==='bok'}));
+        await previewGuard();
+        const record={action,args,nonce,method:methods[action.type]};
+        await bindDraftBok(record,true);await previewGuard();
+        const selected=await interaction(await selectedContract(record),record);await previewGuard();
+        const prepared=await payment(action,record);await previewGuard();
+        const result=await sdk.estimatePrivateFeeActualCost({wallet:session.wallet,node:session.node,interaction:selected.call,prepared,from:session.owner,guard:previewGuard});
+        await previewGuard();
+        check(typeof result?.estimatedFee==='string','ROLLING_INVALID_RESPONSE');
+        return {estimatedFee:uint128(result.estimatedFee).toString()};
+      });
+    },
     // Warm the selected deposit's exact native history witnesses while editing.
     // Nothing is retained as authority: Post selects and verifies again.
     async prefetchPostingWitnesses(deposit){return exclusive(async()=>{
@@ -1383,26 +1433,7 @@ export function createRollingApplication({sdk,deployment,accountSession,privateS
       // Expiry selection is private and owned; the contract simulation, not the
       // public accounting snapshot or browser clock, decides deadline eligibility.
       if(['cancel-bok-request','expire-bok-request'].includes(action.type))record.bokRequestScope=clone(bok);
-      if(action.type==='thread'&&action.budgets?.some(value=>value!=='0')){
-        await ensureBok({bind:true});check(bok,'ROLLING_BOK_UNAVAILABLE');
-        const requests=[];
-        for(let i=0;i<action.contents.length;i++){
-          const budget=action.budgets[i];if(budget==='0')continue;
-          const requestId=field(sdk.Fr.random().toString(),true),target=await bokInvocationTarget(args[2][i],args[1][i],action.contents[i]);
-          requests.push({index:i,requestId,target,budget});args[5][i]=bok.pluginId;args[6][i]=requestId;
-        }
-        if(!immediate)check(await bokCredit()>=requests.reduce((sum,request)=>sum+BigInt(request.budget),0n),'ROLLING_BOK_CREDIT_INSUFFICIENT');
-        record.threadBok={scope:clone(bok),requests};
-      }
-      if(action.type==='bok'){
-        const budget=uint128(action.budget);check(budget>0n);
-        const available=immediate?null:await bokCredit();if(available!==null)check(available>=budget,'ROLLING_BOK_CREDIT_INSUFFICIENT');
-        const draft=args[2],requestId=field(sdk.Fr.random().toString(),true);
-        const target=await bokInvocationTarget(draft,nonce,action.content);
-        record.bok={scope:clone(bok),phase:'authorize',requestId,target,budget:String(budget),availableCredit:available===null?null:String(available),postArgs:args};
-        record.args=[requestId,target,String(budget)];
-        if(immediate){record.bok.phase='atomic';record.method='post_with_bok';record.args=[...args,bok.pluginId,requestId];}
-      }
+      await bindDraftBok(record,immediate);
       const selected=await interaction(await selectedContract(record),record);record.encoded=selected.encoded;
       // Immediate actions obtain a current network-priced maximum. Submission
       // estimates once against current state and stays within this approval.

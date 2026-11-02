@@ -6,7 +6,7 @@ import path from 'node:path';
 import http from 'node:http';
 import {sha256,sealBundle,verifyBundle,checkPublicAssets,assertCompatibleChanges} from './bundle.mjs';
 import {releaseCandidate,rollbackRelease,replaceLink} from './pipeline.mjs';
-import {validateJourneyConfig,createTestWalletBridge} from './journey.mjs';
+import {validateJourneyConfig,createTestWalletBridge,observeJourneySignupStep,journeyFailureSteps} from './journey.mjs';
 import {reuseCandidate} from './prepare.mjs';
 import {runtimeIdentity,stageRuntimeIdentity} from './compatibility.mjs';
 import {checkRuntime} from './smoke.mjs';
@@ -222,4 +222,18 @@ test('sealing admits only hash-bound Solidity SDK inputs and rejects executable 
  await sealBundle(root,{revision,baseline:oldRevision,compatibility:{test:true},publicFiles:{'/':'index.html'}});await verifyBundle(root);await fs.unlink(path.join(root,'release.json'));
  await fs.writeFile(path.join(root,name),'changed');await assert.rejects(sealBundle(root,{revision,baseline:oldRevision,compatibility:{test:true},publicFiles:{'/':'index.html'}}),{code:'RELEASE_DEPENDENCIES'});
  await fs.writeFile(path.join(root,name),'public solidity');await fs.writeFile(path.join(path.dirname(path.join(root,name)),'execute.js'),'executable');await assert.rejects(sealBundle(root,{revision,baseline:oldRevision,compatibility:{test:true},publicFiles:{'/':'index.html'}}),{code:'RELEASE_PRIVATE_PATH'});
+});
+
+// Progress contains only closed stage labels and timing; never provider errors or payloads.
+test('signup diagnostics preserve results and expose the exact timed stage',async()=>{
+ const rows=[];let time=100;
+ const value=await observeJourneySignupStep('USDC','quote',async()=>{time=115;return 'result';},{remaining:()=>500,emit:row=>rows.push(row),now:()=>time});
+ assert.equal(value,'result');assert.deepEqual(rows,[{event:'release-signup-step',asset:'USDC',step:'quote',state:'started',elapsedMs:0,remainingMs:500},{event:'release-signup-step',asset:'USDC',step:'quote',state:'complete',elapsedMs:15,remainingMs:500}]);
+ assert(journeyFailureSteps.includes('signup-USDC-quote'));
+});
+test('signup diagnostic failure omits error details and preserves the original error',async()=>{
+ const rows=[],error=Error('PRIVATE_PAYLOAD_SENTINEL');
+ await assert.rejects(observeJourneySignupStep('USDC','credit',async()=>{throw error;},{remaining:()=>1,emit:row=>rows.push(row)}),value=>value===error);
+ assert.deepEqual(rows.map(row=>row.state),['started','failed']);assert(!JSON.stringify(rows).includes('PRIVATE_PAYLOAD_SENTINEL'));
+ await assert.rejects(observeJourneySignupStep('PRIVATE_PAYLOAD_SENTINEL','credit',async()=>{}, {remaining:()=>1,emit:row=>rows.push(row)}),{code:'RELEASE_JOURNEY_STEP'});assert.equal(rows.length,2);
 });

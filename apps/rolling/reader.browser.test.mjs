@@ -40,16 +40,16 @@ test('public reader: navigation, unsafe content, failure recovery and narrow key
  assert.equal(await page.evaluate(()=>document.activeElement.id),'post-20');assert.equal(await page.getByRole('article').count(),1);
  await page.getByRole('link',{name:'Read the conversation from the beginning',exact:true}).click();await page.getByRole('heading',{name:'Conversation',exact:true}).waitFor();
  await page.getByRole('link',{name:'View conversation',exact:true}).click();await page.getByRole('heading',{name:'Conversation',exact:true}).waitFor();
- await page.getByRole('link',{name:'Explore subboards',exact:true}).first().click();await page.getByRole('heading',{name:'Workshop',exact:true}).waitFor();
+ await page.getByRole('link',{name:'Explore boards',exact:true}).first().click();await page.getByRole('heading',{name:'Workshop',exact:true}).waitFor();
  await page.getByText('Board rules',{exact:true}).click();assert(await page.getByText('Respect people',{exact:true}).isVisible());
  await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'Open navigation',exact:true}).click();
  assert.equal(await page.locator('.workspace').evaluate(node=>node.inert),true);await page.keyboard.press('Escape');assert.equal(await page.locator('.workspace').evaluate(node=>node.inert),false);
  longLabels=true;await page.evaluate(()=>location.hash='/directory/long');await page.getByRole('heading',{name:'W'.repeat(90),exact:true}).waitFor();
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'Valid long board labels must wrap on mobile');
  assert.equal(await page.getByRole('heading',{name:'W'.repeat(90),exact:true}).evaluate(n=>n.scrollWidth<=n.clientWidth),true,'Long board name must remain readable, not clipped');
- assert.equal(await page.locator('nav [aria-current="page"]').textContent(),'Explore subboards');
- assert.equal(await page.title(),'Explore subboards · rollingchat');
- assert((await page.getByRole('searchbox',{name:'Search subboards'}).boundingBox()).height>=42);
+ assert.equal(await page.locator('nav [aria-current="page"]').textContent(),'Explore boards');
+ assert.equal(await page.title(),'Explore boards · rollingchat');
+ assert((await page.getByRole('searchbox',{name:'Search boards'}).boundingBox()).height>=42);
  longLabels=false;await page.evaluate(()=>location.hash='/profile/999');await page.getByRole('heading',{name:'Profile not found',exact:true}).waitFor();
  assert.equal(await page.evaluate(()=>document.activeElement.tagName),'H1');
  assert.equal(await page.title(),'Profile · rollingchat');
@@ -68,7 +68,7 @@ async function socialFixture(t,{wallet='recorder',policies=[]}={}){
  if(wallet==='real')files.add('wallet-panel.mjs');
  const reason='<img src=x onerror=alert(1)> [unsafe](javascript:alert(1))';
  const record={root:'10',parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'0'};
- const live={id:'10',record,tipKey:{x:'1',y:'2'},text:'Visible public post',timestamp:'1',likes:'1',mainVersion:'2',localVersion:'0'};
+ const live={id:'10',record,position:{blockNumber:'1',txIndexWithinBlock:'0',logIndexWithinTx:'0',txHash:'0x'+'1'.repeat(64)},tipKey:{x:'1',y:'2'},text:'Visible public post',timestamp:'1',likes:'1',mainVersion:'2',localVersion:'0'};
  const removed={...live,id:'11',record:{...record,parent:'10',reference:'9',kind:'2',subboard:'20'},text:'REMOVED_TEXT_SENTINEL',localVersion:'1',removal:{reason,policy:'4294967301'},message:'REMOVED_TEXT_SENTINEL'};
  const rejected={...live,id:'12',record:{...record,subboard:'20'},text:'REJECTED_BOARD_TEXT_SENTINEL',localVersion:'1'};
  const malformed={...live,id:'13',mainVersion:'<script>VERSION_SENTINEL</script>',localVersion:'4294967296',text:null,removal:{reason:'No valid version provided',policy:'18446744073709551616'}};
@@ -79,7 +79,7 @@ async function socialFixture(t,{wallet='recorder',policies=[]}={}){
    res.writeHead(200,{'content-type':'application/json'});
    const board={id:'20',name:'Workshop',slug:'workshop',description:'A public board',mainVersion:'8',mainRules:'Current rules',rules:'Local rules',rejected:true,rejection:{reason,mainVersion:'6'}};
    const data={schemaVersion:1,scope:{boardAddress:'0x'+'1'.repeat(64)},complete:true,checkpoint:{number:3,hash:'public'},revision:'1',names:{},boards:{'20':board},nextCursor:null,policies};
-   res.end(JSON.stringify(url.pathname==='/api/directory'?{...data,boards:[board]}:{...data,post:live,posts:[live,removed,rejected,malformed]}));return;
+   res.end(JSON.stringify(url.pathname==='/api/directory'?{...data,boards:[board]}:['/api/candidates','/api/thread'].includes(url.pathname)?{...data,posts:[live]}:{...data,post:live,posts:[live,removed,rejected,malformed]}));return;
   }
   if(url.pathname==='/wallet-panel.mjs'&&['recorder','liked'].includes(wallet)){
    res.writeHead(200,{'content-type':'text/javascript'});res.end(`let liked=${wallet==='liked'};export function mountRollingWalletPanel({onPrivateChange}){window.changeLiked=value=>{liked=value;onPrivateChange();};return {initialize:async()=>{},privateStatus:()=>'complete',preferenceEnabled:()=>false,likeState:()=>liked,act:async value=>{(window.recordedActions??=[]).push(value);return {status:'confirmed'};},open(value){(window.recordedActions??=[]).push(value);},close(){},attachIdentityControls(){}}}`);return;
@@ -111,14 +111,14 @@ test('labelled social records: removed navigation, literal reasons and distinct 
  for(const id of ['11','12','13']){
   const post=page.locator('#post-'+id);assert.deepEqual(await post.getByRole('button').allTextContents(),['Bookmark']);assert.equal(await post.getByRole('button',{name:'Mark thread read',exact:true}).count(),0,'No read marker without a bounded canonical position');assert.equal(await post.locator('.post-body').count(),0);
  }
- assert.deepEqual(await page.locator('#post-10').getByRole('button').allTextContents(),['Reply','Like · 20 credits','Bookmark']);
+ assert.deepEqual(await page.locator('#post-10').getByRole('button').allTextContents(),['Reply','Gift 20.00 credits','Bookmark']);
  await page.setViewportSize({width:390,height:844});
  const live=page.locator('#post-10');assert.equal(await live.locator('.post-more').getAttribute('open'),null);
  await live.locator('.post-more>summary').click();
- assert.deepEqual(await live.getByRole('button').allTextContents(),['Reply','Like · 20 credits','Bookmark','Quote','Repost']);
+ assert.deepEqual(await live.getByRole('button').allTextContents(),['Reply','Gift 20.00 credits','Bookmark','Quote','Repost']);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  assert(!requests.some(value=>value.includes('/v1/node')||value.includes('/prover')||value.includes('owned')));
- for(const name of ['Reply','Like · 20 credits','Bookmark','Quote','Repost'])await live.getByRole('button',{name,exact:true}).click();
+ for(const name of ['Reply','Gift 20.00 credits','Bookmark','Quote','Repost']){await live.getByRole('button',{name,exact:true}).click();if(name==='Gift 20.00 credits')await page.getByRole('dialog').getByRole('button',{name,exact:true}).click();}
  await page.waitForFunction(()=>window.recordedActions?.length===5);
  assert.deepEqual(await page.evaluate(()=>window.recordedActions),[{type:'reply',parent:'10',root:'10',subboard:'0'},{type:'like',post:'10',tipKey:{x:'1',y:'2'}},{type:'preference',kind:1,target:'10',enabled:true},{type:'quote',reference:'10',subboard:'0'},{type:'repost',reference:'10',subboard:'0'}]);
  await page.evaluate(()=>window.recordedActions=[]);
@@ -126,16 +126,16 @@ test('labelled social records: removed navigation, literal reasons and distinct 
  assert.deepEqual(await page.evaluate(()=>window.recordedActions),[]);
  assert(requests.every(value=>!value.includes('/v1/node')&&!value.includes('/prover')&&!value.includes('owned')&&!value.includes('liked')));
  await page.setViewportSize({width:1280,height:900});
- await page.getByRole('link',{name:'Explore subboards',exact:true}).first().click();await page.getByText('Board rules',{exact:true}).click();
+ await page.getByRole('link',{name:'Explore boards',exact:true}).first().click();await page.getByText('Board rules',{exact:true}).click();
  assert(!(await page.getByText('Current parent policy v8',{exact:true}).isVisible()));await page.getByText('Rule history',{exact:true}).click();assert(await page.getByText('Current parent policy v8',{exact:true}).isVisible());assert(await page.getByText('Subboard rejected under parent policy v6',{exact:true}).isVisible());
 });
 
 test('reader permits repeated paid likes and exposes no Unlike action',async t=>{
  const {page}=await socialFixture(t,{wallet:'liked'});
- const like=page.locator('#post-10').getByRole('button',{name:'Like · 20 credits',exact:true});await like.waitFor();
+ const like=page.locator('#post-10').getByRole('button',{name:'Gift 20.00 credits',exact:true});await like.waitFor();
  assert.equal(await like.isEnabled(),true);assert.equal(await like.getAttribute('aria-pressed'),null);
- await like.click();await page.waitForFunction(()=>window.recordedActions?.length===1);
- await like.click();await page.waitForFunction(()=>window.recordedActions?.length===2);
+ await like.click();await page.getByRole('dialog').getByRole('button',{name:'Gift 20.00 credits',exact:true}).click();await page.waitForFunction(()=>window.recordedActions?.length===1);
+ await like.click();await page.getByRole('dialog').getByRole('button',{name:'Gift 20.00 credits',exact:true}).click();await page.waitForFunction(()=>window.recordedActions?.length===2);
  assert.equal(await page.getByRole('button',{name:'Unlike',exact:true,includeHidden:true}).count(),0);
  assert.deepEqual(await page.evaluate(()=>window.recordedActions),Array(2).fill({type:'like',post:'10',tipKey:{x:'1',y:'2'}}));
 });
@@ -211,7 +211,7 @@ for(const mode of ['reorg','revision','duplicate','cursor-loop','empty-loop'])te
 
 test('route change and pagehide discard delayed pages and disconnect their observer',async t=>{
  const {page,state,fire,release}=await pagingFixture(t);state.hold=true;await fire();await until(()=>state.pending.length===1);
- await page.getByRole('link',{name:'Explore subboards',exact:true}).first().click();await page.getByRole('heading',{name:'Explore subboards',exact:true}).waitFor();
+ await page.getByRole('link',{name:'Explore boards',exact:true}).first().click();await page.getByRole('heading',{name:'Explore boards',exact:true}).waitFor();
  await release();await page.evaluate(()=>pagingObservers[0].fire());assert.equal(await page.locator('#post-2').count(),0);assert.equal(await page.evaluate(()=>pagingObservers[0].disconnects),1);
  assert.equal(state.calls.filter(c=>c.cursor).length,1);
  await page.evaluate(()=>location.hash='/home');await page.locator('#post-1').waitFor();await fire();await until(()=>state.pending.length===1);
@@ -263,7 +263,7 @@ test('main and subboard routes use exact board API, contextual composer, directo
  await page.getByRole('navigation',{name:'Community'}).getByRole('link',{name:'Main board',exact:true}).click();await page.getByRole('heading',{name:'Main board',level:1}).waitFor();await page.locator('[data-board-compose]:not([disabled])').waitFor();
  assert.equal(state.calls.at(-1),'/api/board?id=0&limit=30');await page.getByRole('button',{name:'Write a post',exact:true}).click();await page.waitForFunction(()=>window.boardActions?.length===1);assert.deepEqual(await page.evaluate(()=>boardActions[0]),{type:'post',subboard:'0'});
  await page.getByText('Board rules',{exact:true}).click();assert(await page.getByRole('heading',{name:'Site rules'}).isVisible());
- await page.getByRole('link',{name:'Explore subboards',exact:true}).first().click();await page.getByRole('link',{name:'Workshop',exact:true}).click();await page.getByRole('heading',{name:'Workshop',level:1}).waitFor();await page.locator('#post-21').waitFor();
+ await page.getByRole('link',{name:'Explore boards',exact:true}).first().click();await page.getByRole('link',{name:'Workshop',exact:true}).click();await page.getByRole('heading',{name:'Workshop',level:1}).waitFor();await page.locator('#post-21').waitFor();
  assert.equal(state.calls.at(-1),'/api/board?id=20&limit=30');assert(await page.getByText('Build useful things.',{exact:true}).isVisible());assert(!(await page.getByText('Created under parent policy v1',{exact:true}).isVisible()));
  await page.getByText('Board rules',{exact:true}).click();assert(await page.getByText(hostile,{exact:true}).isVisible());await page.getByText('Rule history',{exact:true}).click();assert(await page.getByText('Created under parent policy v1',{exact:true}).isVisible());assert.equal(await page.locator('main img, main script').count(),0);
  await page.locator('#post-21').getByText('Parent rules at publication · v1',{exact:true}).click();assert(await page.locator('#post-21').getByText('Historical parent rules',{exact:true}).isVisible());
@@ -759,4 +759,35 @@ for(const locked of [false,true])test(`unknown saved choice delegates one inline
  else{await page.waitForFunction(()=>window.inlineCalls===1);assert.equal(await page.evaluate(()=>window.privateOpen),undefined);assert.deepEqual(await page.evaluate(()=>window.inlineAction),{type:'preference',kind:1,target:'1',enabled:undefined});assert.equal(await bookmark().textContent(),'Saving…');assert.equal(await bookmark().isDisabled(),true);}
  await page.evaluate(()=>refreshThread());assert.equal(await page.evaluate(()=>window.hydrationCalls??0),locked?0:1,'no automatic retry loop');
  if(!locked){assert.equal(await bookmark().textContent(),'Saving…');assert.equal(await page.evaluate(()=>window.inlineCalls),1);await page.evaluate(()=>finishInline('failed'));}
+});
+
+test('gift confirmation cancellation and Escape send nothing; heart dollar replaces visible price text',async t=>{
+ const {page}=await socialFixture(t,{wallet:'liked'});
+ const gift=page.locator('#post-10').getByRole('button',{name:'Gift 20.00 credits',exact:true});
+ assert.equal(await gift.locator('svg.icon-heart-dollar').count(),1);
+ assert.equal(await gift.locator('.sr-only').evaluate(node=>getComputedStyle(node).clip),'rect(0px, 0px, 0px, 0px)');
+ await gift.click();await page.getByRole('dialog',{name:'Gift 20.00 credits to the author?'}).waitFor();
+ await page.getByRole('button',{name:'Cancel',exact:true}).click();
+ assert.equal(await page.evaluate(()=>window.recordedActions?.length??0),0);
+ await gift.click();await page.keyboard.press('Escape');
+ assert.equal(await page.getByRole('dialog').count(),0);
+ assert.equal(await page.evaluate(()=>window.recordedActions?.length??0),0);
+});
+test('conversation back arrow returns to prior app route and direct links return Home',async t=>{
+ const {page}=await socialFixture(t,{wallet:'liked'});page.setDefaultTimeout(5000);
+ await page.getByRole('button',{name:'Back',exact:true}).click();
+ await page.getByRole('heading',{name:'Home',exact:true}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Back',exact:true}).count(),0);
+ await page.locator('#post-10').getByRole('link',{name:'View conversation',exact:true}).click();
+ await page.getByRole('heading',{name:'Conversation',exact:true}).waitFor();
+ await page.locator('#post-10').waitFor();
+ if(process.env.ROLLING_UX_SCREENSHOT)await page.screenshot({path:process.env.ROLLING_UX_SCREENSHOT,animations:'disabled'});
+ await page.getByRole('button',{name:'Back',exact:true}).click();
+ await page.getByRole('heading',{name:'Home',exact:true}).waitFor();
+ const direct=await page.context().browser().newPage();
+ try{
+  await direct.goto(new URL('/#/thread/10',page.url()).href);
+  await direct.getByRole('button',{name:'Back',exact:true}).click();
+  await direct.getByRole('heading',{name:'Home',exact:true}).waitFor();
+ }finally{await direct.close();}
 });
