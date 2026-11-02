@@ -142,7 +142,43 @@ export function createBrand() {
   chat.className = 'brand-chat';
   chat.textContent = 'chat';
   word.append(chat);
-  return [tile, word];
+  // The tagline sits under the wordmark wherever the logo appears.
+  const text = document.createElement('span');
+  text.className = 'brand-text';
+  const tagline = document.createElement('span');
+  tagline.className = 'brand-tagline';
+  tagline.textContent = BRAND_TAGLINE;
+  text.append(word, tagline);
+  return [tile, text];
+}
+export const BRAND_TAGLINE = 'Private messaging board';
+// Transaction status: one bar for every paid action (posts, replies, tips, names,
+// profiles, boards, funding and withdrawals). Five segments show how far a private
+// transaction has travelled; the headline and help come from the caller. The
+// privacy line is always present, so the loader itself says the action is private.
+export const TRANSACTION_STAGES = Object.freeze([['prepare', 'Prepare'], ['prove', 'Prove'], ['submit', 'Send'], ['included', 'Included'], ['confirmed', 'Confirmed']]);
+export const TRANSACTION_PRIVACY = 'Private: sent from your Aztec account. Nothing on-chain links it to your wallet or your other posts.';
+export function createTransactionStatus({ icon = createIcon, dismissible = false, onDismiss = () => {} } = {}) {
+  const make = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
+  const node = make('section', 'tx-status'); node.setAttribute('aria-label', 'Transaction status'); node.hidden = true;
+  const head = make('div', 'tx-head'), mark = make('span', 'tx-mark'), headline = make('strong', 'tx-headline'), help = make('p', 'tx-help'), track = make('ol', 'tx-track'), privacy = make('p', 'tx-privacy'), privacyText = make('span');
+  mark.setAttribute('aria-hidden', 'true'); mark.append(icon('check')); track.setAttribute('aria-label', 'Progress');
+  const steps = TRANSACTION_STAGES.map(([key, label]) => { const step = make('li', 'tx-step', label); step.dataset.stage = key; track.append(step); return step; });
+  privacy.append(icon('lock'), privacyText);
+  head.append(mark, headline); node.append(head, track, help, privacy);
+  if (dismissible) { const close = make('button', 'tx-close'); close.type = 'button'; close.setAttribute('aria-label', 'Hide transaction status'); close.append(icon('close')); close.addEventListener('click', () => { clear(); onDismiss(); }); node.append(close); }
+  let current = null;
+  function set({ stage = null, headline: text = '', help: detail = '', privacy: line = TRANSACTION_PRIVACY, tone = 'busy', label = '' } = {}) {
+    current = { stage, headline: text, help: detail, privacy: line, tone, label };
+    const index = stage === 'done' ? steps.length : TRANSACTION_STAGES.findIndex(([key]) => key === stage);
+    track.hidden = index < 0;
+    steps.forEach((step, i) => { step.dataset.state = i < index ? 'done' : i === index ? (tone === 'error' ? 'error' : 'current') : 'todo'; step.setAttribute('aria-current', i === index ? 'step' : 'false'); });
+    node.dataset.tone = tone; node.dataset.stage = String(stage); node.setAttribute('aria-busy', String(tone === 'busy'));
+    headline.textContent = text; help.textContent = detail; help.hidden = !detail; privacyText.textContent = line; privacy.hidden = !line;
+    node.hidden = false;
+  }
+  function clear() { current = null; node.hidden = true; node.removeAttribute('data-tone'); node.removeAttribute('data-stage'); }
+  return Object.freeze({ node, set, clear, snapshot: () => current && { ...current }, get active() { return current !== null; } });
 }
 // Placeholder cards shown while a feed loads. Decorative: the visible status text
 // beside them carries the announcement.
@@ -258,7 +294,9 @@ export function threadTree(posts, root, parentOf = threadParent, rootOf = thread
 }
 // Fold policy, Reddit-style: direct replies stay open, deep or busy branches fold,
 // and anything the reader opened or collapsed by hand wins over the defaults.
-export const THREAD_POLICY = Object.freeze({ quietDepth: 3, continueDepth: 5, fanOut: 5 });
+export const THREAD_POLICY = Object.freeze({ quietDepth: 3, continueDepth: 5, fanOut: 5, fanOutDepth: 2 });
+// Feed cards are previews of a conversation: direct replies fold after three.
+export const FEED_THREAD_POLICY = Object.freeze({ quietDepth: 3, continueDepth: 5, fanOut: 3, fanOutDepth: 1 });
 export function threadFolds(tree, signals, state, policy = THREAD_POLICY) {
   const info = new Map();
   const describe = node => { if (info.has(node.id)) return info.get(node.id); const own = node.post ? signals(node.post) : {}; const children = node.children.map(describe); const value = { likes: Number(own.likes) || 0, bot: Boolean(own.bot), removed: Boolean(own.removed), keep: Boolean(own.pending), branchBot: Boolean(own.bot), branchKeep: Boolean(own.pending) }; for (const child of children) { value.branchBot ||= child.branchBot; value.branchKeep ||= child.branchKeep; } info.set(node.id, value); return value; };
@@ -270,7 +308,7 @@ export function threadFolds(tree, signals, state, policy = THREAD_POLICY) {
       const own = info.get(child.id);
       let hidden = null;
       if (child.depth === policy.continueDepth && !own.branchKeep && !state.expanded.has('deep:' + node.id)) hidden = 'deep';
-      else if (child.depth >= 2 && index >= policy.fanOut && !own.branchKeep && !state.expanded.has('more:' + node.id)) hidden = 'more';
+      else if (child.depth >= (policy.fanOutDepth ?? 2) && index >= policy.fanOut && !own.branchKeep && !state.expanded.has('more:' + node.id)) hidden = 'more';
       let collapsed = false;
       if (state.collapsed.has(child.id)) collapsed = true;
       else if (!state.expanded.has(child.id) && !own.branchKeep) collapsed = own.removed || child.depth >= policy.quietDepth && own.likes === 0 && !own.branchBot && node.children.length > 1;
@@ -287,7 +325,9 @@ export function threadFolds(tree, signals, state, policy = THREAD_POLICY) {
 // draws the thread line and collapse controls, applies the fold policy and keeps the
 // reader's choices across pages, live refreshes and Back. Renderers keep ownership of
 // the article itself; only `.post-top` is read for the collapsed summary.
-export function createThreadView({ root, signals, state, announce = () => {}, policy = THREAD_POLICY, parentOf = threadParent, rootOf = threadRoot, icon = createIcon }) {
+// `compare` orders siblings (feeds arrive newest first but read oldest first); without
+// it, posts keep their arrival order, which is chain order on a conversation page.
+export function createThreadView({ root, signals, state, announce = () => {}, policy = THREAD_POLICY, parentOf = threadParent, rootOf = threadRoot, icon = createIcon, compare = null }) {
   const posts = [], articles = new Map(), wrappers = new Map(), branches = new Map(), expanders = new Map();
   let container = null, rootBranch = null, pending = [];
   const make = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
@@ -342,7 +382,18 @@ export function createThreadView({ root, signals, state, announce = () => {}, po
   }
   return Object.freeze({
     mount(node) { container = node; },
-    add(post, article) { if (!container || typeof post?.id !== 'string' || articles.has(post.id)) return; posts.push(post); articles.set(post.id, article); pending.push(post.id); },
+    add(post, article) {
+      if (!container || typeof post?.id !== 'string' || articles.has(post.id)) return;
+      let at = posts.length; if (compare) { at = posts.findIndex(other => compare(post, other) < 0); if (at < 0) at = posts.length; }
+      posts.splice(at, 0, post); articles.set(post.id, article); pending.push(post.id);
+    },
+    // Swap the article shown for a post, e.g. a feed's context clone for the real item.
+    replace(post, article) {
+      const current = articles.get(post?.id); if (!current || current === article) return false;
+      posts[posts.findIndex(other => other.id === post.id)] = post; articles.set(post.id, article);
+      const wrapper = wrappers.get(post.id); if (wrapper && !wrapper.classList.contains('orphan')) article.querySelector('[data-parent-line]')?.remove();
+      current.replaceWith(article); if (!pending.length) refresh(); return true;
+    },
     commit() {
       if (!pending.length) return;
       const tree = threadTree(posts, root, parentOf, rootOf), fresh = new Set(pending); pending = [];
@@ -350,9 +401,12 @@ export function createThreadView({ root, signals, state, announce = () => {}, po
         if (!fresh.has(id)) continue;
         const node = tree.nodes.get(id);
         if (id === root) { container.prepend(articles.get(id)); continue; }
-        const branch = branchFor(node.parent.id, node.depth), wrapper = wrap(node), index = node.parent.children.indexOf(node);
+        const branch = branchFor(node.parent.id, node.depth), wrapper = wrap(node), siblings = node.parent.children, index = siblings.indexOf(node);
         wrapper.style.setProperty('--i', String(Math.min(index, 8)));
-        const expander = expanders.get(node.parent.id); if (expander && expander.parentNode === branch) branch.insertBefore(wrapper, expander); else branch.append(wrapper);
+        // Keep sibling order: insert before the next sibling already in the branch, else before the expander.
+        const following = siblings.slice(index + 1).map(sibling => wrappers.get(sibling.id)).find(other => other && other.parentNode === branch);
+        const expander = expanders.get(node.parent.id);
+        branch.insertBefore(wrapper, following ?? (expander && expander.parentNode === branch ? expander : null));
       }
       refresh();
     },
@@ -369,25 +423,59 @@ export function createThreadView({ root, signals, state, announce = () => {}, po
   });
 }
 
-// One immediate parent gives a feed reply its context without expanding ancestry.
-// Cards retain their own action handlers; context clones receive distinct IDs.
-export function createFeedReplyGroup({parent,reply,parentId,root}) {
-  const group=document.createElement('section');group.className='feed-conversation';group.setAttribute('aria-label','Reply with its parent post');
-  if(parent){
-    parent.classList.add('feed-parent');
-    parent.querySelector('[data-parent-line]')?.remove();
-    const body=parent.querySelector('.post-body');
-    if(body&&body.textContent.length>420){
-      body.classList.add('context-collapsed');
-      const toggle=document.createElement('button');toggle.type='button';toggle.className='context-expand';toggle.textContent='Show more';toggle.setAttribute('aria-expanded','false');
-      toggle.addEventListener('click',()=>{const expanded=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(expanded));body.classList.toggle('context-collapsed',!expanded);toggle.textContent=expanded?'Show less':'Show more';});
-      body.after(toggle);
-    }
-  }else{
-    parent=document.createElement('div');parent.className='feed-parent missing-parent';
-    const message=document.createElement('p');message.textContent='The post being replied to is unavailable.';
-    const link=document.createElement('a');link.href='#/thread/'+root+'/'+parentId;link.textContent='View conversation';parent.append(message,link);
+// Chain order for feed items: a parent always precedes its replies. Positions are
+// compared when both carry them; post identifiers are issued in the same order.
+export function compareChainOrder(a, b) {
+  const keys = ['blockNumber', 'txIndexWithinBlock', 'logIndexWithinTx'];
+  if (a?.position && b?.position && keys.every(key => /^(0|[1-9][0-9]*)$/.test(a.position[key] ?? '') && /^(0|[1-9][0-9]*)$/.test(b.position[key] ?? ''))) {
+    for (const key of keys) { const x = BigInt(a.position[key]), y = BigInt(b.position[key]); if (x !== y) return x < y ? -1 : 1; }
+    return 0;
   }
-  reply.classList.add('feed-reply');reply.querySelector('[data-parent-line]')?.remove();
-  group.append(parent,reply);return group;
+  const x = /^(0|[1-9][0-9]*)$/.test(a?.id ?? '') ? BigInt(a.id) : null, y = /^(0|[1-9][0-9]*)$/.test(b?.id ?? '') ? BigInt(b.id) : null;
+  return x === null || y === null ? 0 : x < y ? -1 : x > y ? 1 : 0;
+}
+// One card per conversation in the Home and board feeds. Every item that belongs to
+// the same root nests under the post it answers, exactly like the conversation page,
+// so a post and its replies never appear as two separate conversations. A parent
+// that the feed has not listed yet is shown from the response's context posts and
+// replaced when the real item arrives. Cards retain their own action handlers.
+export function createFeedConversation({ root, signals, state, announce = () => {}, policy = FEED_THREAD_POLICY, icon = createIcon }) {
+  const card = document.createElement('section'); card.className = 'feed-conversation'; card.setAttribute('aria-label', 'Conversation'); card.dataset.root = root;
+  const thread = createThreadView({ root, signals, state, announce, policy, icon, compare: compareChainOrder });
+  thread.mount(card);
+  const contextIds = new Set(), missingParents = new Set();
+  let missing = null;
+  function clamp(article) {
+    const body = article.querySelector('.post-body'); if (!body || body.textContent.length <= 420) return;
+    body.classList.add('context-collapsed');
+    const toggle = document.createElement('button'); toggle.type = 'button'; toggle.className = 'context-expand'; toggle.textContent = 'Show more'; toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', () => { const expanded = toggle.getAttribute('aria-expanded') !== 'true'; toggle.setAttribute('aria-expanded', String(expanded)); body.classList.toggle('context-collapsed', !expanded); toggle.textContent = expanded ? 'Show less' : 'Show more'; });
+    body.after(toggle);
+  }
+  // Without the root post the card is an excerpt; say so and link into the conversation.
+  function updateMissing() {
+    if (thread.has(root)) { missing?.remove(); missing = null; return; }
+    if (missing) return;
+    missing = document.createElement('div'); missing.className = 'missing-parent';
+    const message = document.createElement('p'); message.textContent = 'Part of a longer conversation. Earlier posts are not shown here.';
+    const link = document.createElement('a'); link.href = '#/thread/' + root + '/' + ([...missingParents][0] ?? root); link.textContent = 'View conversation'; link.className = 'post-link';
+    missing.append(message, link); card.prepend(missing);
+  }
+  return Object.freeze({
+    card,
+    has: thread.has,
+    // `context: true` marks a clone taken from the response's context posts.
+    add(post, article, { context = false } = {}) {
+      if (context) {
+        if (thread.has(post.id)) return;
+        article.id = 'context-' + post.id; article.dataset.contextPost = post.id; article.classList.add('feed-parent'); clamp(article); contextIds.add(post.id);
+      } else if (contextIds.has(post.id)) { contextIds.delete(post.id); thread.replace(post, article); return; }
+      thread.add(post, article);
+    },
+    // Remember a parent neither listed nor given as context, for the card's link.
+    missingParent(id) { missingParents.add(id); },
+    commit() { thread.commit(); updateMissing(); },
+    reveal: thread.reveal,
+    size: thread.size
+  });
 }

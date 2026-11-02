@@ -1,6 +1,6 @@
 import {beginRollingMeasure,measureRollingStage,rollingStageObserver} from './performance.mjs';
 // Presentation only. Account restoration is delegated to the runtime; wallet prompts require a click.
-import {allowance,MAX_THREAD_POSTS,splitMessage,createMessageBudget,createMessageContent,createIcon,mentionsBok} from './model.mjs';
+import {allowance,MAX_THREAD_POSTS,splitMessage,createMessageBudget,createMessageContent,createIcon,mentionsBok,createTransactionStatus,TRANSACTION_PRIVACY} from './model.mjs';
 import {createPublicReader} from './reader-client.mjs';
 import {prepareAvatarUpload} from './avatar-upload.mjs';
 // Presentation-only diagnostic projection. Keep this vocabulary closed even if
@@ -235,7 +235,7 @@ const message='This action could not be completed. Your draft is saved. If you a
  * Uploaded bytes come from immutable previewBlob; recovery validates the saved
  * raster but displays its ORIGINAL Blob, never the validator's re-encoded bytes.
  */
-export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPrivateChange=()=>{},onIncludedPostRendered=()=>false,onAnalytics=()=>{}}){
+export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPrivateChange=()=>{},onIncludedPostRendered=()=>false,onAnalytics=()=>{},onStatus=()=>{}}){
  if(typeof loadRuntime!=='function'||typeof onPublicEffect!=='function'||typeof onPrivateChange!=='function'||typeof onIncludedPostRendered!=='function')throw Error('Wallet panel configuration unavailable.');
  const metric=(name,details)=>{try{onAnalytics(name,details);}catch{}};
  const metricNow=()=>globalThis.performance?.now?.()??Date.now();
@@ -285,6 +285,8 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     if(ownsLike)pendingLikes.delete(tip);
     if(ownsFeedback){
      includedObservation=null;actionFeedback.textContent=result.status==='confirmed'?actionLabel(target.action)+': confirmed.':result.status==='reverted'?'The change reverted.':'The change is no longer included.';actionFeedback.hidden=false;
+     const noun=capital(nouns[target.action?.type]??'your action');
+     if(!busy)showStatus(result.status==='confirmed'?{stage:'done',headline:noun+' is confirmed on Aztec.',help:'',tone:'done'}:{stage:'included',headline:result.status==='reverted'?noun+' reverted.':noun+' is no longer included.',help:result.status==='reverted'?'A network fee may have been charged. Nothing else changed.':'The network reorganised. Check your account before trying again.',tone:'error'});
      if(result.status!=='confirmed'){
       profileSnapshot=null;namesLoaded=false;identities=[];identityRecords=[];cursor=0;selectedName='0';selectedLabel='Anonymous';accountRefreshNeeded=true;requestAccountRefresh();if(!busy)render();
      }
@@ -305,8 +307,14 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  const description=el('p',{id:'rolling-wallet-description',class:'quiet'});
  // Signup funnel: connect, fund, talk. Shown only while an account is being set up.
  const steps=el('ol',{class:'setup-steps','aria-label':'Account setup steps',hidden:''});
- dialog.append(el('div',{class:'dialog-top'},title,closeButton),steps,description,live,content);
+ // One status bar for every paid action. It travels with `live` into the inline name
+ // form, and the page mirrors it (through onStatus) once the dialog has closed.
+ const txStatus=createTransactionStatus();
+ dialog.append(el('div',{class:'dialog-top'},title,closeButton),steps,description,live,txStatus.node,content);
  document.body.append(dialog);
+ function openDialog(){dialog.showModal();emitStatus();}
+ // Escape leaves the inline name form the same way Cancel does.
+ inlineName.addEventListener('keydown',event=>{if(event.key!=='Escape'||!inlineCreation||busy||intent)return;event.preventDefault();dismissInlineCreation();renderIdentityControls();identityControls.querySelector('select')?.focus();});
  const bokBalance=createBokBalanceQuery({identity:()=>unlocked()?session:null,read:()=>session.application.readBokStatus(),onChange:()=>{
   bokStatus=bokBalance.snapshot().value;renderBokControls();updateBokForm();updateTopupQuote();if(bokRefreshNeeded&&!bokBalance.pending)requestBokBalance();requestPostingCredit();requestComposerPreparation();
  }});
@@ -374,7 +382,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  function addBokCredit(){
   if(initializing||busy||!session||!unlocked())return;
   topupKind='bok';topupInputs={amount:''};resetTopupQuote();topupSaved=null;view='topup';clearOperationFeedback();
-  if(!dialog.open){returnFocus=document.activeElement;dialog.showModal();}render();
+  if(!dialog.open){returnFocus=document.activeElement;openDialog();}render();
  }
  function renderBokControls(){
   if(!bokHost)return;bokHost.replaceChildren();
@@ -445,12 +453,40 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   for(const host of [dialog,inlineName])for(const node of host.querySelectorAll('button,input,select,textarea'))node.disabled=node.dataset.accountingStop==='true'?!accountingCheck:value||node.dataset.unavailable==='true';
   renderPostingCreditControls();
  }
- let progressNote=false;
- function note(text){
+ let progressNote=false,statusSnapshot=null,operationAction=null,settledOutcome=null;
+ // Plain words for the thing being sent, used by the status bar's headline.
+ const nouns={post:'your post',reply:'your reply',thread:'your posts',quote:'your quote',repost:'your repost',bok:'your request to Bok',like:'your 20-credit gift',name:'your name',bio:'your bio',avatar:'your avatar',subboard:'your board',withdraw:'your withdrawal','withdraw-bok':'your withdrawal','cancel-deposit':'your refund','cancel-bok-request':'the Bok release','expire-bok-request':'the Bok expiry','claim-deposit':'your deposit','claim-private-fee':'your posting credit','claim-bok':'your Bok credit','moderate-post':'the removal','moderate-avatar':'the removal','reject-subboard':'the rejection','set-main-policy':'the rules update','transfer-moderator':'the transfer'};
+ const capital=text=>text[0].toUpperCase()+text.slice(1);
+ function currentNoun(kind){return kind==='bok-credit'?'your Bok credit':kind==='posting-credit'?'your posting credit':nouns[intent?.action?.type??operationAction??draft.type]??'your action';}
+ function stageCopy(stage,kind){
+  const noun=currentNoun(kind);
+  return {headline:{prepare:`Preparing ${noun}…`,prove:`Proving ${noun} privately…`,submit:`Sending ${noun} to Aztec…`,included:`${capital(noun)} is on Aztec. Final confirmation pending…`}[stage],
+   help:{prepare:'Checking your private balance and the current rules. Nothing has been sent yet.',prove:'A zero-knowledge proof lets the network verify this action without learning who you are. This is the longest step.',submit:'Keep this page open until Aztec accepts the transaction.',included:'Accepted into a block. Final confirmation usually follows within a minute; you can keep reading.'}[stage]};
+ }
+ function emitStatus(){const inPage=dialog.open||(inlineCreation&&!inlineName.hidden);try{onStatus(statusSnapshot?{...statusSnapshot,inPage}:null);}catch{}}
+ // A status that has just appeared scrolls into view: on small screens the
+ // action button sits well below the top of the dialog or inline form.
+ function showStatus(snapshot){const appearing=statusSnapshot===null;statusSnapshot={privacy:TRANSACTION_PRIVACY,tone:'busy',...snapshot};txStatus.set(statusSnapshot);emitStatus();if(appearing&&(dialog.open||inlineCreation))try{txStatus.node.scrollIntoView?.({block:'nearest'});}catch{}}
+ function hideStatus(){if(statusSnapshot===null)return;statusSnapshot=null;txStatus.clear();emitStatus();}
+ // After an operation: a sent action stays visible as included or confirmed until the
+ // page dismisses it; everything else clears. Failures keep their own alert.
+ function settleStatus(){
+  const outcome=settledOutcome;settledOutcome=null;
+  if(!outcome||error){hideStatus();return;}
+  const noun=capital(nouns[outcome.type]??'your action');
+  if(outcome.confirmed)showStatus({stage:'done',headline:noun+' is confirmed on Aztec.',help:'',tone:'done'});
+  else showStatus({stage:'included',headline:noun+' is on Aztec. Final confirmation pending…',help:'You can keep reading. This finishes on its own.'});
+ }
+ // `stage` names the transaction step for the status bar; `live` keeps the plain
+ // announcement. Account setup keeps its own full-height progress layout.
+ function note(text,{stage=null,kind=null,help=''}={}){
   progressNote=false;
-  live.className=setupMode||postingInProgress?'account-setup-progress':'quiet';
-  if((setupMode||postingInProgress)&&text)live.replaceChildren(el('span',{class:'account-setup-spinner','aria-hidden':'true'}),el('strong',{},text),el('span',{class:'account-setup-help'},postingInProgress?'Your post is being processed.':'This can take a little while. Keep this page open.'));
+  const setup=!!setupMode;
+  live.className=setup?'account-setup-progress':busy&&text?'sr-only':'quiet';
+  if(setup&&text)live.replaceChildren(el('span',{class:'account-setup-spinner','aria-hidden':'true'}),el('strong',{},text),el('span',{class:'account-setup-help'},'This can take a little while. Keep this page open.'),el('span',{class:'tx-privacy'},createIcon('lock'),el('span',{},'Your wallet only opens and funds this private account. It is never shown beside your posts.')));
   else live.textContent=text;
+  if(busy&&text&&!setup){const copy=stage?stageCopy(stage,kind):{};showStatus({stage,headline:copy.headline??text,help:help||copy.help||''});}
+  else if(!busy||!text)hideStatus();
  }
  function startSetup(){metric('account_open');setupMode='wallet';note('Opening your account…');render();}
  function clearOperationFeedback(){error='';notice='';note('');for(const node of content.querySelectorAll('[data-operation-feedback]'))node.remove();}
@@ -519,9 +555,9 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   }).finally(()=>{finishRefresh();accountRefreshPending=null;if(epoch===accountEpoch&&unlocked()){updatePostingBalance();renderPostingCreditControls();requestPostingCredit();renderBokControls();requestBokBalance();}});
  }
  async function work(fn,failureMessage=actionFailure,{posting=false,action=false}={}){
-  if(busy)return;cancelCostPreview();if(posting)composerAbort?.abort();createdNameFeedback=null;const finishTiming=posting?beginRollingMeasure('post.interaction'):action?beginRollingMeasure('action.interaction'):()=>{};let finishOperation;operationSettled=new Promise(resolve=>{finishOperation=resolve;});const operationFocus=document.activeElement;busy=true;postingInProgress=posting;actionInProgress=action;actionOperation=null;clearOperationFeedback();controlsBusy(true);if(posting){note('Posting…');for(const button of content.querySelectorAll('[data-action-review]'))button.textContent='Posting…';}
+  if(busy)return;cancelCostPreview();if(posting)composerAbort?.abort();createdNameFeedback=null;const finishTiming=posting?beginRollingMeasure('post.interaction'):action?beginRollingMeasure('action.interaction'):()=>{};let finishOperation;operationSettled=new Promise(resolve=>{finishOperation=resolve;});const operationFocus=document.activeElement;busy=true;postingInProgress=posting;actionInProgress=action;actionOperation=null;operationAction=null;settledOutcome=null;clearOperationFeedback();controlsBusy(true);if(posting){note('Posting…',{stage:'prepare'});for(const button of content.querySelectorAll('[data-action-review]'))button.textContent='Posting…';}
   try{if(initializationPending)await initializationPending;await composerPreparation;await moderatorLookup;await accountRefreshPending;await postingCreditPending;await bokBalance.settled();await topupQuotePending;await fn();}catch(failure){notice='';stopFunding();recoveryInspection=null;note('');error=failure===runtimeFailure?'Account tools could not load. Reload the page to try again.':failure===rulesFailure?'Current board rules are unavailable, changed, or reject new posts. Review the rules below before continuing. Nothing was sent.':failure===connectionFailure?'Your account could not connect. Check your connection and try again.':failure===avatarFailure?'This image could not be prepared. Choose a smaller still PNG, JPEG or WebP image.':failureMessage(failure)??message;}finally{
-   try{if((error||actionOperation?.failed)&&pendingPostReveal?.txHash===actionOperation?.txHash)pendingPostReveal=null;if(actionOperation?.included&&!postingInProgress&&(error||actionOperation.failed)){actionFeedback.textContent=error?(actionOperation.confirmed?'Confirmed. Account details could not refresh.':'The change could not be confirmed.'):actionOperation.resultStatus==='reverted'?'The change reverted.':'Confirmation is still pending.';actionFeedback.hidden=false;}if(setupMode){setupMode=null;note('');}if(actionOperation?.included&&actionOperation.modal&&actionOperation.epoch===accountEpoch&&unlocked()&&(error||intent||actionOperation.failed)&&!dialog.open)dialog.showModal();postingInProgress=false;actionInProgress=false;actionOperation=null;if(invalidated||reloadRequired)clearPrivateView();if(progressNote)note('');busy=false;render(document.activeElement===document.body?operationFocus:document.activeElement);
+   try{if((error||actionOperation?.failed)&&pendingPostReveal?.txHash===actionOperation?.txHash)pendingPostReveal=null;if(actionOperation?.included&&!postingInProgress&&(error||actionOperation.failed)){actionFeedback.textContent=error?(actionOperation.confirmed?'Confirmed. Account details could not refresh.':'The change could not be confirmed.'):actionOperation.resultStatus==='reverted'?'The change reverted.':'Confirmation is still pending.';actionFeedback.hidden=false;}if(setupMode){setupMode=null;note('');}if(actionOperation?.included&&actionOperation.modal&&actionOperation.epoch===accountEpoch&&unlocked()&&(error||intent||actionOperation.failed)&&!dialog.open)openDialog();postingInProgress=false;actionInProgress=false;actionOperation=null;if(invalidated||reloadRequired)clearPrivateView();if(progressNote)note('');busy=false;render(document.activeElement===document.body?operationFocus:document.activeElement);settleStatus();
    const created=createdNameFeedback;createdNameFeedback=null;
    if(created&&created.epoch===accountEpoch&&created.name===selectedName&&unlocked()){
     const selector=identityControls.querySelector('select');if(selector?.isConnected){selector.focus({preventScroll:true});selector.scrollIntoView({block:'nearest'});}
@@ -574,8 +610,10 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    const stages=fundingAutomatic||fundingActiveCapability?{estimating:`Checking the cost of adding your ${credit}…`,preparing:`Preparing your ${credit}…`,proving:`Preparing your ${credit}…`,submitting:`Adding your ${credit}…`,confirming:`Waiting for your ${credit} to confirm…`}:postingInProgress?{'posting-waiting':'Waiting for the network to unlock posting…',estimating:'Preparing your post…',preparing:'Preparing your post…',proving:'Creating the proof for your post…',submitting:'Sending your post…',confirming:'Waiting for your post to confirm…'}:{estimating:'Checking the cost…',preparing:actionInProgress?'Preparing your action…':'Loading your account…',proving:'Creating the proof…',submitting:'Sending your action. Keep this page open…',confirming:'Waiting for confirmation…'};
    let stage;try{const own=Object.getOwnPropertyDescriptor(progress??{},'stage');if(own&&Object.hasOwn(own,'value')&&typeof own.value==='string')stage=own.value;}catch{}
    transactionTiming.progress(stage);
+   const funding=fundingAutomatic||fundingActiveCapability,kind=funding?(fundingKind==='bok'?'bok-credit':'posting-credit'):null;
+   const txStage=diagnostic?.stage==='funding-claim'?({inspect:'prepare',recover:'prepare','account-status':'prepare',prepare:'prove',checkpoint:'prove',submit:'submit',reconcile:'included'})[diagnostic.step]??'prepare':diagnostic?.stage?null:({estimating:'prepare',preparing:'prepare',proving:'prove',submitting:'submit',confirming:'included','posting-waiting':'prepare'})[stage]??null;
    const setupMessages={'account-lock':'Opening your account…','trusted-node':'Connecting to the network…',deployment:'Checking the network…','account-derive':'Preparing your private account…','store-open':'Saving your account on this device…','pxe-create':'Preparing your private account…','account-register':'Preparing your private account…','contracts-register':'Preparing your private account…','initial-sync':'Syncing your account with the network…','journal-open':'Finishing account setup…','wallet-bind':'Finishing account setup…','account-manager':'Finishing account setup…','application-bind':'Finishing account setup…'};
-   note(setupMode&&diagnostic?.stage==='session-initialization'?(setupMessages[diagnostic.step]??'Finishing account setup…'):setupMode&&diagnostic?.stage==='private-refresh'?'Checking your account balance…':diagnostic?.stage==='funding-claim'?fundingProgressMessage(diagnostic,fundingKind):Object.hasOwn(stages,stage)?stages[stage]:fundingAutomatic||fundingActiveCapability?(diagnostic?.stage==='private-refresh'?`Checking your ${credit}…`:`Adding your ${credit}…`):postingInProgress?'Posting…':'Loading your account…');progressNote=true;
+   note(setupMode&&diagnostic?.stage==='session-initialization'?(setupMessages[diagnostic.step]??'Finishing account setup…'):setupMode&&diagnostic?.stage==='private-refresh'?'Checking your account balance…':diagnostic?.stage==='funding-claim'?fundingProgressMessage(diagnostic,fundingKind):Object.hasOwn(stages,stage)?stages[stage]:fundingAutomatic||fundingActiveCapability?(diagnostic?.stage==='private-refresh'?`Checking your ${credit}…`:`Adding your ${credit}…`):postingInProgress?'Posting…':'Loading your account…',{stage:txStage,kind});progressNote=true;
   }});}
   if(setupMode&&runtime.startedFreshAccount?.()&&session.funding){
    // An explicit new test account has a new derivation nonce. Its payment does
@@ -609,7 +647,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   initializing=true;
   initializationPending=Promise.resolve().then(async()=>{
    await ensureRuntime();
-   if(runtime.startingTestAccount?.()&&!dialog.open){returnFocus=document.activeElement;dialog.showModal();closeButton.focus();}
+   if(runtime.startingTestAccount?.()&&!dialog.open){returnFocus=document.activeElement;openDialog();closeButton.focus();}
    if(!unlocked()&&typeof runtime.restoreAccount==='function')await runtime.restoreAccount();
    if(!unlocked())return false;
    await connect();return true;
@@ -619,7 +657,8 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   }).finally(()=>{initializing=false;note('');render();requestComposerPreparation();});
   render();return initializationPending;
  }
- function privacyDetails(){return el('details',{class:'account-details'},el('summary',{},'How privacy works'),paragraph('Posts are public. Other readers cannot see which posts belong to the same anonymous account. This version uses a trusted proving service that can see the private data it processes.'));}
+ const privacyNote=text=>el('p',{class:'privacy-note'},createIcon('lock'),el('span',{},text));
+ function privacyDetails(){return el('details',{class:'account-details'},el('summary',{},'How privacy works'),paragraph('Your wallet funds a private account on the Aztec network. Posts, replies, tips and names are published from that account, so nothing on-chain links them to your wallet, and other readers cannot tell which posts share an account.'),paragraph('Posts themselves are public. Ethereum funding amounts and timing are public. This version uses a trusted proving service that can see the private data it processes.'));}
  function walletChoices(target,connectWallet){
   const choices=runtime.fundingWallets();
   if(!Array.isArray(choices)||choices.length>32)throw connectionFailure;
@@ -642,7 +681,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   target.append(list,button('Refresh wallet list',()=>render()));
  }
  function custody(){
-  content.append(paragraph(runtime.startingTestAccount?.()?'Connect your wallet to start a new test account with an empty posting balance.':'Connect your Ethereum wallet to open your account. Use the same wallet whenever you come back.'));
+  content.append(paragraph(runtime.startingTestAccount?.()?'Connect your wallet to start a new test account with an empty posting balance.':'Connect your Ethereum wallet to open a private account on Aztec. Use the same wallet whenever you come back.'),privacyNote('Your wallet only opens and funds the account. It is never shown beside your posts, and nothing on-chain links the two.'));
   if(typeof runtime.fundingWallets!=='function'||typeof runtime.signInWallet!=='function'){content.append(paragraph('Wallet sign-in is unavailable. Reload the page to try again.'));return;}
   walletChoices(content,choice=>void work(async()=>{
    startSetup();note('Approve sign-in in '+choice.name+'…');await runtime.signInWallet(choice.id);metric('wallet_connected');await connect();
@@ -1110,6 +1149,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   if(['bok-post-reverted','bok-release-reverted'].includes(result.status)){note('');notice=(result.status==='bok-post-reverted'?'The Bok post reverted.':'The Bok release or expiry reverted.')+' A network fee may have been charged. The funded request remains saved; no action is retried automatically.';return;}
   if(['included','confirmed'].includes(result.status)){
    const provisional=result.status==='included';
+   settledOutcome={type:result.action?.type,confirmed:!provisional};
    if(actionOperation?.intentId===result.intentId)includedMetric(result.action,actionOperation);
    if(actionOperation?.intentId===result.intentId)requestPostReveal(actionOperation,result.action,result.txHash);
    if(provisional){includedObservation={txHash:result.txHash,action:result.action,inclusion:result.inclusion,observed:null};if(result.action?.type==='like')pendingLikes.set(result.txHash,includedObservation);actionFeedback.textContent=actionLabel(result.action)+': included; final confirmation pending.';actionFeedback.hidden=false;requestIncludedObservation();}
@@ -1171,7 +1211,8 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    !Number.isSafeInteger(progress.blockNumber)||progress.blockNumber<=0)return;
   active.included=true;active.txHash=progress.txHash;includedMetric(intent.action,active);
   requestPostReveal(active,intent.action,progress.txHash);
-  note('Confirmation pending');closeButton.disabled=false;
+  settledOutcome={type:intent.action.type,confirmed:false};
+  note('Confirmation pending',{stage:'included'});closeButton.disabled=false;
   if(!postingTypes.has(intent.action.type)){const finish=beginRollingMeasure('action.included');finish();actionFeedback.textContent=actionLabel(intent.action)+': confirmation pending.';actionFeedback.hidden=false;}
   try{active.onIncluded?.();}catch{}
   if(active.modal&&dialog.open){const finish=postingTypes.has(intent.action.type)?beginRollingMeasure('post.composer-close'):()=>{};dialog.close();finish();}
@@ -1214,7 +1255,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   if(!session||!unlocked()||blocked||status?.status!=='fee-ready'||intent){panelApi.open(action);return {status:'blocked',reason:intent?'existing-action':'setup'};}
   const epoch=accountEpoch,active=session;let outcome;
   await work(async()=>{
-   checkAccount(epoch);if(session!==active)throw connectionFailure;note('Saving…');
+   checkAccount(epoch);if(session!==active)throw connectionFailure;operationAction=action.type;note('Saving…',{stage:'prepare'});
    await executeAction(action,{modal:false,onIncluded,onResult:result=>{outcome=result;}});
   },actionFailure,{action:true});
   if(outcome)return {status:outcome.status};
@@ -1246,10 +1287,13 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    node.addEventListener('input',()=>{draft[name]=node.value;if(name==='content')updateInvitation();if(name==='subboard')updateRules();validate();});fields.set(name,node);content.append(label(text,node));return node;
   }
   function avatarInput(optional=false){
-   const file=el('input',{type:'file',accept:'image/png,image/jpeg,image/webp','aria-label':'Avatar image'});
+   // The native file control stays for input; a styled button opens it.
+   const file=el('input',{type:'file',accept:'image/png,image/jpeg,image/webp','aria-label':'Avatar image',class:'sr-only',tabindex:'-1'});
    file.addEventListener('change',()=>{const selected=file.files?.[0];if(!selected)return;avatarDraft=null;
     void work(async()=>{const epoch=accountEpoch;let prepared;try{prepared=await prepareAvatarUpload(selected);}catch{throw avatarFailure;}checkAccount(epoch);avatarDraft={blob:prepared.previewBlob,notice:prepared.notice};});});
-   content.append(label(optional?'Avatar image (optional)':'Avatar image',file),paragraph('Choose a PNG, JPEG or WebP. We’ll crop it to a square and show you a preview.'));
+   const pick=button(avatarDraft?.blob?'Choose a different image':'Choose an image',()=>file.click());pick.className='button file-picker';pick.insertBefore(createIcon('user'),pick.firstChild);
+   const chosen=el('span',{class:'file-chosen quiet',role:'status'},avatarDraft?.blob?'Image ready to publish':'No image chosen');
+   content.append(el('div',{class:'form-field'},el('span',{},optional?'Avatar image (optional)':'Avatar image'),el('div',{class:'file-field'},pick,chosen,file)),paragraph('Choose a PNG, JPEG or WebP. We’ll crop it to a square and show you a preview.'));
    if(avatarDraft?.blob){showAvatar(avatarDraft.blob,content);if(avatarDraft.notice)content.append(paragraph(avatarDraft.notice));content.append(paragraph(`${avatarDraft.blob.size}/8192 encoded bytes`));}
    if(!optional&&avatarDraft?.clear)content.append(paragraph('The avatar will be cleared.'));
    if(!optional||avatarDraft?.blob)content.append(button(optional?'Remove selected avatar':'Clear avatar',()=>{avatarDraft=optional?null:{clear:true};render();}));
@@ -1288,7 +1332,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   }else if(kind==='subboard'){
    content.append(paragraph('Create a space for a topic or community. Its web address is permanent. The site’s rules apply alongside your board’s rules.'));
    input('slug','Board address (e.g. book-club)');input('name','Board name');input('description','Description',{area:true});input('rules','Additional rules',{area:true,required:false});
-  }else if(kind==='like'){target('post');content.append(paragraph('Gift 20.00 credits to the author. Network fees are additional.'));}
+  }else if(kind==='like'){target('post');content.append(paragraph('Gift 20.00 credits to the author. Network fees are additional.'),privacyNote('Sent from your private Aztec account. The author sees the gift, never who sent it.'));}
   else{
    const names=el('select',{'aria-label':'Posting identity'},el('option',{value:'0'},'Anonymous'));
    for(const record of identityRecords)names.append(el('option',{value:record.id},`${record.first} ${record.last}`));
@@ -1383,6 +1427,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    const action=captureComposerAction(),selectedAvatar=avatarDraft;
    const direct=immediateTypes.has(action.type);
    void work(async()=>{
+    operationAction=action.type;if(!postingTypes.has(action.type))note('Preparing…',{stage:'prepare'});
     const expectedRules=direct?displayedPostingRules(action):undefined;
     if(!direct)await checkPostingRules(action);
     await prepareAvatarAction(action,selectedAvatar);
@@ -1409,6 +1454,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    const balanceLabel=el('span');
    updatePostingBalance=()=>{balanceLabel.textContent=accountRefreshNeeded||accountRefreshPending?'Balance (updating) ':'Balance ';balance.textContent=typeof status?.privateFeeCredit==='string'?formatCredits(status.privateFeeCredit):status?.status==='fee-needed'?'0.00':'—';if(typeof status?.privateFeeCredit==='string')balance.setAttribute('title',formatCredits(status.privateFeeCredit));else balance.removeAttribute('title');validate();};
    content.append(el('div',{class:'composer-cost'},el('span',{},balanceLabel,balance),el('span',{},'Estimated cost: ',cost)));
+   content.append(privacyNote(postingTypes.has(draft.type)?'Published from your private Aztec account. Readers see the post, never your wallet, and cannot tell which posts share an account.':'Sent from your private Aztec account. Nothing on-chain links this to your wallet.'));
   }
   const review=button(reviewLabel(draft),prepareReview,true);
   const threadNotice=el('p',{class:'thread-limit-note',role:'status',hidden:''});
@@ -1595,7 +1641,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   const cap=session.topup[topupKind],isBok=topupKind==='bok';
   if(!topupInputs.amount)topupInputs.amount=isBok?'1':formatCredits(BigInt(cap.defaultPrivateFeeCap)*2n,{roundUp:true});
   if(!topupInputs.asset)topupInputs.asset=cap.ethAvailable?'ETH':'USDC';
-  content.append(paragraph(isBok?'Bok credit pays the assistant when you mention @bok in a post. It is separate from posting credit.':'Posting credit pays network fees for posts, replies, tips and account updates. It is separate from your refundable deposit and Bok credit.'));
+  content.append(paragraph(isBok?'Bok credit pays the assistant when you mention @bok in a post. It is separate from posting credit.':'Posting credit pays network fees for posts, replies, tips and account updates. It is separate from your refundable deposit and Bok credit.'),privacyNote('Credit moves into your private Aztec account. Posts and tips paid from it are never linked to the wallet that paid.'));
   const amountName=isBok?'Amount (USD)':'Posting credit amount',amount=el('input',{type:'text',inputmode:'decimal','aria-label':amountName});amount.value=topupInputs.amount;const edits=[amount];
   amount.addEventListener('input',()=>{topupInputs.amount=amount.value;resetTopupQuote();requestTopupQuote();});
   amount.addEventListener('change',requestTopupQuote);content.append(label(amountName,amount));
@@ -1653,6 +1699,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    const maximum=(isUsdc?decimal(b.maximumUsdc,6):compactAmount(b.maximumTotalWei,18,8,true))+currency;
    const usd=isUsdc?Number(decimal(b.maximumUsdc,6)).toFixed(2):q.usdEstimate;
    content.append(el('section',{class:'wallet-payment-total','aria-label':'Total payable'},el('span',{},'Total payable · maximum'),el('strong',{},usd?'≈ $'+usd+' USD':maximum),el('p',{class:'quiet',title:decimal(isUsdc?b.maximumUsdc:b.maximumTotalWei,isUsdc?6:18)+currency},usd?'Up to '+maximum:'USD estimate unavailable. This is the maximum payment.'),el('p',{class:'quiet'},'Includes your deposit, posting credit and payment fees.')),
+    privacyNote('Your wallet pays once on Ethereum. The deposit and credit land in your private Aztec account, and nothing you post from it can be traced back to this wallet.'),
     paragraph(runtime.canStartTestAccount?'Test network · test funds only.':'Ethereum mainnet.'),
     paragraph(isUsdc?'Your wallet will ask for two signatures to approve this payment.':'Approve the payment in your wallet.'));
    const details=el('details',{class:'account-details wallet-cost-breakdown'},el('summary',{},'Cost breakdown'),
@@ -1676,20 +1723,20 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     }
    },aggregateFundingFailure),true));
   }else if(!fundingAutomatic){
-   content.append(el('h3',{},'Set up posting'),paragraph('A refundable deposit discourages spam. Your posting balance pays for posts and account updates.'));
+   content.append(el('h3',{},'Set up posting'),paragraph('A refundable deposit discourages spam. Your posting balance pays for posts and account updates.'),privacyNote('Both move into a private account on Aztec. Posts paid from it are never linked to the wallet that funded it.'));
    if(fundingQuoteRequested&&!busy)content.append(button('Refresh price',()=>void work(prepareFundingQuote,aggregateFundingFailure),true));
   }
-  if(fundingAutomatic)content.append(paragraph('Keep this page open until your posting balance is ready.'));
+  if(fundingAutomatic)content.append(paragraph('Keep this page open until your posting balance is ready.'),privacyNote('Your credit is being moved into your private Aztec account. From here on, nothing you post is linked to your wallet.'));
  }
  function fundingView(){
   const connected=fundingWalletView();if(connected)aggregateFundingView();
 
  }
- function restoreDialogContent(){inlineName.hidden=true;dialog.append(description,live,content);}
+ function restoreDialogContent(){inlineName.hidden=true;dialog.append(description,live,txStatus.node,content);emitStatus();}
  function addPostingCredit(){
   if(initializing||busy||blocked||intent||!session?.topup?.['private-fee']||!unlocked())return;
   inlineCreation=false;restoreDialogContent();topupKind='private-fee';topupInputs={amount:''};resetTopupQuote();topupSaved=null;view='topup';clearOperationFeedback();
-  if(!dialog.open){returnFocus=document.activeElement;dialog.showModal();}render();
+  if(!dialog.open){returnFocus=document.activeElement;openDialog();}render();
  }
  function postingCreditUnavailable(failure){
   let unavailable=false,unsafe=false;
@@ -1765,7 +1812,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    if(select.value==='load'){void work(()=>loadView({loadIdentity:true}));return;}
    if(select.value==='create'){
     inlineCreation=true;clearProfileDraft();clearOperationFeedback();view='action';draft={type:'name',first:'',last:''};
-    if(dialog.open)dialog.close();inlineName.hidden=false;inlineName.append(description,live,content);render();
+    if(dialog.open)dialog.close();inlineName.hidden=false;inlineName.append(description,live,txStatus.node,content);render();emitStatus();
     if(!runtime||initializing)void initialize();else if(session&&unlocked())void work(loadView);
    }else{selectedName=select.value;selectedLabel=ownedLabel(selectedName);if(['post','reply','quote','repost','bok'].includes(draft.type))draft.name=selectedName;if(leaving)renderIdentityControls();}
   });
@@ -1802,11 +1849,11 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   const signedIn=!!runtime&&unlocked();
   title.textContent=!signedIn?'Connect your wallet':view==='funding'?'Set up posting':view==='topup'?(topupKind==='bok'?'Add Bok credit':'Add posting credit'):view==='preferences'?'Follows and bookmarks':view==='names'?'Your names':view==='balances'?'Balance and withdrawals':view==='refund'?'Pending Ethereum refund':view==='action'?(TYPES[draft.type]??'Your account'):'Your account';
   if(signedIn&&intent&&['prepared','replacement-prepared'].includes(intent.status))title.textContent=intent.status==='replacement-prepared'?'Review replacement':reviewLabel(intent.action);
-  description.textContent=!signedIn?'Join the conversation without sharing your identity.':'';
+  description.textContent=!signedIn?'Connect a wallet to fund a private account on Aztec. Your posts are never linked to it.':'';
   description.hidden=!!setupMode||!description.textContent;
   const onboardingFunding=signedIn&&['fee-needed','collateral-pending'].includes(status?.status);
   steps.hidden=!!intent||invalidated||reloadRequired||!(!signedIn||!!setupMode||view==='funding'||onboardingFunding&&view==='topup');
-  if(!steps.hidden){const stage=!signedIn?0:onboardingFunding||view==='funding'?1:2;steps.replaceChildren(...['Connect wallet','Set up posting','Start talking'].map((step,index)=>el('li',{'data-state':index<stage?'done':index===stage?'current':'todo'},step)));}
+  if(!steps.hidden){const stage=!signedIn?0:onboardingFunding||view==='funding'?1:2;steps.replaceChildren(...['Connect wallet','Fund privately','Start talking'].map((step,index)=>el('li',{'data-state':index<stage?'done':index===stage?'current':'todo'},step)));}
   content.hidden=!!setupMode;
   if(setupMode||initializing)title.textContent='Opening your account…';
   if(error)content.append(el('p',{role:'alert',tabindex:'-1',class:'notice error','data-operation-feedback':''},error));
@@ -1830,7 +1877,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     else{
      if(view==='overview'){
       const needsFunding=status?.status==='fee-needed'||status?.status==='collateral-pending',needsTopup=status?.status==='fee-needed'&&status?.depositIds?.length>0;
-      if(needsFunding)content.append(el('section',{class:'wallet-setup-prompt'},el('h3',{},needsTopup?'Add posting credit':'Set up posting'),paragraph(needsTopup?'Your deposit is already in place. Add posting credit to keep going.':'A refundable deposit and posting credit let you join the conversation.'),button(needsTopup?'Add posting credit':'Set up posting',()=>{if(needsTopup){topupKind='private-fee';topupInputs={amount:''};resetTopupQuote();topupSaved=null;}selectView(needsTopup?'topup':'funding');},true)));
+      if(needsFunding)content.append(el('section',{class:'wallet-setup-prompt'},el('h3',{},needsTopup?'Add posting credit':'Set up posting'),paragraph(needsTopup?'Your deposit is already in place. Add posting credit to keep going.':'A refundable deposit and posting credit open your private account. Posts from it are never linked to your wallet.'),button(needsTopup?'Add posting credit':'Set up posting',()=>{if(needsTopup){topupKind='private-fee';topupInputs={amount:''};resetTopupQuote();topupSaved=null;}selectView(needsTopup?'topup':'funding');},true)));
       const menu=el('nav',{class:'wallet-account-menu','aria-label':'Your account'});
       menu.append(button('Your names',()=>selectView('names')),button('Follows and bookmarks',()=>selectView('preferences')));
       if(typeof session.application.readBalances==='function')menu.append(button('Balance and withdrawals',()=>{balances=null;bokAccounting=null;selectView('balances');}));
@@ -1874,7 +1921,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  }
  function close(){if(!actionOperation?.included&&(busy||!initializing&&session?.busy&&!bokBalance.pending&&!topupQuotePending&&!postingCreditPending&&!accountRefreshPending&&!composerPreparation)){note('An account operation is in progress. Wait before closing.');return false;}pendingReply=null;cancelCostPreview();stopFunding();stopRefundWatch();recoveryInspection=null;releasePreviews();if(dialog.open)dialog.close();return true;}
  dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
- dialog.addEventListener('close',()=>{cancelCostPreview();if(returnFocus?.isConnected)returnFocus.focus();});
+ dialog.addEventListener('close',()=>{cancelCostPreview();emitStatus();if(returnFocus?.isConnected)returnFocus.focus();});
  dialog.addEventListener('keydown',event=>{
   if(event.key!=='Tab')return;
   const focusable=[...dialog.querySelectorAll('button,input,select,textarea,summary,a[href]')].filter(node=>!node.disabled&&node.getClientRects().length);
@@ -1902,7 +1949,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
      panelApi.open(request.defaults,request.extras);
     });
    }
-   if(!dialog.open){returnFocus=document.activeElement;dialog.showModal();closeButton.focus();}return;
+   if(!dialog.open){returnFocus=document.activeElement;openDialog();closeButton.focus();}return;
   }
   if(inlineCreation){inlineCreation=false;restoreDialogContent();}
   if(session)unlocked(); // Detect replaced custody before rendering cached account data.
@@ -1917,7 +1964,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   // Refunds can arrive while the composer is closed. Refresh this optional
   // snapshot in the background; typing and the unlocked session remain intact.
   if(!dialog.open&&view==='action'&&draft.type==='bok')requestBokBalance();
-  if(!dialog.open){composerOpening++;returnFocus=document.activeElement;render();dialog.showModal();updatePostingBalance();closeButton.focus();}
+  if(!dialog.open){composerOpening++;returnFocus=document.activeElement;render();openDialog();updatePostingBalance();closeButton.focus();}
   else render();
   if(!initializationPending)void initialize();
 
