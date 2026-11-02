@@ -1,0 +1,180 @@
+[
+  {
+    "totalMs": 12400,
+    "rows": [
+      {
+        "name": "Input update, debounce, dispatch",
+        "startMs": 0,
+        "endMs": 264.705078125,
+        "durationMs": 264.705078125
+      },
+      {
+        "name": "Synchronization incl first policy",
+        "startMs": 264.705078125,
+        "endMs": 1320.330078125,
+        "durationMs": 1055.625
+      },
+      {
+        "name": "Contract state incl handoff",
+        "startMs": 1320.330078125,
+        "endMs": 1870.455078125,
+        "durationMs": 550.125
+      },
+      {
+        "name": "Uninstrumented preparation barrier",
+        "startMs": 1870.455078125,
+        "endMs": 2358.860107421875,
+        "durationMs": 488.405029296875
+      },
+      {
+        "name": "Arguments: policy/history concurrent",
+        "startMs": 2358.860107421875,
+        "endMs": 3557.860107421875,
+        "durationMs": 1199.0
+      },
+      {
+        "name": "Payment metadata, binding and handoffs",
+        "startMs": 3557.860107421875,
+        "endMs": 4160.025146484375,
+        "durationMs": 602.1650390625
+      },
+      {
+        "name": "Private fee-credit discovery",
+        "startMs": 4160.025146484375,
+        "endMs": 6184.47021484375,
+        "durationMs": 2024.445068359375
+      },
+      {
+        "name": "Payment/request construction and handoffs",
+        "startMs": 6184.47021484375,
+        "endMs": 6192.18017578125,
+        "durationMs": 7.7099609375
+      },
+      {
+        "name": "Private execution incl oracle waits",
+        "startMs": 6192.18017578125,
+        "endMs": 9799.39501953125,
+        "durationMs": 3607.21484375
+      },
+      {
+        "name": "Synthetic kernel, serialization and handoffs",
+        "startMs": 9799.39501953125,
+        "endMs": 10477.830078125,
+        "durationMs": 678.43505859375
+      },
+      {
+        "name": "Public simulation RPC",
+        "startMs": 10477.830078125,
+        "endMs": 11073.3349609375,
+        "durationMs": 595.5048828125
+      },
+      {
+        "name": "Admission validation incl handoff",
+        "startMs": 11073.3349609375,
+        "endMs": 12029.14013671875,
+        "durationMs": 955.80517578125
+      },
+      {
+        "name": "Exact estimate finalization",
+        "startMs": 12029.14013671875,
+        "endMs": 12031.670166015625,
+        "durationMs": 2.530029296875
+      },
+      {
+        "name": "Return, UI and harness observation",
+        "startMs": 12031.670166015625,
+        "endMs": 12400,
+        "durationMs": 368.329833984375
+      }
+    ]
+  },
+  {
+    "totalMs": 9887,
+    "rows": [
+      {
+        "name": "Input update, debounce, dispatch",
+        "startMs": 0,
+        "endMs": 262.485107421875,
+        "durationMs": 262.485107421875
+      },
+      {
+        "name": "Synchronization incl first policy",
+        "startMs": 262.485107421875,
+        "endMs": 1456.695068359375,
+        "durationMs": 1194.2099609375
+      },
+      {
+        "name": "Contract state incl handoff",
+        "startMs": 1456.695068359375,
+        "endMs": 2216.4951171875,
+        "durationMs": 759.800048828125
+      },
+      {
+        "name": "Uninstrumented preparation barrier",
+        "startMs": 2216.4951171875,
+        "endMs": 3143.0849609375,
+        "durationMs": 926.58984375
+      },
+      {
+        "name": "Arguments: policy/history concurrent",
+        "startMs": 3143.0849609375,
+        "endMs": 4379.304931640625,
+        "durationMs": 1236.219970703125
+      },
+      {
+        "name": "Payment metadata, binding and handoffs",
+        "startMs": 4379.304931640625,
+        "endMs": 4916.16015625,
+        "durationMs": 536.855224609375
+      },
+      {
+        "name": "Private fee-credit discovery",
+        "startMs": 4916.16015625,
+        "endMs": 6458.3701171875,
+        "durationMs": 1542.2099609375
+      },
+      {
+        "name": "Payment/request construction and handoffs",
+        "startMs": 6458.3701171875,
+        "endMs": 6464.22509765625,
+        "durationMs": 5.85498046875
+      },
+      {
+        "name": "Private execution incl oracle waits",
+        "startMs": 6464.22509765625,
+        "endMs": 7701.81005859375,
+        "durationMs": 1237.5849609375
+      },
+      {
+        "name": "Synthetic kernel, serialization and handoffs",
+        "startMs": 7701.81005859375,
+        "endMs": 8248.050048828125,
+        "durationMs": 546.239990234375
+      },
+      {
+        "name": "Public simulation RPC",
+        "startMs": 8248.050048828125,
+        "endMs": 8817.525146484375,
+        "durationMs": 569.47509765625
+      },
+      {
+        "name": "Admission validation incl handoff",
+        "startMs": 8817.525146484375,
+        "endMs": 9757.4599609375,
+        "durationMs": 939.934814453125
+      },
+      {
+        "name": "Exact estimate finalization",
+        "startMs": 9757.4599609375,
+        "endMs": 9759.815185546875,
+        "durationMs": 2.355224609375
+      },
+      {
+        "name": "Return, UI and harness observation",
+        "startMs": 9759.815185546875,
+        "endMs": 9887,
+        "durationMs": 127.184814453125
+      }
+    ]
+  }
+]

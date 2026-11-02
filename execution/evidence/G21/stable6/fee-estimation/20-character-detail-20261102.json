@@ -1,0 +1,204 @@
+{
+  "started": "2026-11-02T14:28:28.799Z",
+  "finished": "2026-11-02T14:29:48.030Z",
+  "origin": "https://d30njln0kead8n.cloudfront.net",
+  "board": "0x269bd57c385f1df1d652a0d0bb849cc7584b9a04083f0da4c65723c4a2a7ffd5",
+  "originalSDK": "eeb9f390d6e0a420ef1a5a73cc625fe8d1e4dafec1e6120b9ce3c1740de43619",
+  "originalWorker": "a6fd9b3bab293b4ff5b36e5aad2df63a109b5696b11629dcbe07e872aae39242",
+  "conditions": [
+    {
+      "availableCredit": "31592663804825400000",
+      "gasSettings": {
+        "gasLimits": {
+          "daGas": 117624,
+          "l2Gas": 6540000
+        },
+        "teardownGasLimits": {
+          "daGas": 512,
+          "l2Gas": 40000
+        },
+        "maxFeesPerGas": {
+          "feePerDaGas": "0",
+          "feePerL2Gas": "2500000400000"
+        },
+        "maxPriorityFeesPerGas": {
+          "feePerDaGas": "0",
+          "feePerL2Gas": "0"
+        }
+      }
+    }
+  ],
+  "dom": [
+    {
+      "stage": "input-event",
+      "at": 1793629775605.3252
+    },
+    {
+      "stage": "pending-DOM",
+      "at": 1793629775607.4202,
+      "value": "pending"
+    },
+    {
+      "stage": "cost-DOM",
+      "at": 1793629787548.79,
+      "value": "1.25 credits"
+    }
+  ],
+  "passed": true,
+  "errors": [],
+  "scenario": "One 20-character ordinary draft after funded account and composer preparation; no post submitted; temporary diagnostic timing only",
+  "run": {
+    "textLength": 20,
+    "at": 1793629775590,
+    "end": 1793629787981,
+    "wallMs": 12391,
+    "value": "1.25 credits"
+  },
+  "spans": [
+    {
+      "stage": "rolling.action.sync",
+      "start": 1793629775859.535,
+      "end": 1793629777069.92,
+      "duration": 1210.3849999904633
+    },
+    {
+      "stage": "rolling.action.policy",
+      "start": 1793629776449.475,
+      "end": 1793629777069.7102,
+      "duration": 620.2349999845028
+    },
+    {
+      "stage": "rolling.action.contract-state",
+      "start": 1793629777070.46,
+      "end": 1793629777669.18,
+      "duration": 598.7200000286102
+    },
+    {
+      "stage": "preview-guard",
+      "start": 1793629777070.41,
+      "end": 1793629778284.195,
+      "duration": 1213.7849999964237
+    },
+    {
+      "stage": "preview-state-barrier",
+      "start": 1793629778284.39,
+      "end": 1793629778284.405,
+      "duration": 0.015000015497207642
+    },
+    {
+      "stage": "preview-guard",
+      "start": 1793629778284.465,
+      "end": 1793629778284.4949,
+      "duration": 0.030000001192092896
+    },
+    {
+      "stage": "preview-contract-instance",
+      "start": 1793629778284.56,
+      "end": 1793629778284.63,
+      "duration": 0.06999999284744263
+    },
+    {
+      "stage": "preview-guard",
+      "start": 1793629778284.73,
+      "end": 1793629778284.76,
+      "duration": 0.030000001192092896
+    },
+    {
+      "stage": "rolling.action.screening",
+      "start": 1793629778285.375,
+      "end": 1793629778297.52,
+      "duration": 12.144999980926514
+    },
+    {
+      "stage": "rolling.action.history-witnesses",
+      "start": 1793629778297.54,
+      "end": 1793629779053.21,
+      "duration": 755.669999986887
+    },
+    {
+      "stage": "preview-guard",
+      "start": 1793629779626.77,
+      "end": 1793629779626.78,
+      "duration": 0.010000020265579224
+    },
+    {
+      "stage": "preview-guard",
+      "start": 1793629779626.96,
+      "end": 1793629779626.985,
+      "duration": 0.025000005960464478
+    },
+    {
+      "stage": "preview-guard",
+      "start": 1793629779627.345,
+      "end": 1793629779627.35,
+      "duration": 0.004999995231628418
+    },
+    {
+      "stage": "rolling.action.policy",
+      "start": 1793629778285.28,
+      "end": 1793629779626.585,
+      "duration": 1341.3049999773502
+    },
+    {
+      "stage": "rolling.action.fee-metadata",
+      "start": 1793629779627.84,
+      "end": 1793629780226,
+      "duration": 598.1599999964237
+    },
+    {
+      "stage": "rolling.action.fee-binding",
+      "start": 1793629780226.565,
+      "end": 1793629780231.9749,
+      "duration": 5.409999996423721
+    },
+    {
+      "stage": "preview-guard",
+      "start": 1793629782127.6,
+      "end": 1793629782127.625,
+      "duration": 0.025000005960464478
+    },
+    {
+      "stage": "rolling.action.fee-balance",
+      "start": 1793629780232.1,
+      "end": 1793629782127.205,
+      "duration": 1895.1049999892712
+    },
+    {
+      "stage": "private-execution",
+      "start": 1793629782136.17,
+      "end": 1793629785371.335,
+      "duration": 3235.1649999916553
+    },
+    {
+      "stage": "synthetic-kernel-and-serialization",
+      "start": 1793629785371.5,
+      "end": 1793629785992.6199,
+      "duration": 621.1200000047684
+    },
+    {
+      "stage": "public-simulation",
+      "start": 1793629785992.71,
+      "end": 1793629786629.15,
+      "duration": 636.4400000274181
+    },
+    {
+      "stage": "admission-validation",
+      "start": 1793629786629.22,
+      "end": 1793629787539.26,
+      "duration": 910.0399999916553
+    },
+    {
+      "stage": "exact-estimate",
+      "start": 1793629782127.71,
+      "end": 1793629787547.85,
+      "duration": 5420.140000015497
+    },
+    {
+      "stage": "preview-guard",
+      "start": 1793629787547.94,
+      "end": 1793629787547.955,
+      "duration": 0.014999985694885254
+    }
+  ],
+  "browserClosed": true
+}
