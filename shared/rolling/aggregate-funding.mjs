@@ -1,4 +1,4 @@
-import {Interface, AbiCoder, keccak256, TypedDataEncoder, encodeBytes32String} from 'ethers';
+import {Interface, AbiCoder, keccak256, TypedDataEncoder, encodeBytes32String, toUtf8Bytes} from 'ethers';
 
 // Allow time to read the cost and approve both wallet prompts. Slippage and
 // on-chain deadlines still bound execution; a stale quote is never refreshed silently.
@@ -174,6 +174,17 @@ export async function aggregateFundingTransaction(preparation,consent) {
   return simulate(prepared.get(preparation),preparation,encodeAggregateFundingTransaction(preparation,consent),false);
 }
 
+export const MAINNET_USDC_IMPLEMENTATION_SLOT=keccak256(toUtf8Bytes('org.zeppelinos.proxy.implementation'));
+export async function readUsdcImplementation({chainId,token,readStorage,readImplementation}) {
+ if(String(chainId)!=='1'||token.toLowerCase()!=='0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')return String(await readImplementation()).toLowerCase();
+ // Circle's mainnet proxy restricts implementation() to its administrator.
+ // Read its legacy (pre-EIP-1967) slot at the same block as the runtime checks.
+ const word=await readStorage(MAINNET_USDC_IMPLEMENTATION_SLOT);
+ check(typeof word==='string'&&/^0x0{24}[0-9a-fA-F]{40}$/.test(word),'USDC_IMPLEMENTATION');
+ const address='0x'+word.slice(26).toLowerCase();
+ check(BigInt(address)!==0n,'USDC_IMPLEMENTATION');
+ return address;
+}
 const usdcAbi=new Interface(['function implementation() view returns(address)','function DOMAIN_SEPARATOR() view returns(bytes32)','function balanceOf(address) view returns(uint256)','function authorizationState(address,bytes32) view returns(bool)']);
 const preparedUsdc=new WeakMap();
 export const usdcAuthorizationTypes=freeze({ReceiveWithAuthorization:[{name:'from',type:'address'},{name:'to',type:'address'},{name:'value',type:'uint256'},{name:'validAfter',type:'uint256'},{name:'validBefore',type:'uint256'},{name:'nonce',type:'bytes32'}]});
@@ -212,7 +223,7 @@ export async function prepareAggregateUsdcFunding(input,{provider}={}) {
     async()=>hasCollateral?String((await call(s.collateralPortal,portal,'depositNonces',[w.address]))[0]):'0',
     async()=>{if(hasCollateral)check((await call(s.collateralPortal,portal,'depositsEnabled'))[0]===true,'PORTAL_NOT_READY');},
     async()=>{if(hasBok)check((await call(s.bokPortal,bok,'active'))[0]===true,'PORTAL_NOT_READY');},
-    async()=>check(String((await call(s.bokToken,usdcAbi,'implementation'))[0]).toLowerCase()===s.usdcImplementation,'USDC_IMPLEMENTATION'),
+    async()=>check(await readUsdcImplementation({chainId:s.chainId,token:s.bokToken,readStorage:slot=>request('eth_getStorageAt',[s.bokToken,slot,tag]),readImplementation:async()=>(await call(s.bokToken,usdcAbi,'implementation'))[0]})===s.usdcImplementation,'USDC_IMPLEMENTATION'),
     async()=>check((await call(s.bokToken,usdcAbi,'DOMAIN_SEPARATOR'))[0]===TypedDataEncoder.hashDomain(domain),'USDC_DOMAIN'),
   ]);
   check(BigInt(a.collateralWei)>=minimum&&BigInt(a.collateralWei)<=maximum,'COLLATERAL_BOUNDS');

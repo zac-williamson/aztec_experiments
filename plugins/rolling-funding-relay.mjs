@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {Interface,AbiCoder,keccak256,Transaction,Wallet,JsonRpcProvider,FetchRequest} from 'ethers';
 import {fileState,onceAztecOperation,reconcileRollingEthereum,matchRollingEthereumSigned,operatorEthereumRequest} from './operations.mjs';
-import {aggregateUsdcFundingAbi} from '../shared/rolling/aggregate-funding.mjs';
+import {aggregateUsdcFundingAbi,readUsdcImplementation} from '../shared/rolling/aggregate-funding.mjs';
 import {validateAggregateFundingIntent,verifyAggregateFundingEffects} from '../shared/rolling/aggregate-recovery.mjs';
 const abi=new Interface(aggregateUsdcFundingAbi);
 const quoteAbi=new Interface(['function quoteExactOutputSingle((address tokenIn,address tokenOut,uint256 amount,uint24 fee,uint160 sqrtPriceLimitX96)) returns(uint256,uint160,uint32,uint256)']);
@@ -65,7 +65,7 @@ export async function createRollingFundingRelay({config,directory,provider,signe
   check((await provider.getNetwork()).chainId===BigInt(c.chainId));
   const block=await provider.getBlock('latest');check(block&&Number.isSafeInteger(block.number)&&Number.isSafeInteger(block.timestamp)&&BigInt(block.timestamp)>plan.validAfter&&BigInt(block.timestamp)+30n<plan.deadline);
   for(const [address,hash] of [[c.router,c.routerCodeHash],[c.usdc,c.usdcCodeHash],[c.usdcImplementation,c.usdcImplementationCodeHash],[c.quoter,c.quoterCodeHash]])check(keccak256(await provider.getCode(address,block.number))===hash);
-  const impl=tokenAbi.decodeFunctionResult('implementation',await provider.call({to:c.usdc,data:tokenAbi.encodeFunctionData('implementation'),blockTag:block.number}))[0];check(impl.toLowerCase()===c.usdcImplementation);
+  const impl=await readUsdcImplementation({chainId:c.chainId,token:c.usdc,readStorage:slot=>provider.getStorage(c.usdc,slot,block.number),readImplementation:async()=>tokenAbi.decodeFunctionResult('implementation',await provider.call({to:c.usdc,data:tokenAbi.encodeFunctionData('implementation'),blockTag:block.number}))[0]});check(impl.toLowerCase()===c.usdcImplementation);
   const request={to:c.router,from:c.relayer,data:intent.data,value:0n};
   // Executes both signatures, exact conversion and all bridges without spending.
   await provider.call({...request,blockTag:block.number});

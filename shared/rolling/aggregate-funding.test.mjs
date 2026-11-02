@@ -60,7 +60,7 @@ function usdcFixture(options={}) {
   if(call.method==='eth_getBalance'){f.calls.push(call);assert.equal(call.params[0],f.input.relay.address,'Only RELAYER requires ETH');return options.relayEmpty?'0x0':'0xffffff';}
   if(call.method==='eth_call'){
    const {to,data}=call.params[0];
-   if(to===s.quoter){f.calls.push(call);const parsed=q.parseTransaction({data});assert.equal(parsed.args[0].tokenIn,s.bokToken);assert([s.weth,s.feeToken].includes(parsed.args[0].tokenOut.toLowerCase()));if(options.noLiquidity)throw Error('No route');return q.encodeFunctionResult('quoteExactOutputSingle',[parsed.args[0].amount*10n,1,0,100]);}
+   if(to===s.quoter){f.calls.push(call);const parsed=q.parseTransaction({data});assert.equal(parsed.args[0].tokenIn.toLowerCase(),s.bokToken);assert([s.weth,s.feeToken].includes(parsed.args[0].tokenOut.toLowerCase()));if(options.noLiquidity)throw Error('No route');return q.encodeFunctionResult('quoteExactOutputSingle',[parsed.args[0].amount*10n,1,0,100]);}
    if(to===s.bokToken){f.calls.push(call);const parsed=usdc.parseTransaction({data});const values={implementation:options.badImplementation?address(72):s.usdcImplementation,DOMAIN_SEPARATOR:options.badDomain?field(3):TypedDataEncoder.hashDomain({...s.usdcDomain,chainId:s.chainId,verifyingContract:s.bokToken}),balanceOf:options.poor?1n:999999999n,authorizationState:options.spent===true};return usdc.encodeFunctionResult(parsed.name,[values[parsed.name]]);}
    if(to===s.router && r.parseTransaction({data}).name==='usdcAuthorizationNonce'){
     f.calls.push(call);const plan=r.parseTransaction({data}).args[0],hash=keccak256(AbiCoder.defaultAbiCoder().encode([r.getFunction('fundUsdc').inputs[0]],[plan]));
@@ -279,4 +279,30 @@ for(const [asset,make] of [['ETH',fixture],['USDC',usdcFixture]])test(`${asset} 
  assert.equal(f.calls.filter(c=>c.method==='eth_call'&&c.params[0].to===f.input.scope.quoter).length,1);
  const tx=asset==='ETH'?await aggregateFundingTransaction(quote,'0x'):await aggregateUsdcFundingTransaction(quote,'0x','0x12');
  assert.equal(r.parseTransaction(tx).args[1],'0x');assert.equal(tx.value,asset==='ETH'?quote.plan.fee.maxEth:'0');
+});
+
+test('mainnet canonical USDC reads its legacy implementation slot, with strict address padding',async()=>{
+ const {readUsdcImplementation,MAINNET_USDC_IMPLEMENTATION_SLOT}=await import('./aggregate-funding.mjs');
+ const token='0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',implementation=address(73),seen=[];
+ const base={chainId:'1',token,readImplementation:()=>assert.fail('admin-only method must not be called')};
+ assert.equal(await readUsdcImplementation({...base,readStorage:async slot=>{seen.push(slot);return '0x'+'0'.repeat(24)+implementation.slice(2);}}),implementation);
+ assert.deepEqual(seen,[MAINNET_USDC_IMPLEMENTATION_SLOT]);
+ assert.equal(MAINNET_USDC_IMPLEMENTATION_SLOT,keccak256(new TextEncoder().encode('org.zeppelinos.proxy.implementation')));
+ for(const word of ['0x','0x'+'0'.repeat(64),'0x1'+'0'.repeat(63),'0x'+'0'.repeat(63)])await assert.rejects(readUsdcImplementation({...base,readStorage:async()=>word}),{code:'AGGREGATE_USDC_IMPLEMENTATION'});
+ for(const config of [{chainId:'11155111',token},{chainId:'1',token:address(8)}])assert.equal(await readUsdcImplementation({...config,readStorage:()=>assert.fail('not canonical mainnet proxy'),readImplementation:async()=>implementation}),implementation);
+});
+
+test('mainnet USDC quote pins storage implementation lookup to the quote block',async()=>{
+ const f=usdcFixture(),s=f.input.scope;
+ s.chainId=f.input.wallet.chainId='1';s.bokToken='0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+ const original=f.provider.request.bind(f.provider),storage=[];
+ f.provider.request=async call=>{
+  if(call.method==='eth_chainId')return '0x1';
+  if(call.method==='eth_getStorageAt'){storage.push(call.params);return '0x'+'0'.repeat(24)+s.usdcImplementation.slice(2);}
+  if(call.method==='eth_call'&&call.params[0].to===s.bokToken&&call.params[0].data==='0x5c60da1b')assert.fail('admin-only implementation()');
+  return original(call);
+ };
+ await f.prepare();
+ const {MAINNET_USDC_IMPLEMENTATION_SLOT}=await import('./aggregate-funding.mjs');
+ assert.deepEqual(storage,[[s.bokToken,MAINNET_USDC_IMPLEMENTATION_SLOT,'0x10']]);
 });

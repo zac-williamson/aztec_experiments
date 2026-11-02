@@ -14,7 +14,7 @@ const board=new Interface(['event Deposited(address indexed depositor,uint128 am
 async function fixture(t,options={}){
  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'rolling-relay-'));t.after(()=>fs.rm(directory,{recursive:true,force:true}));
  const signer=new Wallet(h(1)),relayer=signer.address.toLowerCase(),codeHash=keccak256('0x6001');
- const config={chainId:options.chainId??'31337',development:options.chainId===undefined,router:a(2),routerCodeHash:codeHash,collateralPortal:a(3),feePortal:a(4),bokPortal:a(5),privateFpc:h(6),usdc:a(7),usdcCodeHash:codeHash,usdcImplementation:a(8),usdcImplementationCodeHash:codeHash,weth:a(9),quoter:a(10),quoterCodeHash:codeHash,gasPoolFee:500,relayer,feeUsdc:'500',maxGasWei:'1000',totalGasBudgetWei:options.budget??'2000'};
+ const config={chainId:options.chainId??'31337',development:options.chainId===undefined,router:a(2),routerCodeHash:codeHash,collateralPortal:a(3),feePortal:a(4),bokPortal:a(5),privateFpc:h(6),usdc:options.usdc??a(7),usdcCodeHash:codeHash,usdcImplementation:a(8),usdcImplementationCodeHash:codeHash,weth:a(9),quoter:a(10),quoterCodeHash:codeHash,gasPoolFee:500,relayer,feeUsdc:'500',maxGasWei:'1000',totalGasBudgetWei:options.budget??'2000'};
  const plan={beneficiary:a(11),relayer,collateral:{amount:'100',maxUsdc:'200',poolFee:500},collateralSecretHash:h(12),fee:{amount:'100',maxUsdc:'200',poolFee:500},feeSecretHash:h(13),bokAmount:'300',bokCommitment:h(14),bokSecretHash:h(15),nonce:'0',validAfter:'0',deadline:String(Math.floor(Date.now()/1000)+120),relayFeeUsdc:'500',authorizationSalt:h(16)};
  if(options.feeOnly)Object.assign(plan,{collateral:{amount:'0',maxUsdc:'0',poolFee:0},collateralSecretHash:h(0),bokAmount:'0',bokCommitment:h(0),bokSecretHash:h(0)});
  const input={data:abi.encodeFunctionData('fundUsdc',[plan,options.feeOnly?'0x':'0x01','0x02'])};
@@ -178,4 +178,14 @@ test('existing relay accepts fee-only USDC authorization and returns one conserv
 for(const chainId of ['1','11155111'])test('public relay accepts matched chain and refuses mismatched RPC '+chainId,async t=>{
  const f=await fixture(t,{chainId});assert.equal((await f.relay.terms()).feeUsdc,'500');
  const wrong=await fixture(t,{chainId,wrongChain:true});await assert.rejects(wrong.relay.submit(wrong.input));assert.equal(wrong.state.signs,0);
+});
+
+test('mainnet relay pins canonical USDC implementation storage to preflight block',async t=>{
+ const f=await fixture(t,{chainId:'1',usdc:'0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'}),reads=[];
+ const {MAINNET_USDC_IMPLEMENTATION_SLOT}=await import('../../shared/rolling/aggregate-funding.mjs');
+ f.provider.getStorage=async(...args)=>{reads.push(args);return '0x'+'0'.repeat(24)+f.config.usdcImplementation.slice(2);};
+ const call=f.provider.call;
+ f.provider.call=async request=>{assert.notEqual(request.to,f.config.usdc,'must not call admin-only implementation()');return call(request);};
+ assert.equal((await f.relay.submit(f.input)).status,'succeeded');
+ assert.deepEqual(reads,[[f.config.usdc,MAINNET_USDC_IMPLEMENTATION_SLOT,10]]);
 });
