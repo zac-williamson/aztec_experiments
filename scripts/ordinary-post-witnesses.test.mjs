@@ -95,6 +95,22 @@ test('exact selected-note memberships run concurrently with public witnesses and
  assert.equal(f.noteCalls.length,1);f.pending.splice(0).forEach(resolve=>resolve());f.notePending.splice(0).forEach(resolve=>resolve());await work;await actual;
  assert.equal(f.noteCalls.length,1,'private execution uses the same native witness request');
 });
+test('the selected deposit joins history and config membership prefetch without a serial private read',async()=>{
+ const f=await fixture({mature:false});f.args.noteHashWitnessHints={...metadata(f),depositHash:new Fr(123).toString()};f.hold();f.holdNotes();
+ const work=f.run();
+ for(let i=0;i<50&&(f.pending.length<2||f.notePending.length<2);i++)await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(f.pending.length,2);assert.equal(f.notePending.length,2);
+ const deposit=f.noteCalls.find(call=>call.hash.equals(new Fr(123)));
+ assert(deposit);const required=f.args.wallet.pxe.node.getNoteHashMembershipWitness(deposit.at,deposit.hash);
+ assert.equal(f.noteCalls.length,2);
+ f.pending.splice(0).forEach(resolve=>resolve());f.notePending.splice(0).forEach(resolve=>resolve());await work;await required;
+ assert.equal(f.noteCalls.length,2,'native private deposit read joins the exact anchored prefetch');
+});
+test('deposit metadata cannot cross an anchor and malformed metadata cannot warm membership',async()=>{
+ const f=await fixture({mature:false});f.args.noteHashWitnessHints={...metadata(f),depositHash:new Fr(123).toString()};await f.run();assert.equal(f.noteCalls.length,2);
+ f.advance();await f.run();assert.equal(f.noteCalls.length,2);
+ const g=await fixture({mature:false});g.args.noteHashWitnessHints={...metadata(g),depositHash:'invalid'};await g.run();assert.equal(g.noteCalls.length,0);
+});
 for(const changed of ['owner','board','anchorHash','hashes','too-many','count'])test('optional note metadata mismatch is ignored: '+changed,async()=>{
  const f=await fixture({mature:false});const meta=metadata(f);
  if(changed==='hashes')meta.hashes=['not-a-field'];else if(changed==='too-many')meta.hashes=[Fr.ONE.toString(),new Fr(2).toString(),new Fr(3).toString()];else if(changed==='count')meta.hashes=[];else meta[changed]=Fr.ZERO.toString();

@@ -41,8 +41,10 @@ export async function prefetchOrdinaryPostWitnesses({wallet,node,board,artifact,
   // Native private execution still obtains and validates its own witnesses.
   let noteHashes=[];
   try{const meta=noteHashWitnessHints;
-    if(owner&&meta?.board===board.address.toString()&&meta.owner===owner?.toString()&&meta.anchorHash===anchor.hash.toString()&&Array.isArray(meta.hashes)&&meta.hashes.length<=2&&meta.hashes.length===hints.filter(Boolean).length)
+    if(owner&&meta?.board===board.address.toString()&&meta.owner===owner?.toString()&&meta.anchorHash===anchor.hash.toString()&&Array.isArray(meta.hashes)&&meta.hashes.length<=2&&meta.hashes.length===hints.filter(Boolean).length){
       noteHashes=meta.hashes.map(value=>Fr.fromString(value));
+      if(meta.depositHash!==undefined)noteHashes.push(Fr.fromString(meta.depositHash));
+    }
   }catch{noteHashes=[];}
   const reads=await Promise.allSettled([
     ...entries.map(async entry=>({...entry,witness:await cachedNode.getPublicDataWitness(anchor,entry.leaf)})),

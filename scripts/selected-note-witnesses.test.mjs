@@ -23,15 +23,16 @@ async function fixture({wrongClass=false,wrongOwner=false,wrongName=false}={}){
  const deposit={...posts[0],storageSlot:depositSlot,noteHash:new Fr(99)};
  let reads=0;
  const oracle=Object.create(UtilityExecutionOracle.prototype);Object.assign(oracle,{callContext:{contractAddress:board},scopes:[owner],anchorBlockHeader:{},changeSetId:42,aztecNode:{},noteStore:{getNotes:async(filter,id)=>{reads++;assert.equal(id,42);assert(filter.contractAddress.equals(board));assert(filter.owner.equals(owner));assert.equal(filter.scopes[0],owner);return [deposit,...posts].filter(note=>note.storageSlot.equals(filter.storageSlot));}}});
- const finish=await capture(oracle,call,artifact,[wrongOwner?AztecAddress.ZERO:owner],{getCurrentClassId:async()=>Fr.fromString(wrongClass?'0x01':ORDINARY_POST_GAS_PROFILE.boardClassId)},{getContractArtifact:async()=>({storageLayout:{posts:{slot:12}}})},{hash:async()=>hash});
+ const finish=await capture(oracle,call,artifact,[wrongOwner?AztecAddress.ZERO:owner],{getCurrentClassId:async()=>Fr.fromString(wrongClass?'0x01':ORDINARY_POST_GAS_PROFILE.boardClassId)},{getContractArtifact:async()=>({storageLayout:{posts:{slot:12},deposits:{slot:13}}})},{hash:async()=>hash});
  const select=(slot,count,previous)=>oracle.getNotes(Option.some(owner),slot,count,[0,1],[0,0],[32,32],[new Fr(9),new Fr(previous)], [1,1],[],[],[],[],2,0,0,2,9);
  return {owner,board,hash,posts,deposit,finish,oracle,select,postSlot,depositSlot,reads:()=>reads};
 }
-for(const count of [0,1,2])test(`capture only ${count} native-selected PostNotes, never deposit or unrelated history`,async()=>{
+for(const count of [0,1,2])test(`capture ${count} native-selected PostNotes and the exact selected deposit without another query`,async()=>{
  const f=await fixture();await f.select(f.depositSlot,1,0);
  for(let i=0;i<count;i++){const selected=await f.select(f.postSlot,2,i);assert.equal(selected.data.length,1);assert(selected.data[0].noteHash.equals(f.posts[i].noteHash));}
  const meta=await f.finish();assert.equal(meta.board,f.board.toString());assert.equal(meta.owner,f.owner.toString());assert.equal(meta.anchorHash,f.hash.toString());
  assert.deepEqual([...meta.hashes],await Promise.all(f.posts.slice(0,count).map(async n=>(await computeUniqueNoteHash(n.noteNonce,await siloNoteHash(n.contractAddress,n.noteHash))).toString())));
+ assert.equal(meta.depositHash,(await computeUniqueNoteHash(f.deposit.noteNonce,await siloNoteHash(f.deposit.contractAddress,f.deposit.noteHash))).toString());
  assert.equal(f.reads(),count+1,'no second native note query');
 });
 for(const config of [{wrongClass:true},{wrongOwner:true},{wrongName:true}])test('unqualified utility capture absent '+JSON.stringify(config),async()=>{

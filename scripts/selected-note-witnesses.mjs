@@ -27,12 +27,17 @@ async function rollingSelectedNoteCapture(oracle,call,artifact,scopes,contracts,
   if(artifact.name!=='get_screen_hints'||scopes?.length!==1||call.args.length!==2||!call.args[0].equals(Fr.fromString(scopes[0].toString()))||!call.selector.equals(await FunctionSelector.fromNameAndParameters(artifact.name,artifact.parameters)))return absent;
   const classId=await contracts.getCurrentClassId(call.to);
   if(classId?.toString()!==${JSON.stringify(ORDINARY_POST_GAS_PROFILE.boardClassId)})return absent;
-  const boardArtifact=await store.getContractArtifact(classId),slot=boardArtifact?.storageLayout?.posts?.slot;
-  if(slot===undefined)return absent;
-  const postSlot=new Fr(BigInt(slot)),owner=scopes[0],selected=[];let valid=true;
+  const boardArtifact=await store.getContractArtifact(classId),slot=boardArtifact?.storageLayout?.posts?.slot,depositSlotValue=boardArtifact?.storageLayout?.deposits?.slot;
+  if(slot===undefined||depositSlotValue===undefined)return absent;
+  const postSlot=new Fr(BigInt(slot)),depositSlot=new Fr(BigInt(depositSlotValue)),owner=scopes[0],selected=[];let valid=true,deposit;
   const original=oracle.getNotes.bind(oracle);
   oracle.getNotes=async(...args)=>{
    const result=await original(...args);
+   if(args[1].equals(depositSlot)){
+    if(args[2]!==1||args[12]!==2||args[13]!==0||args[15]!==2||result.data.length!==1||deposit)valid=false;
+    else{const note=result.data[0];if(note.isPending||!note.contractAddress.equals(call.to)||!note.owner.equals(owner)||!note.storageSlot.equals(depositSlot))valid=false;
+     else deposit={contractAddress:note.contractAddress,noteHash:note.noteHash,noteNonce:note.noteNonce};}
+   }
    if(args[1].equals(postSlot)){
     if(args[2]!==2||args[12]!==2||args[13]!==0||args[15]!==2||result.data.length!==1||selected.length>=2)valid=false;
     else{const note=result.data[0];if(note.isPending||!note.contractAddress.equals(call.to)||!note.owner.equals(owner)||!note.storageSlot.equals(postSlot))valid=false;
@@ -43,6 +48,7 @@ async function rollingSelectedNoteCapture(oracle,call,artifact,scopes,contracts,
   return async()=>{
    if(!valid)return undefined;
    try{return {board:call.to.toString(),owner:owner.toString(),anchorHash:(await header.hash()).toString(),
+    ...(deposit?{depositHash:(await computeUniqueNoteHash(deposit.noteNonce,await siloNoteHash(deposit.contractAddress,deposit.noteHash))).toString()}:{}),
     hashes:await allToCompletion(selected.map(async note=>(await computeUniqueNoteHash(note.noteNonce,await siloNoteHash(note.contractAddress,note.noteHash))).toString()))};}
    catch{return undefined;}
   };
