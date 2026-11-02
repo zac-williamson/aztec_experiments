@@ -46,11 +46,11 @@ test('failed final anchor check discards partially reconstructed notes and prese
  const reader=e.make();assert.equal((await reader.read()).availableCredit,100n);
  const persisted=[...e.values.entries()];
  const orphan=await output({tx:2,block:2,value:200n});e.privateLogs.push(orphan.log);e.setHead(2);
- const original=e.node.getBlockData;let rejected=false;
+ const original=e.node.getBlockData;let rejected=false,headReads=0;
  e.node.getBlockData=async value=>{
   const result=await original(value);
   // Number 2 is the final canonical read, after the new note was reconstructed.
-  if(value===2&&!rejected){rejected=true;return {...result,blockHash:hex(999)};}
+  if(value===2&&++headReads===2&&!rejected){rejected=true;return {...result,blockHash:hex(999)};}
   return result;
  };
  await assert.rejects(reader.read(),{code:'PRIVATE_CREDIT_ANCHOR_CHANGED'});
@@ -73,4 +73,31 @@ test('cache contention reloads the latest authenticated snapshot on the next rea
  const before=e.calls.length;
  assert.equal((await stale.read()).availableCredit,300n);
  assert.equal(e.calls.length,before);
+});
+
+
+test('synchronized preview reuses only a completed exact-anchor snapshot and refreshes new tips/spends',async()=>{
+ const e=env(),mint=await output({tx:31});e.privateLogs.push(mint.log);let headers=0;
+ const get=e.node.getBlockData;e.node.getBlockData=async value=>{headers++;return get(value);};
+ const reader=e.make(),first=await reader.read();const initialHeaders=headers,initialLogs=e.calls.length;
+ const repeated=await reader.read({reuseAtAnchor:true});assert.equal(repeated.availableCredit,100n);
+ assert.equal(headers,initialHeaders);assert.equal(e.calls.length,initialLogs);assert.notEqual(repeated.notes,first.notes);
+ assert.throws(()=>{repeated.notes[0].value=1n;},TypeError);
+ assert.equal((await reader.read({reuseAtAnchor:true})).availableCredit,100n);
+ // A plain caller still authenticates canonical state instead of borrowing the
+ // preview caller's native synchronization authority.
+ await reader.read();assert.equal(headers,initialHeaders+2);
+ const change=await output({tx:32,block:2,value:70n,role:1,completion:30n,nullifiers:[first.notes[0].nullifier]});
+ e.privateLogs.push(change.log);e.setHead(2);
+ assert.equal((await reader.read({reuseAtAnchor:true})).availableCredit,70n);
+ assert(e.calls.length>initialLogs);
+ // Same height, different native anchor must discard the completed snapshot.
+ e.privateLogs.splice(0);e.setHead(2,hex(999));
+ assert.equal((await reader.read({reuseAtAnchor:true})).availableCredit,0n);
+});
+
+test('fresh reader cannot reuse persisted credit without canonical validation',async()=>{
+ const e=env();e.privateLogs.push((await output({tx:41})).log);await e.make().read();let reads=0;
+ const get=e.node.getBlockData;e.node.getBlockData=async value=>{reads++;return get(value);};
+ assert.equal((await e.make().read({reuseAtAnchor:true})).availableCredit,100n);assert.equal(reads,2);
 });

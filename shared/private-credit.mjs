@@ -74,7 +74,8 @@ export function selectCreditInputs(notes,required){
 // One reader per native wallet, board and FPC. The cache contains wallet secrets
 // in the encrypted wallet store. Canonical checks invalidate a reorged cache.
 export function createPrivateCreditReader({wallet,node,owner,fpc,fpcArtifact,board,boardArtifact,chainId,version,fromBlock=1,cache}){
- let last=fromBlock-1,lastHash=null,notes=new Map(),seenNullifiers=new Set(),roots,reading,cacheSlot,cacheState,loaded=false;
+ let last=fromBlock-1,lastHash=null,notes=new Map(),seenNullifiers=new Set(),roots,reading,cacheSlot,cacheState,loaded=false,completed;
+ const pxe=wallet.pxe;
  const getRoots=async()=>{
   if(roots)return roots;
   // Drain both native utility reads before releasing the account operation.
@@ -135,14 +136,26 @@ export function createPrivateCreditReader({wallet,node,owner,fpc,fpcArtifact,boa
    if(page.length<20)return result;
   }
  }
- async function scan(){
+ async function scan({reuseAtAnchor=false}={}){
+  check(wallet.pxe===pxe,'PRIVATE_FEE_CONTEXT_CHANGED');
   await load();
   const header=await wallet.pxe.getSyncedBlockHeader(),anchor=await header.toBlockParameter();
-  const head=Number(header.getBlockNumber()),current=await node.getBlockData(anchor);
-  check(current&&Number(current.header.globalVariables.blockNumber)===head,'PRIVATE_CREDIT_ANCHOR_CHANGED');
+  check(wallet.pxe===pxe,'PRIVATE_FEE_CONTEXT_CHANGED');
+  const head=Number(header.getBlockNumber()),anchorKey=JSON.stringify(anchor);
+  // Only a caller owning a fresh native synchronization may reuse this result.
+  // Persisted snapshots alone never qualify, and a different hash at the same
+  // height cannot reuse notes from the old fork.
+  if(reuseAtAnchor&&completed?.key===anchorKey)return {...completed.value,notes:[...completed.value.notes]};
+  const observations=await Promise.allSettled([
+   node.getBlockData(head),
+   last>=fromBlock&&last!==head?node.getBlockData(last):Promise.resolve(null),
+  ]);
+  const failure=observations.find(result=>result.status==='rejected');if(failure)throw failure.reason;
+  const current=observations[0].value;
+  check(current&&Number(current.header.globalVariables.blockNumber)===head&&current.blockHash.toString()===anchor.hash.toString(),'PRIVATE_CREDIT_ANCHOR_CHANGED');
   const anchorHash=current.blockHash.toString();
   if(last>=fromBlock){
-   const prior=await node.getBlockData(last);
+   const prior=last===head?current:observations[1].value;
    if(last>head||prior?.blockHash.toString()!==lastHash){last=fromBlock-1;lastHash=null;notes=new Map();seenNullifiers=new Set();}
   }
   const [creditRoot,tipRoot]=await getRoots();
@@ -190,17 +203,19 @@ export function createPrivateCreditReader({wallet,node,owner,fpc,fpcArtifact,boa
    }
   }
   const final=await node.getBlockData(head),newAnchor=await (await wallet.pxe.getSyncedBlockHeader()).toBlockParameter();
-  check(final?.blockHash.toString()===anchorHash&&JSON.stringify(newAnchor)===JSON.stringify(anchor),'PRIVATE_CREDIT_ANCHOR_CHANGED');
+  check(wallet.pxe===pxe&&final?.blockHash.toString()===anchorHash&&JSON.stringify(newAnchor)===anchorKey,'PRIVATE_CREDIT_ANCHOR_CHANGED');
   const active=[...notes.values()].filter(n=>!seenNullifiers.has(n.nullifier.toString()));
   notes=new Map(active.map(n=>[n.unique.toString(),n]));seenNullifiers=new Set();last=head;lastHash=anchorHash;
   if(cacheSlot){
    const saved={version:1,last,lastHash,notes:active.map(n=>({secret:String(n.secret),key:{x:String(n.key.x),y:String(n.key.y)},blinding:String(n.blinding),partial:String(n.partial),nonce:String(n.nonce),unique:String(n.unique),nullifier:String(n.nullifier),value:String(n.value)}))};
    if(JSON.stringify(cacheState.value)!==JSON.stringify(saved))cacheState=await cacheSlot.write(cacheState,saved);
   }
-  return {notes:active,availableCredit:active.reduce((v,n)=>v+n.value,0n),anchor};
+  const value=Object.freeze({notes:Object.freeze(active.map(note=>Object.freeze({...note}))),availableCredit:active.reduce((v,n)=>v+n.value,0n),anchor:Object.freeze({...anchor})});
+  completed={key:anchorKey,value};return {...value,notes:[...value.notes]};
  }
- return Object.freeze({read(){
-  if(!reading)reading=scan().catch(error=>{
+ return Object.freeze({read(options={}){
+  if(!reading)reading=scan(options).catch(error=>{
+   completed=undefined;
    // Never retain a partially read fork or a candidate from an unverified
    // anchor. This is disposable in-memory state, not a migration/recovery log.
    last=fromBlock-1;lastHash=null;notes=new Map();seenNullifiers=new Set();

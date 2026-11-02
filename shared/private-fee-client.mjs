@@ -142,8 +142,11 @@ async function prepare({wallet,node,owner,privateFeeAddress,privateFeeArtifact,e
   const privateBalance=async()=>{
     check(creditScope?.board&&creditScope?.artifact,'PRIVATE_FEE_CONFIGURATION_REQUIRED');
     check(wallet.pxe===paymentPXE,'PRIVATE_FEE_CONTEXT_CHANGED');
+    // This capability is supplied only by a caller holding its synchronized
+    // operation scope; recheck it at read time, after metadata prefetch completes.
+    const reuseAtAnchor=typeof creditScope.reuseAtAnchor==='function'&&await creditScope.reuseAtAnchor()===true;
     const observed=await measure('action.fee-balance',()=>privateCreditReader({wallet,node,owner:author,fpc:payer,fpcArtifact:artifact,
-      board:creditScope.board,boardArtifact:creditScope.artifact,chainId,version,cache:creditScope.cache}).read());
+      board:creditScope.board,boardArtifact:creditScope.artifact,chainId,version,cache:creditScope.cache}).read({reuseAtAnchor}));
     check(wallet.pxe===paymentPXE,'PRIVATE_FEE_CONTEXT_CHANGED');
     selectedCredit={owner:author,notes:observed.notes};
     return observed.availableCredit;

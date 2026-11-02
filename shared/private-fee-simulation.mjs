@@ -6,7 +6,8 @@ import {generateSimulatedProvingResult} from '@aztec-labs/pxe/simulator';
 import {snapshotPrivateFeeSimulationInput} from './private-fee-validation.mjs';
 // Adapter for the pinned SDK. Measurement needs public revert results because
 // PXE's combined simulation throws them away; final validation uses that strict path.
-export function createPrivateFeeSimulator(wallet, node) {
+export function createPrivateFeeSimulator(wallet, node, {skipAdmissionValidation=false}={}) {
+  if(typeof skipAdmissionValidation!=='boolean')throw new TypeError('Invalid fee simulation policy');
   // This native capability and the immutable-log transform are installed by
   // the same pinned SDK build. Direct EmbeddedWallet callers use the unpatched
   // SDK and retain fresh private execution for every public simulation.
@@ -69,7 +70,7 @@ export function createPrivateFeeSimulator(wallet, node) {
     private: privateSimulation,
     validateMeasurement,
     async public(payload, from, gasSettings, enforce=false, measurement) {
-      if(enforce)return wallet.simulateTx(payload, {from, fee:{gasSettings}, skipTxValidation:false, skipFeeEnforcement:false});
+      if(enforce)return wallet.simulateTx(payload, {from, fee:{gasSettings}, skipTxValidation:skipAdmissionValidation, skipFeeEnforcement:false});
       if(measurement!==undefined&&reusableMeasurements)return publicFromMeasurement(payload,from,gasSettings,measurement);
       const privateResult = await privateSimulation(payload, from, gasSettings);
       const publicOutput = privateResult.publicInputs.forPublic

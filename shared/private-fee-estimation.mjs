@@ -36,7 +36,9 @@ function allocate(budget,lower,caps,prices){
 // credit selection, but return the simulated charge rather than its gas ceiling.
 // No proof, transaction journal or broadcast is reachable from this function.
 export async function estimatePrivateFeeActualCost(input){
- const simulator=input.simulator??createPrivateFeeSimulator(input.wallet,input.node);
+ // Display needs the actual fee-enforced execution result, not a second
+ // node admission check. Submission retains the strict default simulator.
+ const simulator=input.simulator??createPrivateFeeSimulator(input.wallet,input.node,{skipAdmissionValidation:true});
  let measured;
  const capture={...simulator,async public(...args){
   await input.guard?.();const result=await simulator.public(...args);await input.guard?.();
