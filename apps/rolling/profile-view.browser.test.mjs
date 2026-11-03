@@ -11,7 +11,7 @@ window.make=async(mime='image/png',size=100)=>{const c=document.createElement('c
 window.identity=(bytes,extra={})=>({id:'7',first:'River',last:'Lane',profile:{bio:{version:'1',length:'0',text:''},avatar:{version:'1',width:'100',height:'100',length:String(bytes.length),encoding:'base64',data:btoa(String.fromCharCode(...bytes)),...extra}}});
 window.mount=(id,options)=>{const n=avatar(id,options);document.body.append(n);return n;};window.ready=true;`;
 async function setup(t){
- const files=new Set(['profile-view.mjs','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-client.mjs','model.mjs','navigation.mjs','style.css','live.html']);
+ const files=new Set(['profile-view.mjs','reader.mjs','reader-updates.mjs','performance.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-client.mjs','model.mjs','navigation.mjs','style.css','live.html']);
  const state={identity:{id:'7',first:'River',last:'Lane',profile:{bio:{version:'1',text:'<script>bad()</script> Plain public bio'},avatar:{version:'0'}}}};
  const post=(id,name,bot=null)=>({id,record:{root:id,parent:'0',reference:'0',kind:'1',subboard:'0',name_id:name},text:'Public conversation',timestamp:'1791734400',likes:'0',bot});
  const server=http.createServer(async(req,res)=>{
@@ -69,7 +69,7 @@ test('native decoding concurrency is bounded and timed-out work never draws late
 test('actual reader keeps named avatars, anonymous and authenticated Bok separate; no private requests',async t=>{
  const {page,state,requests,base}=await setup(t);state.identity=await page.evaluate(async()=>{const {bytes}=await make();const id=identity(bytes);id.profile.bio.text='<script>bad()</script> Public bio';return id;});
  await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));await page.goto(base+'/live.html#/profile/7');await page.locator('.public-profile [data-state="ready"]').waitFor();
- assert.equal(await page.getByRole('heading',{name:'River Lane',exact:true}).count(),1);assert.equal(await page.locator('.post .public-avatar').count(),1);assert.equal(await page.getByText('Authenticated bot',{exact:true}).count(),1);assert.equal(await page.locator('.public-profile script').count(),0);
+ assert.equal(await page.getByRole('heading',{name:'River Lane',exact:true}).count(),1);assert.equal(await page.locator('.post .public-avatar').count(),1);assert.equal(await page.getByText('AI assistant',{exact:true}).count(),1);assert.equal(await page.locator('.public-profile script').count(),0);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.locator('.skip').focus();await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>document.activeElement.id),'content');
- assert(requests.every(url=>url.startsWith(base)));assert(requests.every(url=>!url.includes('/wallet')&&!url.includes('owned_')&&!url.includes('aztec')));
+ assert(requests.every(url=>url.startsWith(base)));assert(requests.every(url=>!url.includes('/v1/node')&&!url.includes('/prover')&&!url.includes('owned_')));
 });

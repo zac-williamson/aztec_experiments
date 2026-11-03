@@ -20,7 +20,7 @@ test('public reader: navigation, unsafe content, failure recovery and narrow key
   if(url.pathname.startsWith('/api/')){
    res.writeHead(unavailable?503:url.pathname==='/api/profile'&&url.searchParams.get('nameId')==='999'?404:200,{'content-type':'application/json'});
    const kind=url.pathname.slice(5),base={schemaVersion:1,scope,complete:true,checkpoint:{number:3,hash:'public'},revision:'1',names:{'7':identity},boards:{},nextCursor:null};
-   res.end(JSON.stringify(kind==='directory'?{...base,boards:[{id:'20',slug:'workshop',name:longLabels?'W'.repeat(90):'Workshop',description:longLabels?'x'.repeat(900):'Build together',mainRules:'Respect people',rules:'Show your work',rejected:false}]}:kind==='profile'?{...base,identity,posts:[post]}:kind==='post'?{...base,post:url.searchParams.get('id')==='20'?later:post}:kind==='home'?{...base,posts:[url.searchParams.has('cursor')?later:post],nextCursor:url.searchParams.has('cursor')?null:'2:1'}:{...base,posts:[post]}));return;
+   res.end(JSON.stringify(kind==='directory'?{...base,boards:[{id:'20',slug:'workshop',name:longLabels?'W'.repeat(90):'Workshop',description:longLabels?'x'.repeat(900):'Build together',mainRules:'Respect people',rules:'Show your work',rejected:false}]}:kind==='profile'?{...base,identity,posts:[post]}:kind==='post'?{...base,post:url.searchParams.get('id')==='20'?later:post}:kind==='board'?{...base,boardId:'0',board:null,mainPolicy:{version:'1',text:'Rules'},policies:[],posts:[url.searchParams.has('cursor')?later:post],nextCursor:url.searchParams.has('cursor')?null:'2:1'}:{...base,posts:[post]}));return;
   }
   const name=url.pathname==='/'?'live.html':url.pathname.slice(1);if(!files.has(name)){res.writeHead(404);res.end();return;}
   res.writeHead(200,{'content-type':name.endsWith('.mjs')?'text/javascript':name.endsWith('.css')?'text/css':'text/html','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"});res.end(await fs.readFile(path.join(root,name)));
@@ -28,7 +28,7 @@ test('public reader: navigation, unsafe content, failure recovery and narrow key
  const browser=await launchBrowser();t.after(()=>browser.close());const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],requests=[];
  page.setDefaultTimeout(5000);page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>requests.push(request.url()));
  await page.addInitScript(()=>{window.IntersectionObserver=undefined;localStorage.setItem('rolling.welcome.seen','1');}); // Exercise the accessible manual fallback.
- await page.goto(`http://127.0.0.1:${server.address().port}/`);await page.getByRole('article').waitFor();
+ await page.goto(`http://127.0.0.1:${server.address().port}/#/board/0`);await page.getByRole('article').waitFor();
  assert.equal(await page.locator('article script,article img').count(),0);assert.equal(await page.locator('a[href^="javascript:"]').count(),0);
  const message=page.locator('#post-10 > .post-body');assert.equal(await message.textContent(),'Docs\nhttp://example.org/path [Unsafe](javascript:alert) [Data](data:text/html,hello) <img src=x onerror=alert(1)> 😀');
  assert.deepEqual(await message.locator('a').evaluateAll(nodes=>nodes.map(n=>({text:n.textContent,href:n.href,target:n.target,rel:n.rel}))),[{text:'Docs',href:'https://example.com/docs?x=1&y=2',target:'_blank',rel:'noopener noreferrer'},{text:'http://example.org/path',href:'http://example.org/path',target:'_blank',rel:'noopener noreferrer'}]);
@@ -54,24 +54,24 @@ test('public reader: navigation, unsafe content, failure recovery and narrow key
  assert.equal(await page.evaluate(()=>document.activeElement.tagName),'H1');
  assert.equal(await page.title(),'Profile · rollingchat');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
- unavailable=true;await page.evaluate(()=>location.hash='/home');await page.getByRole('heading',{name:'Conversations are being checked'}).waitFor();
+ unavailable=true;await page.evaluate(()=>location.hash='/board/0');await page.getByRole('heading',{name:'Conversations are being checked'}).waitFor();
  unavailable=false;await page.getByRole('button',{name:'Try again',exact:true}).click();await page.locator('#post-20').waitFor();assert.equal(await page.getByRole('article').count(),2);
  await page.keyboard.press('Tab');await page.locator('.skip').focus();await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>document.activeElement.id),'content');
  if(process.env.ROLLING_READER_SCREENSHOT){await page.screenshot({path:process.env.ROLLING_READER_SCREENSHOT,fullPage:true});}
- assert(requests.some(url=>new URL(url).pathname==='/api/home'));assert(!requests.some(url=>new URL(url).pathname==='/api/feed'));assert.deepEqual(errors,[]);assert(requests.every(url=>url.startsWith(`http://127.0.0.1:${server.address().port}/`)));assert(requests.every(url=>!url.includes('aztec_bundle')&&!url.includes('/wallet')));
+ assert(requests.some(url=>new URL(url).pathname==='/api/board'));assert(!requests.some(url=>new URL(url).pathname==='/api/feed'));assert.deepEqual(errors,[]);assert(requests.every(url=>url.startsWith(`http://127.0.0.1:${server.address().port}/`)));assert(requests.every(url=>!url.includes('/v1/node')&&!url.includes('/prover')&&!url.includes('owned_')));
 });
 
 // These public records and the action-recorder module are labelled doubles.
 // The renderer is real; this checks routing/presentation, never a transaction.
-async function socialFixture(t,{wallet='recorder',policies=[],proving=false,firstVisit=false}={}){
+async function socialFixture(t,{wallet='recorder',policies=[],proving=false,firstVisit=false,home=false}={}){
  const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css','avatar-upload.mjs']);
  if(wallet==='real')files.add('wallet-panel.mjs');
  const reason='<img src=x onerror=alert(1)> [unsafe](javascript:alert(1))';
  const record={root:'10',parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'0'};
  const live={id:'10',record,position:{blockNumber:'1',txIndexWithinBlock:'0',logIndexWithinTx:'0',txHash:'0x'+'1'.repeat(64)},tipKey:{x:'1',y:'2'},text:'Visible public post',timestamp:'1',likes:'1',mainVersion:'2',localVersion:'0'};
  const removed={...live,id:'11',record:{...record,parent:'10',reference:'9',kind:'2',subboard:'20'},text:'REMOVED_TEXT_SENTINEL',localVersion:'1',removal:{reason,policy:'4294967301'},message:'REMOVED_TEXT_SENTINEL'};
- const rejected={...live,id:'12',record:{...record,subboard:'20'},text:'REJECTED_BOARD_TEXT_SENTINEL',localVersion:'1'};
- const malformed={...live,id:'13',mainVersion:'<script>VERSION_SENTINEL</script>',localVersion:'4294967296',text:null,removal:{reason:'No valid version provided',policy:'18446744073709551616'}};
+ const rejected={...live,id:'12',record:{...record,root:'12',subboard:'20'},text:'REJECTED_BOARD_TEXT_SENTINEL',localVersion:'1'};
+ const malformed={...live,id:'13',record:{...record,root:'13'},mainVersion:'<script>VERSION_SENTINEL</script>',localVersion:'4294967296',text:null,removal:{reason:'No valid version provided',policy:'18446744073709551616'}};
  const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname==='/api/events'){res.writeHead(204);res.end();return;}
@@ -79,22 +79,22 @@ async function socialFixture(t,{wallet='recorder',policies=[],proving=false,firs
    res.writeHead(200,{'content-type':'application/json'});
    const board={id:'20',name:'Workshop',slug:'workshop',description:'A public board',mainVersion:'8',mainRules:'Current rules',rules:'Local rules',rejected:true,rejection:{reason,mainVersion:'6'}};
    const data={schemaVersion:1,scope:{boardAddress:'0x'+'1'.repeat(64)},complete:true,checkpoint:{number:3,hash:'public'},revision:'1',names:{},boards:{'20':board},nextCursor:null,policies};
-   res.end(JSON.stringify(url.pathname==='/api/directory'?{...data,boards:[board]}:['/api/candidates','/api/thread'].includes(url.pathname)?{...data,posts:[live]}:{...data,post:live,posts:[live,removed,rejected,malformed]}));return;
+   res.end(JSON.stringify(url.pathname==='/api/directory'?{...data,boards:[board]}:url.pathname==='/api/thread'?{...data,posts:[live]}:{...data,identity:{id:'7',first:'Fixture',last:'Author'},post:live,posts:[live,removed,rejected,malformed]}));return;
   }
   if(url.pathname==='/wallet/runtime.mjs'&&proving){
    res.writeHead(200,{'content-type':'text/javascript'});res.end(`export async function loadRollingWalletRuntime(){return {async setRemoteProving(value){(window.provingCalls??=[]).push(value);if(window.provingFailure)throw Object.assign(new Error('fixture failure'),{code:window.provingFailure});return value;}}}`);return;
   }
   if(url.pathname==='/wallet-panel.mjs'&&['recorder','liked'].includes(wallet)){
-   res.writeHead(200,{'content-type':'text/javascript'});res.end(`let liked=${wallet==='liked'};export function mountRollingWalletPanel({onPrivateChange}){window.changeLiked=value=>{liked=value;onPrivateChange();};return {initialize:async()=>{},privateStatus:()=>'complete',preferenceEnabled:()=>false,likeState:()=>liked,act:async value=>{(window.recordedActions??=[]).push(value);return {status:'confirmed'};},open(value){(window.recordedActions??=[]).push(value);},close(){},attachIdentityControls(){}}}`);return;
+   res.writeHead(200,{'content-type':'text/javascript'});res.end(`let liked=${wallet==='liked'};export function mountRollingWalletPanel({onPrivateChange}){window.changeLiked=value=>{liked=value;onPrivateChange();};return {initialize:async()=>{},privateStatus:()=>'complete',preferenceEnabled:()=>false,likeState:()=>liked,act:async value=>{(window.recordedActions??=[]).push(value);return {status:'confirmed'};},open(value){(window.recordedActions??=[]).push(value);},close(){},attachIdentityControls(){},attachBokControls(){}}}`);return;
   }
   const name=url.pathname==='/'?'live.html':url.pathname.slice(1);
   if(!files.has(name)){res.writeHead(404);res.end();return;}
   res.writeHead(200,{'content-type':name.endsWith('.mjs')?'text/javascript':name.endsWith('.css')?'text/css':'text/html','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src blob:; base-uri 'none'; form-action 'none'"});res.end(await fs.readFile(path.join(root,name)));
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
  const browser=await launchBrowser();t.after(()=>browser.close());const page=await browser.newPage(),requests=[],errors=[];
- page.on('request',request=>requests.push(new URL(request.url()).pathname));page.on('pageerror',error=>errors.push(error.message));
+ page.setDefaultTimeout(5000);page.on('request',request=>requests.push(new URL(request.url()).pathname));page.on('pageerror',error=>errors.push(error.message));
  if(!firstVisit)await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));
- t.after(()=>assert.deepEqual(errors,[]));await page.goto(`http://127.0.0.1:${server.address().port}/#/${wallet==='liked'?'post/10':'home'}`);await page.locator(proving?'.proving-preference':wallet==='liked'?'#post-10':'#post-13').waitFor();return {page,requests,reason};
+ t.after(()=>assert.deepEqual(errors,[]));await page.goto(`http://127.0.0.1:${server.address().port}/#/${wallet==='liked'?'post/10':home?'home':'profile/7'}`);await page.locator(proving?'.proving-preference':wallet==='liked'||home?'#post-10':'#post-13').waitFor();return {page,requests,reason};
 }
 
 // The real sidebar and preference controller, with a labelled worker acknowledgement
@@ -180,9 +180,9 @@ async function pagingFixture(t,{observer='controlled',directory=false}={}){
    const cursor=url.searchParams.get('cursor');state.calls.push({path:url.pathname,cursor,keys:[...url.searchParams.keys()]});state.active++;state.peak=Math.max(state.peak,state.active);
    let finished=false;const finish=()=>{if(!finished){finished=true;state.active--;}};res.once('close',finish);
    const respond=()=>{
-    const kind=url.pathname.slice(5),base={schemaVersion:1,scope:{boardAddress:'public'},complete:true,checkpoint:{number:3,hash:'public'},revision:'epoch:1',names:{},boards:{},nextCursor:null};
+    const kind=url.pathname.slice(5),base={schemaVersion:1,scope:{boardAddress:'public'},complete:true,checkpoint:{number:3,hash:'public'},revision:'epoch:1',names:{},boards:{},boardId:'0',board:null,mainPolicy:{version:'1',text:'Rules'},policies:[],nextCursor:null};
     let body=kind==='directory'?{...base,boards:[]}:{...base,posts:[post(cursor==='next-3'?3:cursor?2:1)],nextCursor:cursor==='next-3'?null:cursor?'next-3':'next-2'};
-    if(kind==='home'&&state.prepend){body={...base,revision:'epoch:2',posts:[post(cursor==='next-4'?3:cursor==='next-3'?2:cursor?1:4)],nextCursor:cursor==='next-4'?null:cursor==='next-3'?'next-4':cursor?'next-3':'next-2'};}
+    if(kind==='board'&&state.prepend){body={...base,revision:'epoch:2',posts:[post(cursor==='next-4'?3:cursor==='next-3'?2:cursor?1:4)],nextCursor:cursor==='next-4'?null:cursor==='next-3'?'next-4':cursor?'next-3':'next-2'};}
     if(kind==='directory'&&directory){body={...base,boards:cursor==='next-3'&&state.mode!=='no-match'?[{id:'20',slug:'needle',name:'Needle result',description:'Sparse match',mainRules:'Rules',rules:'',rejected:false}]:[],nextCursor:cursor==='next-3'?null:cursor?'next-3':'next-2'};}
     if(cursor&&state.mode==='revision')body.revision='epoch:2';
     if(cursor&&state.mode==='duplicate')body.posts=[post(1)];
@@ -201,7 +201,7 @@ async function pagingFixture(t,{observer='controlled',directory=false}={}){
  if(observer==='controlled')await page.addInitScript(()=>{
   window.pagingObservers=[];
   window.IntersectionObserver=class{
-   constructor(callback,options){this.callback=callback;this.options=options;this.targets=[];this.disconnects=0;window.pagingObservers.push(this);}
+   constructor(callback,options){this.callback=callback;this.options=options;this.targets=[];this.disconnects=0;if(options.rootMargin)window.pagingObservers.push(this);}
    observe(target){this.targets=[target];this.lastTarget=target;}
    unobserve(){this.targets=[];}
    disconnect(){this.disconnects++;this.targets=[];}
@@ -209,7 +209,7 @@ async function pagingFixture(t,{observer='controlled',directory=false}={}){
   };
  });
  await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));
- await page.goto(`http://127.0.0.1:${server.address().port}/${directory?'#/directory/needle':''}`);
+ await page.goto(`http://127.0.0.1:${server.address().port}/${directory?'#/directory/needle':'#/board/0'}`);
  if(directory)await page.getByRole('button',{name:'Load more',exact:true}).waitFor();else await page.locator('#post-1').waitFor();
  return {page,state,async fire(times=1){await page.evaluate(n=>{for(let i=0;i<n;i++)window.pagingObservers.at(-1).fire();},times);},async release(){for(const fn of state.pending.splice(0))fn();}};
 }
@@ -226,7 +226,7 @@ test('continuous paging serializes repeated intersection and keyboard requests, 
  await page.locator('#post-2').scrollIntoViewIfNeeded();const y=await page.evaluate(()=>scrollY);
  await page.locator('#post-2').getByRole('link',{name:'View conversation',exact:true}).click();await page.getByRole('heading',{name:'Conversation',exact:true}).waitFor();
  await page.goBack();await page.locator('#post-3').waitFor();assert.equal(await page.getByRole('article').count(),3);assert(Math.abs(await page.evaluate(()=>scrollY)-y)<3);
- assert.deepEqual(state.calls.filter(c=>c.path==='/api/home').map(c=>c.cursor),[null,'next-2','next-3',null,'next-2','next-3']);
+ assert.deepEqual(state.calls.filter(c=>c.path==='/api/board').map(c=>c.cursor),[null,'next-2','next-3',null,'next-2','next-3']);
 });
 
 for(const mode of ['reorg','revision','duplicate','cursor-loop','empty-loop'])test('continuous paging fails closed on '+mode+' without automatic cursor retry',async t=>{
@@ -242,7 +242,7 @@ test('route change and pagehide discard delayed pages and disconnect their obser
  await page.getByRole('link',{name:'Explore boards',exact:true}).first().click();await page.getByRole('heading',{name:'Explore boards',exact:true}).waitFor();
  await release();await page.evaluate(()=>pagingObservers[0].fire());assert.equal(await page.locator('#post-2').count(),0);assert.equal(await page.evaluate(()=>pagingObservers[0].disconnects),1);
  assert.equal(state.calls.filter(c=>c.cursor).length,1);
- await page.evaluate(()=>location.hash='/home');await page.locator('#post-1').waitFor();await fire();await until(()=>state.pending.length===1);
+ await page.evaluate(()=>location.hash='/board/0');await page.locator('#post-1').waitFor();await fire();await until(()=>state.pending.length===1);
  await page.evaluate(()=>dispatchEvent(new PageTransitionEvent('pagehide')));await release();await fire(3);
  assert.equal(await page.locator('#post-2').count(),0);assert.equal(await page.evaluate(()=>pagingObservers.at(-1).disconnects),1);
 });
@@ -278,11 +278,11 @@ async function boardFixture(t,{rejected=false}={}){
    if(url.pathname==='/api/board'&&state.mode==='foreign-post')body.posts[0].record.subboard='99';
    res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify(body));return;
   }
-  if(url.pathname==='/wallet-panel.mjs'){res.writeHead(200,{'content-type':'text/javascript'});res.end('export function mountRollingWalletPanel({onPrivateChange}){window.moderatorFixture={authorized:false,change(value){this.authorized=value;onPrivateChange();}};return {moderatorAuthorized:()=>moderatorFixture.authorized,open(value){(window.boardActions??=[]).push(value);},close(){},attachIdentityControls(){}}}');return;}
+  if(url.pathname==='/wallet-panel.mjs'){res.writeHead(200,{'content-type':'text/javascript'});res.end('export function mountRollingWalletPanel({onPrivateChange}){window.moderatorFixture={authorized:false,change(value){this.authorized=value;onPrivateChange();}};return {initialize(){},privateStatus:()=>"locked",attachBokControls(){},moderatorAuthorized:()=>moderatorFixture.authorized,open(value){(window.boardActions??=[]).push(value);},close(){},attachIdentityControls(){}}}');return;}
   const name=url.pathname==='/'?'live.html':url.pathname.slice(1);if(!files.has(name)){res.writeHead(404);res.end();return;}
   res.writeHead(200,{'content-type':name.endsWith('.mjs')?'text/javascript':name.endsWith('.css')?'text/css':'text/html'});res.end(await fs.readFile(path.join(root,name)));
  });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
- const browser=await launchBrowser();t.after(()=>browser.close());const page=await browser.newPage(),requests=[],errors=[];page.on('request',r=>requests.push(new URL(r.url()).pathname));page.on('pageerror',e=>errors.push(e.message));t.after(()=>assert.deepEqual(errors,[]));
+ const browser=await launchBrowser();t.after(()=>browser.close());const page=await browser.newPage(),requests=[],errors=[];page.setDefaultTimeout(5000);page.on('request',r=>requests.push(new URL(r.url()).pathname));page.on('pageerror',e=>errors.push(e.message));t.after(()=>assert.deepEqual(errors,[]));
  await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));
  await page.addInitScript(()=>{window.IntersectionObserver=undefined;});await page.goto(`http://127.0.0.1:${server.address().port}/`);await page.locator('#post-10').waitFor();return {page,state,requests,hostile};
 }
@@ -295,11 +295,11 @@ test('main and subboard routes use exact board API, contextual composer, directo
  await page.getByRole('link',{name:'Explore boards',exact:true}).first().click();await page.getByRole('link',{name:'Workshop',exact:true}).click();await page.getByRole('heading',{name:'Workshop',level:1}).waitFor();await page.locator('#post-21').waitFor();
  assert.equal(state.calls.at(-1),'/api/board?id=20&limit=30');assert(await page.getByText('Build useful things.',{exact:true}).isVisible());assert(!(await page.getByText('Created under parent policy v1',{exact:true}).isVisible()));
  await page.getByText('Board rules',{exact:true}).click();assert(await page.getByText(hostile,{exact:true}).isVisible());await page.getByText('Rule history',{exact:true}).click();assert(await page.getByText('Created under parent policy v1',{exact:true}).isVisible());assert.equal(await page.locator('main img, main script').count(),0);
- await page.locator('#post-21').getByText('Parent rules at publication · v1',{exact:true}).click();assert(await page.locator('#post-21').getByText('Historical parent rules',{exact:true}).isVisible());
+ await page.locator('#post-21 .post-more > summary').click();await page.locator('#post-21 .post-provenance > summary').click();await page.locator('#post-21').getByText('Parent rules at publication · v1',{exact:true}).click();assert(await page.locator('#post-21').getByText('Historical parent rules',{exact:true}).isVisible());
  assert.equal(await page.locator('#post-21').getByRole('link',{name:'Workshop',exact:true}).getAttribute('href'),'#/board/20');
  await page.getByRole('button',{name:'Write a post',exact:true}).click();await page.waitForFunction(()=>window.boardActions?.length===2);assert.deepEqual(await page.evaluate(()=>boardActions[1]),{type:'post',subboard:'20'});
- await page.getByRole('button',{name:'Load more',exact:true}).click();await page.locator('#post-22').waitFor();assert.equal(state.calls.at(-1),'/api/board?id=20&limit=30&cursor=20%3A1%3A1');assert.equal(await page.locator('.feed article').count(),2);assert.equal(await page.locator('#post-10').count(),0);
- assert(!state.calls.some(c=>c.startsWith('/api/feed')));assert(!requests.some(p=>p.startsWith('/wallet/')||p.includes('owned')));
+ await page.getByRole('button',{name:'Load more',exact:true}).click();await page.locator('#post-22').waitFor();assert.equal(state.calls.at(-1),'/api/board?id=20&limit=30&cursor=20%3A1%3A1&revision=epoch%3A1');assert.equal(await page.locator('.feed article').count(),2);assert.equal(await page.locator('#post-10').count(),0);
+ assert(!state.calls.some(c=>c.startsWith('/api/feed')));assert(!requests.some(p=>p.includes('/v1/node')||p.includes('/prover')||p.includes('owned')));
 });
 
 test('rejected board remains discoverable and navigable without new posting controls',async t=>{
@@ -320,100 +320,70 @@ test('unknown or malformed board route has no generic-feed fallback',async t=>{
  await page.evaluate(()=>location.hash='/board/20/extra');await page.getByRole('heading',{name:'Page not found',exact:true}).waitFor();assert.equal(state.calls.length,count);assert(await page.getByRole('button',{name:'Write a post',exact:true}).isDisabled());
 });
 
-// Labelled private-session/public-HTTP doubles, real panel/reader/pure filter.
-// No proof, paid action or encrypted-chain recovery is represented by this fixture.
+// Labelled off-chain saved-items session and public HTTP responses. The real
+// reader validates requested IDs, ordering and snapshots; no chain tx is mocked.
 async function privateViewFixture(t,{mutation=null,tombstone=null}={}){
- const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css','avatar-upload.mjs','wallet-panel.mjs']);
- const scope={chainId:'31337',rollupVersion:'1',boardAddress:'0x'+'1'.padStart(64,'0')},hash='0x'+'a'.repeat(64);
- const make=(id,block)=>({id,record:{root:'10',parent:id==='10'?'0':'10',reference:'0',kind:'1',subboard:'0',name_id:'0'},text:'Public content '+id,timestamp:'1',likes:'0',position:{blockNumber:String(block),txIndexWithinBlock:'0',logIndexWithinTx:'0',blockHash:hash}});
- const requests=[],feed=[],state={hold:false,pending:[]};
+ const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
+ const hash='0x'+'a'.repeat(64),requests=[],feed=[],state={hold:false,pending:[]};
+ const make=(id,block)=>({id,record:{root:id,parent:'0',reference:'0',kind:'1',subboard:'0',name_id:'7'},text:'Public content '+id,timestamp:'1',likes:'0',position:{blockNumber:String(block),txIndexWithinBlock:'0',logIndexWithinTx:'0',blockHash:hash}});
  const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');requests.push(url.pathname+url.search);
   if(url.pathname==='/api/events'){res.writeHead(204);res.end();return;}
+  if(url.pathname==='/wallet-panel.mjs'){
+   res.writeHead(200,{'content-type':'text/javascript'});res.end(`export function mountRollingWalletPanel({onPrivateChange}){
+let status='locked',snapshot={bookmarks:['10','11'],followedBoards:['0'],followedNames:[],labels:{}};
+window.privateTest={reads:0,actions:[],signIn(){status='complete';onPrivateChange();},invalidate(){status='locked';onPrivateChange();},hydrate(){status='recovering';onPrivateChange();}};
+return {initialize(){},privateStatus:()=>status,savedItemsSnapshot:()=>snapshot,privateAccountVersion:()=>status==='locked'?null:'fixture-account',preferenceEnabled:(kind,id)=>snapshot.bookmarks.includes(id),attachIdentityControls(){},attachBokControls(){},close(){},open(){privateTest.signIn();},loadSavedItems(){privateTest.reads++;return new Promise(resolve=>privateTest.resumeRecovery=()=>{status='complete';onPrivateChange();resolve(true);});},async act(action){privateTest.actions.push(action);if(action.kind===1)snapshot={...snapshot,bookmarks:snapshot.bookmarks.filter(id=>id!==action.target)};onPrivateChange();return {status:'confirmed'};}};}`);return;
+  }
   if(url.pathname.startsWith('/api/')){
-   const next=url.searchParams.has('cursor');if(url.pathname==='/api/feed')feed.push(url.pathname+url.search);
-   const posts=next?[make(mutation==='duplicate'?'10':'11',mutation==='order'?4:2)]:[make('10',3)];
-   const data={schemaVersion:1,scope,complete:true,checkpoint:{number:4,hash},revision:mutation==='snapshot'&&next?'changed':'one',names:{},boards:{},posts,nextCursor:next?null:'page2'};
-   if(tombstone&&next){
-    posts[0].text='REDACTED_NOTIFICATION_SENTINEL';
-    if(tombstone==='removed')posts[0].removal={reason:'Removed reply',policy:'1'};
-    else{posts[0].record.subboard='20';data.boards['20']={id:'20',name:'Rejected board',rejected:true,rejection:{reason:'Rejected rules',mainVersion:'1'}};}
-   }
+   const saved=['/api/bookmarks','/api/following'].includes(url.pathname),next=url.searchParams.has('cursor');if(saved)feed.push(url.pathname+url.search);
+   const posts=next?[make(mutation==='duplicate'?'10':mutation==='unrequested'?'99':'11',mutation==='order'?4:2)]:[make('10',3)];
+   const data={schemaVersion:1,scope:{boardAddress:'public'},complete:true,checkpoint:{number:4,hash},revision:mutation==='snapshot'&&next?'changed':'one',names:{},boards:{},posts,nextCursor:next?null:'page2'};
+   if(tombstone&&next){posts[0].text='REDACTED_SAVED_SENTINEL';if(tombstone==='removed')posts[0].removal={reason:'Removed reply',policy:'1'};else data.boards['0']={id:'0',rejected:true,rejection:{reason:'Rejected rules',mainVersion:'1'}};}
    if(url.pathname==='/api/board')Object.assign(data,{boardId:'0',board:null,mainPolicy:{version:'1',text:''},policies:[]});
-   if(state.hold&&url.pathname==='/api/feed')await new Promise(resolve=>state.pending.push(resolve));
+   if(state.hold&&saved)await new Promise(resolve=>state.pending.push(resolve));
    res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify(data));return;
   }
-  if(url.pathname==='/wallet/runtime.mjs'){
-   res.writeHead(200,{'content-type':'text/javascript'});res.end(`import {selectPrivateViews} from '/private-views.mjs';
-const raw={},prefs={scope:{chainId:'31337',version:'1',board:'1'},head:{schema:1,initialized:true,revision:'2',digest:'42'},bookmarks:['11'],followedBoards:[],followedNames:[],subscriptions:['10'],replyNotifications:true,readMarkers:[]};
-window.privateTest={reads:0,partial:false,options:null,prepare:[],head:0};
-export async function loadRollingWalletRuntime(){return {selectPrivateViews,getAccount:()=>raw,account:{configure:o=>privateTest.options=o},createSession:async()=>({busy:false,close:async()=>{},application:{readAccountStatus:async()=>({status:'collateral-pending',privateFeeCredit:'2',depositIds:[]}),ownedIdentities:async()=>({identities:(privateTest.names??[]).map(r=>r.id),records:privateTest.names??[],nextCursor:null}),readPreferences:async({signal})=>{if(!(signal instanceof AbortSignal)||signal.aborted)throw Error('Preference fixture requires active signal');privateTest.reads++;if(privateTest.partial){privateTest.partial=false;privateTest.holdRecovery=true;return {status:'recovering',complete:false,progress:{scannedThrough:32,anchorBlock:100}};}if(privateTest.holdRecovery)await new Promise(resolve=>privateTest.resumeRecovery=()=>{privateTest.holdRecovery=false;privateTest.resumeRecovery=null;resolve();});return {status:'complete',complete:true,preferences:prefs};},readPreferenceHead:async()=>{privateTest.head++;return prefs.head;},prepare:async action=>{privateTest.prepare.push(action);return {intentId:'one',status:'prepared',action,maximumFee:'3'};}}})};}`);return;
-  }
-  if(url.pathname==='/invocation.mjs'){res.writeHead(200,{'content-type':'text/javascript'});res.end(await fs.readFile(new URL('../../shared/rolling/invocation.mjs',import.meta.url)));return;}
-  if(url.pathname==='/private-views.mjs'){res.writeHead(200,{'content-type':'text/javascript'});res.end(await fs.readFile(new URL('../../shared/rolling/private-views.mjs',import.meta.url)));return;}
   const name=url.pathname==='/'?'live.html':url.pathname.slice(1);if(!files.has(name)){res.writeHead(404);res.end();return;}
   res.writeHead(200,{'content-type':name.endsWith('.mjs')?'text/javascript':name.endsWith('.css')?'text/css':'text/html'});res.end(await fs.readFile(path.join(root,name)));
- });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
- const browser=await launchBrowser();t.after(()=>browser.close());const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));t.after(()=>assert.deepEqual(errors,[]));await page.addInitScript(()=>window.IntersectionObserver=undefined);
- await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));
- await page.goto(`http://127.0.0.1:${server.address().port}/#/bookmarks`);await page.getByRole('heading',{name:'Your bookmarks',exact:true}).waitFor();return {page,requests,feed,state};
+ });await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const browser=await launchBrowser();t.after(async()=>{for(const release of state.pending.splice(0))release();await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));});
+ const page=await browser.newPage(),errors=[];page.setDefaultTimeout(5000);page.on('pageerror',e=>errors.push(e.message));t.after(()=>assert.deepEqual(errors,[]));
+ await page.addInitScript(()=>{window.IntersectionObserver=undefined;localStorage.setItem('rolling.welcome.seen','1');});
+ await page.goto(`http://127.0.0.1:${server.address().port}/#/bookmarks`);await page.getByRole('heading',{name:'Your bookmarks',exact:true}).waitFor();await page.waitForFunction(()=>!!window.privateTest);return {page,requests,feed,state};
 }
-async function recoverPrivateView(page){await page.getByRole('button',{name:'Open your account'}).click();await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.getByRole('button',{name:'Load saved items',exact:true}).click();await page.getByText('Your saved choices are ready.').waitFor();await page.getByRole('button',{name:'Close account panel'}).click();}
-test('private routes stay SDK-free when locked; filter whole ordinary pages and continue an empty filtered cursor',async t=>{
- const {page,requests,feed}=await privateViewFixture(t);assert.equal(feed.length,0);assert(!requests.some(p=>p.includes('wallet')));assert(await page.getByText('Sign in to load your follows, bookmarks and notifications.',{exact:true}).isVisible());
- assert.equal(await page.evaluate(()=>document.activeElement.tagName),'BODY'); // Preserve the initial skip-link tab order.
- for(const title of ['Following','Notifications','Bookmarks']){
-  await page.getByRole('link',{name:title,exact:true}).click();await page.getByRole('heading',{name:title,exact:true}).waitFor();
-  assert.equal(await page.locator('#announcement').getAttribute('role'),'status');
-  assert.equal(await page.locator('#announcement').getAttribute('aria-live'),'polite');
-  assert.equal(await page.locator('#announcement').textContent(),title+': sign in to see your saved conversations.');
-  assert.notEqual(await page.evaluate(()=>document.activeElement.tagName),'BODY');
-  if(title!=='Bookmarks')assert.equal(await page.evaluate(()=>document.activeElement.tagName),'H1');
- }
- assert.equal(feed.length,0);assert(!requests.some(p=>p.includes('wallet')));
- if(process.env.ROLLING_PREFERENCES_LOCKED_SCREENSHOT)await page.screenshot({path:process.env.ROLLING_PREFERENCES_LOCKED_SCREENSHOT,fullPage:true});
- await recoverPrivateView(page);assert.equal(await page.evaluate(()=>privateTest.reads),1);await page.getByRole('button',{name:'Load more',exact:true}).waitFor();assert.equal(await page.getByRole('article').count(),0);
- await page.getByRole('button',{name:'Load more',exact:true}).focus();await page.keyboard.press('Enter');await page.locator('#post-11').waitFor();assert.equal(await page.getByRole('article').count(),1);assert.equal(await page.getByRole('heading',{name:'A little quiet here'}).count(),0);
- assert.deepEqual(feed,['/api/feed?limit=30','/api/feed?limit=30&cursor=page2']);assert(!requests.some(p=>/bookmarks=|nameId=|owner=|subscriptions=/.test(p)));
- await page.locator('#post-11').getByRole('button',{name:'Unbookmark',exact:true}).click();await page.getByRole('button',{name:'Check action and review fee'}).click();await page.getByRole('button',{name:'Confirm and send'}).waitFor();assert.deepEqual(await page.evaluate(()=>privateTest.prepare),[{type:'preference',kind:1,target:'11',enabled:false,expectedRevision:'2'}]);
+async function recoverPrivateView(page){await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.locator('#post-10').waitFor();}
+test('locked saved routes never request saved data; signed-in bookmarks use bounded IDs and toggle without a transaction',async t=>{
+ const {page,requests,feed}=await privateViewFixture(t);assert.equal(feed.length,0);
+ assert(await page.getByText('Sign in to see the posts you have saved.',{exact:true}).isVisible());
+ for(const title of ['Following','Bookmarks']){await page.getByRole('link',{name:title,exact:true}).click();await page.getByRole('heading',{name:title,level:1,exact:true}).waitFor();assert.equal(await page.locator('#announcement').textContent(),title+': sign in to see your saved conversations.');}
+ assert.equal(feed.length,0);assert.equal(await page.getByRole('link',{name:'Notifications',exact:true}).count(),0);
+ await recoverPrivateView(page);await page.getByRole('button',{name:'Load more',exact:true}).click();await page.locator('#post-11').waitFor();assert.equal(await page.locator('article.post').count(),2);
+ assert.deepEqual(feed,['/api/bookmarks?ids=10%2C11&limit=30','/api/bookmarks?ids=10%2C11&limit=30&cursor=page2&revision=one']);
+ await page.locator('#post-11').getByRole('button',{name:'Unbookmark',exact:true}).click();await page.waitForFunction(()=>privateTest.actions.length===1);
+ assert.deepEqual(await page.evaluate(()=>privateTest.actions),[{type:'preference',kind:1,target:'11',enabled:false}]);assert.equal(await page.locator('dialog[open]').count(),0);
+ assert(!requests.some(p=>/\/v1\/node|\/prover|owned_|owner=/.test(p)));
 });
-for(const mutation of ['duplicate','order','snapshot'])test('private page validation rejects '+mutation+' even across locally filtered rows',async t=>{
- const {page}=await privateViewFixture(t,{mutation});await recoverPrivateView(page);await page.getByRole('button',{name:'Load more',exact:true}).click();await page.getByRole('alert').waitFor();assert.equal(await page.getByRole('article').count(),0);assert.equal(await page.getByRole('button',{name:'Load more',exact:true}).count(),0);
+for(const mutation of ['duplicate','order','snapshot','unrequested'])test('saved page validation rejects '+mutation+' before appending any row',async t=>{
+ const {page}=await privateViewFixture(t,{mutation});await recoverPrivateView(page);await page.getByRole('button',{name:'Load more',exact:true}).click();await page.getByRole('alert').waitFor();assert.equal(await page.locator('article.post').count(),1);assert.equal(await page.locator('#post-11,#post-99').count(),0);assert.equal(await page.getByRole('button',{name:'Load more',exact:true}).count(),0);
 });
-test('account invalidation synchronously removes private DOM and partial recovery never requests public pages',async t=>{
- const {page,feed}=await privateViewFixture(t);await page.getByRole('button',{name:'Open your account'}).click();await page.getByRole('button',{name:'Sign in',exact:true}).click();await page.getByRole('button',{name:'Load saved items',exact:true}).waitFor();await page.evaluate(()=>privateTest.partial=true);await page.getByRole('button',{name:'Load saved items'}).click();await page.waitForFunction(()=>typeof privateTest.resumeRecovery==='function');assert.equal(feed.length,0);
- await page.evaluate(()=>privateTest.resumeRecovery());await page.getByText('Your saved choices are ready.').waitFor();await page.getByRole('button',{name:'Close account panel'}).click();await page.getByRole('button',{name:'Load more',exact:true}).click();await page.locator('#post-11').waitFor();
- assert.equal(await page.evaluate(()=>{privateTest.options.onChange({invalidated:true});return document.querySelectorAll('article').length;}),0);await page.getByRole('heading',{name:'Your saved conversations'}).waitFor();
+test('account invalidation synchronously removes saved DOM; hydration waits without fetching saved pages',async t=>{
+ const {page,feed}=await privateViewFixture(t);await recoverPrivateView(page);
+ assert.equal(await page.evaluate(()=>{privateTest.invalidate();return document.querySelectorAll('article.post').length;}),0);
+ const before=feed.length;await page.evaluate(()=>privateTest.hydrate());await page.waitForFunction(()=>typeof privateTest.resumeRecovery==='function');assert.equal(feed.length,before);assert.equal(await page.locator('article.post').count(),0);
+ await page.evaluate(()=>privateTest.resumeRecovery());await page.locator('#post-10').waitFor();assert.equal(feed.length,before+1);
 });
-
-test('a delayed ordinary page cannot restore private content after account invalidation',async t=>{
- const {page,state}=await privateViewFixture(t);await recoverPrivateView(page);state.hold=true;await page.getByRole('button',{name:'Load more',exact:true}).click();
- const until=Date.now()+2000;while(!state.pending.length&&Date.now()<until)await new Promise(resolve=>setTimeout(resolve,10));assert.equal(state.pending.length,1);
- await page.evaluate(()=>privateTest.options.onChange({invalidated:true}));state.hold=false;for(const resolve of state.pending)resolve();await page.getByRole('heading',{name:'Your saved conversations'}).waitFor();
- assert.equal(await page.getByRole('article').count(),0);
+test('a delayed saved page cannot restore private content after account invalidation',async t=>{
+ const {page,state}=await privateViewFixture(t);await recoverPrivateView(page);state.hold=true;await page.getByRole('button',{name:'Load more',exact:true}).click();await until(()=>state.pending.length===1);
+ await page.evaluate(()=>privateTest.invalidate());for(const resolve of state.pending.splice(0))resolve();await page.getByRole('heading',{name:'Your bookmarks',exact:true}).waitFor();assert.equal(await page.locator('article.post').count(),0);
 });
-test('Following and Notifications use only ordinary feed parameters and explicit subscription filtering',async t=>{
- const {page,feed}=await privateViewFixture(t);await recoverPrivateView(page);await page.getByRole('link',{name:'Following',exact:true}).click();await page.getByRole('button',{name:'Load more',exact:true}).click();await page.getByText('Checked against chain block 4',{exact:true}).waitFor();assert.equal(await page.getByRole('article').count(),0);
- await page.getByRole('link',{name:'Notifications',exact:true}).click();await page.getByRole('button',{name:'Load more',exact:true}).click();await page.locator('#post-11').waitFor();assert.equal(await page.locator('#post-10').count(),0);assert(feed.every(url=>/^\/api\/feed\?limit=30(?:&cursor=page2)?$/.test(url)));
- await page.locator('#post-11 .post-more summary').click();await page.locator('#post-11').getByRole('button',{name:'Mark thread read',exact:true}).click();await page.getByRole('button',{name:'Check action and review fee'}).click();await page.getByRole('button',{name:'Confirm and send'}).waitFor();assert.deepEqual(await page.evaluate(()=>privateTest.prepare),[{type:'read-marker',thread:'10',throughBlock:'2',expectedRevision:'2'}]);
+test('Following queries selected boards and renders the followed list without on-chain actions',async t=>{
+ const {page,feed}=await privateViewFixture(t);await recoverPrivateView(page);await page.getByRole('link',{name:'Following',exact:true}).click();await page.getByRole('heading',{name:'Following',level:1,exact:true}).waitFor();await page.getByRole('list',{name:'People and boards you follow'}).waitFor();
+ assert(await page.getByRole('list',{name:'People and boards you follow'}).getByRole('link',{name:'Main board',exact:true}).isVisible());
+ assert.equal(feed.at(-1),'/api/following?boards=0&names=&limit=30');assert.deepEqual(await page.evaluate(()=>privateTest.actions),[]);
 });
-
-// Removed content remains an unread notification until the ordinary private action
-// is reviewed. These are renderer/panel checks with labelled session doubles.
-for(const tombstone of ['removed','rejected'])for(const action of ['read','unsubscribe'])test(`tombstone notifications: ${tombstone} reply supports ${action} without revealing content`,async t=>{
- const {page,feed,requests}=await privateViewFixture(t,{tombstone});page.setDefaultTimeout(3000);
- await recoverPrivateView(page);await page.getByRole('link',{name:'Notifications',exact:true}).click();await page.getByRole('button',{name:'Load more',exact:true}).click();
- const card=page.locator('#post-11');await card.waitFor();
- assert(!(await page.locator('body').innerText()).includes('REDACTED_NOTIFICATION_SENTINEL'));
- assert.equal(await card.locator('.post-body').count(),0);
- for(const name of ['Reply','Like','Quote','Repost','Remove this post'])assert.equal(await card.getByRole('button',{name,exact:true}).count(),0);
- assert.equal(await card.getByRole('link',{name:'View thread',exact:true}).getAttribute('href'),'#/thread/10');
- await card.locator('.post-more>summary').click();await card.locator('.post-provenance>summary').click();await card.getByRole('button',{name:action==='read'?'Mark thread read':'Unsubscribe from thread',exact:true}).focus();await page.keyboard.press('Enter');
- await page.getByRole('button',{name:'Check action and review fee',exact:true}).click();await page.getByRole('button',{name:'Confirm and send',exact:true}).waitFor();
- const expected=action==='read'?{type:'read-marker',thread:'10',throughBlock:'2',expectedRevision:'2'}:{type:'preference',kind:4,target:'10',enabled:false,expectedRevision:'2'};
- assert.deepEqual(await page.evaluate(()=>privateTest.prepare),[expected]);
- assert(feed.every(url=>/^\/api\/feed\?limit=30(?:&cursor=page2)?$/.test(url)));
- assert(!requests.some(url=>/owner=|subscriptions=|bookmarks=|nameId=/.test(url)));
+for(const tombstone of ['removed','rejected'])test(`saved ${tombstone} post remains navigable without exposing its message`,async t=>{
+ const {page}=await privateViewFixture(t,{tombstone});await recoverPrivateView(page);await page.getByRole('button',{name:'Load more',exact:true}).click();const card=page.locator('#post-11');await card.waitFor();assert.equal(await card.locator(':scope > .post-body').count(),0);assert(!(await card.innerText()).includes('REDACTED_SAVED_SENTINEL'));assert.equal(await card.getByRole('link',{name:'View thread',exact:true}).getAttribute('href'),'#/thread/11');assert.equal(await card.getByRole('button',{name:'Reply',exact:true}).count(),0);
 });
 
 // Real production DOM; labelled public records. This guards the genuine driver
@@ -426,11 +396,11 @@ test('notification message assertion retains publication rules and rejects missi
  assert.equal(await card.locator('.post-body').count(),2);
  await assert.rejects(card.locator('.post-body').textContent(),/strict mode violation/);
  await assertRollingNotificationPostText(card,'Visible public post');
- await card.getByText('Parent rules at publication · v2',{exact:true}).click();
+ await card.locator('.post-more > summary').click();await card.locator('.post-provenance > summary').click();await card.getByText('Parent rules at publication · v2',{exact:true}).click();
  assert.equal(await card.locator('details .post-body').textContent(),'Keep conversation civil.');
  assert(await card.locator('details .post-body').isVisible());
  await card.getByText('More',{exact:true}).click();
- assert.equal(await card.getByRole('button',{name:'Subscribe to thread',exact:true}).count(),1);
+ assert.equal(await card.getByRole('button',{name:'Subscribe to thread',exact:true}).count(),0);
  await assert.rejects(assertRollingNotificationPostText(card,'Different message'),/Notification browser check failed/);
  await card.evaluate(node=>node.append(node.querySelector(':scope > .post-body').cloneNode(true)));
  await assert.rejects(assertRollingNotificationPostText(card,'Visible public post'),/strict mode violation/);
@@ -442,15 +412,15 @@ test('notification message assertion retains publication rules and rejects missi
 // Sparse bounded directory windows intentionally may have no matches yet.
 test('directory empty continuations require one explicit action per page and never replay saved windows',async t=>{
  const {page,state}=await pagingFixture(t,{directory:true});
- assert(await page.getByText('No matches in this page. Continue searching.',{exact:true}).isVisible());
- assert.equal(await page.getByText('No subboards match this search.',{exact:true}).count(),0);
+ assert(await page.getByText('No matches on this page. Check the next page or try another search.',{exact:true}).isVisible());
+ assert.equal(await page.getByText('No boards match. Try another topic or create a board.',{exact:true}).count(),0);
  assert.equal(await page.evaluate(()=>pagingObservers.length),0);await page.waitForTimeout(100);assert.equal(state.calls.length,1);
  const more=page.getByRole('button',{name:'Load more',exact:true});await more.click();await until(()=>state.calls.length===2);await page.waitForFunction(()=>!document.querySelector('[aria-busy="true"]'));
  assert(await page.getByText('No matches in this page. Continue searching.',{exact:true}).isVisible());await page.waitForTimeout(100);assert.equal(state.calls.length,2);
  await more.click();await page.getByRole('heading',{name:'Needle result',exact:true}).waitFor();assert.equal(state.calls.length,3);assert.equal(await more.count(),0);
  await page.evaluate(()=>location.hash='/home');await page.locator('#post-1').waitFor();await page.goBack();await page.getByRole('button',{name:'Load more',exact:true}).waitFor();
  await page.waitForTimeout(100);const directory=state.calls.filter(c=>c.path==='/api/directory');assert.deepEqual(directory.map(c=>c.cursor),[null,'next-2','next-3',null]);
- assert(directory.every(c=>c.keys.every(key=>['query','limit','cursor'].includes(key))));
+ assert(directory.every(c=>c.keys.every(key=>['query','limit','cursor','revision'].includes(key))));
 });
 test('directory definitive no-results wording appears only on the terminal empty window',async t=>{
  const {page,state}=await pagingFixture(t,{directory:true});state.mode='no-match';
@@ -462,43 +432,13 @@ for(const mode of ['revision','cursor-loop','reorg'])test('directory empty conti
  assert.equal(state.calls.length,2);await page.waitForTimeout(100);assert.equal(state.calls.length,2);assert.equal(await page.getByRole('button',{name:'Load more',exact:true}).count(),0);
 });
 
-// Same driver assertion, actual reader/panel, labelled cold-reader results.
-// Public root visibility is independent from incomplete private preferences.
-test('notification partial recovery preserves public roots but never exposes an incomplete private feed',async t=>{
- const {assertRollingNotificationRecoveryVisibility:checkRecovery}=await import('../../scripts/testing/rolling-notification-browser.mjs');
- const {page}=await privateViewFixture(t);await recoverPrivateView(page);
- await page.getByRole('link',{name:'Main board',exact:true}).first().click();await page.locator('#post-10').waitFor();
- await page.getByRole('button',{name:'Your account',exact:true}).click();
- const d=page.getByRole('dialog',{});
- await d.getByText('Account settings',{exact:true}).click();await d.getByRole('button',{name:'Follows and bookmarks',exact:true}).click();
- await page.evaluate(()=>privateTest.partial=true);await d.getByRole('button',{name:'Load saved items',exact:true}).click();
- await page.waitForFunction(()=>typeof privateTest.resumeRecovery==='function');
- assert.equal(await page.locator('#content article.post').count(),1);
- assert.equal(await d.getByText('Your saved choices are ready.',{exact:true}).count(),0);
- await checkRecovery(page,{publicBoard:true});await assert.rejects(checkRecovery(page),/Notification browser check failed/);
- await page.evaluate(()=>privateTest.resumeRecovery());
- await d.getByText('Your saved choices are ready.',{exact:true}).waitFor();await d.getByRole('button',{name:'Close account panel',exact:true}).click();
- await page.locator('#post-10').getByText('More',{exact:true}).click();
- assert.equal(await page.locator('#post-10').getByRole('button',{name:'Unsubscribe from thread',exact:true}).count(),1);
- await page.getByRole('link',{name:'Notifications',exact:true}).click();await page.getByRole('button',{name:'Saved items settings',exact:true}).waitFor();
- await page.getByRole('button',{name:'Saved items settings',exact:true}).click();await page.evaluate(()=>privateTest.partial=true);
- await d.getByRole('button',{name:'Refresh saved items',exact:true}).click();await page.waitForFunction(()=>typeof privateTest.resumeRecovery==='function');
- await checkRecovery(page);assert.equal(await page.locator('#content article.post').count(),0);
- await assert.rejects(checkRecovery(page,{publicBoard:true}),/Notification browser check failed/);
- await page.locator('#content').evaluate(node=>node.insertAdjacentHTML('beforeend','<article class="post">Synthetic forbidden private row</article>'));
- await assert.rejects(checkRecovery(page),/Notification browser check failed/);
- await page.locator('#content article.post').evaluate(node=>node.remove());
- await page.evaluate(()=>privateTest.resumeRecovery());await d.getByText('Your saved choices are ready.',{exact:true}).waitFor();
- assert.equal(await page.evaluate(()=>privateTest.prepare.length),0);
-});
-
 // The panel capability here is a labelled local authority double. Production
 // authority and transaction rechecks are exercised by application/panel suites.
 test('contextual moderator actions use public targets only after local authorization and clear on invalidation',async t=>{
  const {page,state,requests}=await boardFixture(t);
  assert.equal(await page.getByRole('button',{name:'Remove this post',exact:true}).count(),0);
- assert(!requests.some(p=>p.includes('wallet')));
- await page.getByRole('button',{name:'Your account',exact:true}).click();await page.waitForFunction(()=>window.moderatorFixture);
+ assert(!requests.some(p=>p.includes('/v1/node')||p.includes('/prover')||p.includes('owned_')));
+ await page.getByRole('button',{name:'Connect wallet',exact:true}).click();await page.waitForFunction(()=>window.moderatorFixture);
  const before=state.calls.length;await page.evaluate(()=>moderatorFixture.change(true));
  await page.locator('#post-10').getByRole('button',{name:'Remove this post',exact:true}).click();
  assert.deepEqual(await page.evaluate(()=>boardActions.at(-1)),{type:'moderate-post',post:'10'});assert.equal(state.calls.length,before);
@@ -513,7 +453,7 @@ test('contextual moderator actions use public targets only after local authoriza
  assert(state.calls.every(p=>!/[?&](owner|moderator|owned|account)=/.test(p)));
 });
 test('moderator context actions respect rejected and already removed public state',async t=>{
- const {page}=await boardFixture(t,{rejected:true});await page.getByRole('button',{name:'Your account',exact:true}).click();await page.waitForFunction(()=>window.moderatorFixture);await page.evaluate(()=>moderatorFixture.change(true));
+ const {page}=await boardFixture(t,{rejected:true});await page.getByRole('button',{name:'Connect wallet',exact:true}).click();await page.waitForFunction(()=>window.moderatorFixture);await page.evaluate(()=>moderatorFixture.change(true));
  await page.evaluate(()=>location.hash='/board/20');await page.getByRole('heading',{name:'Workshop',level:1}).waitFor();
  assert.equal(await page.getByRole('button',{name:'Reject this subboard',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'Remove this post',exact:true}).count(),0);
  await page.evaluate(()=>location.hash='/directory');await page.getByRole('heading',{name:'Workshop'}).waitFor();assert.equal(await page.getByRole('button',{name:'Reject this subboard',exact:true}).count(),0);
@@ -560,13 +500,13 @@ test('keyboard sparse directory paging retains its button then focuses the exhau
 
 // G17 keeps social context in the reader while hiding implementation metadata.
 test('G17 primary posting stays above the feed on desktop and mobile; policy details stay out of the message',async t=>{
- const {page}=await socialFixture(t);
+ const {page}=await socialFixture(t,{home:true});
  for(const width of [1440,390]){
   await page.setViewportSize({width,height:900});const compose=page.locator('.page-head').getByRole('button',{name:'Write a post',exact:true});
   assert(await compose.isVisible());const c=await compose.boundingBox(),post=await page.locator('#post-10').boundingBox();assert(c.y+c.height<=post.y);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   assert.equal(await page.locator('#post-10').getByText('Published under policy: parent v2 · local v0',{exact:true}).isVisible(),false);
-  await page.screenshot({path:`execution/evidence/G17/reader-${width}.png`});
+  if(process.env.ROLLING_READER_SCREENSHOT_DIR)await page.screenshot({path:path.join(process.env.ROLLING_READER_SCREENSHOT_DIR,`reader-${width}.png`)});
  }
  await page.locator('.page-head').getByRole('button',{name:'Write a post',exact:true}).click();await page.waitForFunction(()=>window.recordedActions?.length===1);
  assert.deepEqual(await page.evaluate(()=>window.recordedActions),[{type:'post',subboard:'0'}]);
@@ -576,21 +516,6 @@ test('G17 account loading failures are visible and offer an explicit retry',asyn
  const {page}=await socialFixture(t,{wallet:'missing'});await page.locator('#post-10').getByRole('button',{name:'Reply',exact:true}).click();
  const error=page.locator('[data-account-error]');await error.waitFor();assert(await error.isVisible());assert(await error.getByRole('button',{name:'Try again',exact:true}).isVisible());assert.match(await error.innerText(),/Check your connection/);
 });
-test('G17 signed-in saved feeds load automatically through the existing private reader',async t=>{
- const {page,feed}=await privateViewFixture(t);await page.getByRole('button',{name:'Your account',exact:true}).click();await page.getByRole('button',{name:'Close account panel'}).waitFor();await page.waitForFunction(()=>document.querySelector('dialog').getAttribute('aria-busy')==='false');await page.getByRole('button',{name:'Close account panel'}).click();
- await page.getByRole('link',{name:'Following',exact:true}).click();await page.waitForFunction(()=>window.privateTest.reads===1);await page.getByRole('heading',{name:'Find your people',exact:true}).waitFor();assert.equal(await page.getByText('Your saved items could not load.',{exact:true}).count(),0);assert.equal(await page.getByRole('dialog').isVisible(),false);assert(feed.length>0);
-});
-test('G18 real reader retains the name selector across navigation and opens creation inline',async t=>{
- const {page}=await privateViewFixture(t);await page.locator('[data-posting-name] select').waitFor();
- await page.getByRole('button',{name:'Your account',exact:true}).click();await page.waitForFunction(()=>window.privateTest&&document.querySelector('dialog').getAttribute('aria-busy')==='false');
- await page.evaluate(()=>{privateTest.names=[{id:'7',first:'River',last:'Lane'}];});await page.getByText('Account settings',{exact:true}).click();await page.getByRole('button',{name:'Refresh account',exact:true}).click();await page.waitForFunction(()=>document.querySelector('dialog').getAttribute('aria-busy')==='false');await page.getByRole('button',{name:'Close account panel'}).click();
- const select=page.locator('[data-posting-name] select');await select.selectOption('7');await page.getByRole('link',{name:'Following',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-posting-name] select')?.value==='7');
- await select.selectOption('create');await page.getByLabel('First name',{exact:true}).waitFor();assert.equal(await page.locator('dialog[open]').count(),0);
- await page.getByRole('button',{name:'Cancel',exact:true}).click();assert.equal(await select.inputValue(),'7');
- await page.evaluate(()=>privateTest.options.onChange({invalidated:true}));await page.waitForFunction(()=>document.querySelector('[data-posting-name] select')?.value==='0');assert.equal(await select.locator('option[value="7"]').count(),0);
-});
-
-
 test('public revision notification renders a Bok response without navigation or polling',async t=>{
  const files=new Set(['live.html','reader.mjs','proving-preference.mjs','analytics.mjs','analytics-schema.mjs','feed-ranking.mjs','feed-preferences.mjs','home-reader.mjs','reader-updates.mjs','performance.mjs','reader-client.mjs','profile-view.mjs','model.mjs','navigation.mjs','style.css']);
  const checkpoint={number:12,hash:'0x'+'a'.repeat(64)},scope={boardAddress:'0x'+'1'.repeat(64)};
@@ -624,9 +549,9 @@ async function threadRefreshFixture(t,{total=32,hydrate=false,locked=false}={}){
   if(url.pathname==='/wallet-panel.mjs'){
    res.writeHead(200,{'content-type':'text/javascript'});res.end('export function mountRollingWalletPanel(options){window.refreshThread=options.onPublicEffect;let saved='+JSON.stringify(hydrate?null:false)+';return {initialize(){},attachIdentityControls(){},attachBokControls(){},open(options){window.privateOpen=options;},close(){},privateStatus:()=>'+JSON.stringify(locked)+'?"locked":saved===null?"recovering":"complete",loadSavedItems(){window.hydrationCalls=(window.hydrationCalls??0)+1;return new Promise(resolve=>window.finishHydration=value=>{if(value===null){resolve(false);return;}saved=value;options.onPrivateChange();resolve(true);});},preferenceEnabled:()=>saved,act(action,{onIncluded}){window.inlineAction=action;window.inlineCalls=(window.inlineCalls??0)+1;window.includeInline=onIncluded;return new Promise(resolve=>window.finishInline=status=>{if(status==="included"||status==="confirmed")saved=action.enabled;options.onPrivateChange();resolve({status});});}}}');return;
   }
-  if(url.pathname==='/api/thread'||url.pathname==='/api/home'){
+  if(url.pathname==='/api/thread'||url.pathname==='/api/profile'){
    const offset=Number(url.searchParams.get('cursor')??0);state.calls.push(offset);
-   const body={schemaVersion:1,scope,complete:true,checkpoint,revision:state.invalidPage&&offset?'changed':state.revision,
+   const body={schemaVersion:1,scope,identity:{id:'7',first:'Fixture',last:'Author'},complete:true,checkpoint,revision:state.invalidPage&&offset?'changed':state.revision,
     ...(state.confirmationCheckpoint?{confirmationCheckpoint:state.invalidConfirmationPage&&offset?{...state.confirmationCheckpoint,number:state.confirmationCheckpoint.number+1}:state.confirmationCheckpoint}:{}),
     posts:Array.from({length:Math.min(16,state.total-offset)},(_,i)=>{const id=String(offset+i+1);return {id,record:{root:'1',parent:id==='1'?'0':'1',reference:'0',kind:'1',subboard:'0',name_id:'0'},text:'Reply '+id,timestamp:'1',likes:'0',...(state.confirmationCheckpoint?{confirmation:'confirmed'}:{}),...state.postMetadata[id]};}),
     nextCursor:offset+16<state.total?String(offset+16):null,names:{},boards:{}};
@@ -681,7 +606,7 @@ test('navigation cancels a thread extent refresh without adding its delayed repl
  await page.getByRole('button',{name:'Load more',exact:true}).click();await page.locator('#post-32').waitFor();
  state.total=33;state.revision='2';state.hold=true;
  await page.evaluate(()=>{window.refreshing=refreshThread();});await until(()=>state.pending.length===1);
- await page.evaluate(()=>{location.hash='/home';});await page.getByRole('heading',{name:'Home',exact:true}).waitFor();await page.locator('#post-16').waitFor();
+ await page.evaluate(()=>{location.hash='/profile/7';});await page.getByRole('heading',{name:'Fixture Author',exact:true}).waitFor();await page.locator('#post-16').waitFor();
  state.hold=false;state.pending.splice(0).forEach(resolve=>resolve());await page.evaluate(()=>refreshing);
  assert.equal(await page.getByRole('article').count(),16);assert.equal(await page.locator('#post-32').count(),0);assert.equal(await page.locator('#post-33').count(),0);
  assert.equal(await page.getByRole('alert').count(),0);
@@ -693,7 +618,7 @@ test('an unrendered conversation never inherits another conversation’s loaded 
  await page.getByRole('button',{name:'Load more',exact:true}).click();await page.locator('#post-32').waitFor();
  state.total=48;state.holdRoot='2';
  await page.evaluate(()=>{location.hash='/thread/2';});await until(()=>state.pending.length===1);
- await page.evaluate(()=>{location.hash='/home';});await page.getByRole('heading',{name:'Home',exact:true}).waitFor();await page.locator('#post-16').waitFor();
+ await page.evaluate(()=>{location.hash='/profile/7';});await page.getByRole('heading',{name:'Fixture Author',exact:true}).waitFor();await page.locator('#post-16').waitFor();
  state.holdRoot=null;state.pending.splice(0).forEach(resolve=>resolve());
  await page.goBack();await page.getByRole('heading',{name:'Conversation',exact:true}).waitFor();await page.locator('#post-16').waitFor();
  assert.equal(await page.getByRole('article').count(),16);assert.equal(await page.getByRole('button',{name:'Load more',exact:true}).count(),1);
@@ -709,12 +634,12 @@ test('proposed Bok reply appears in a loaded conversation and checkpoint-only pr
  state.total=33;state.revision='2';state.confirmationCheckpoint={number:11,hash:'0x'+'b'.repeat(64)};
  state.postMetadata['33']={confirmation:'pending',bot:{},position:{blockNumber:'12'},text:'Your app is ready: https://example.com/app'};
  notify();const reply=page.locator('#post-33');await reply.locator('.post-confirmation').waitFor();
- assert.equal(await reply.locator('.post-confirmation').textContent(),'Confirmation pending');
+ assert.equal(await reply.locator('.post-confirmation').textContent(),'Network confirmation pending');
  assert.equal(await reply.locator('.author').textContent(),'Bok');assert.equal(await reply.getAttribute('data-confirmation'),'pending');
  assert.equal(await reply.getByRole('link',{name:'https://example.com/app',exact:true}).getAttribute('href'),'https://example.com/app');
  assert.equal(await reply.getByRole('link',{name:'View conversation',exact:true}).getAttribute('href'),'#/thread/1');
- for(const name of ['Reply','Like','Quote','Repost']){
-  const action=reply.getByRole('button',{name,exact:true,includeHidden:true});assert.equal(await action.isEnabled(),true,name);assert.equal(await action.getAttribute('title'),null);
+ for(const name of ['Reply','Gift 20.00 credits','Quote','Repost']){
+  const action=reply.getByRole('button',{name,exact:true,includeHidden:true});assert.equal(await action.isEnabled(),true,name);assert.equal(await action.getAttribute('title'),name==='Gift 20.00 credits'?'Gift 20.00 credits to the author':null);
  }
  assert.equal(await reply.getByRole('button',{name:'Bookmark',exact:true}).isEnabled(),true);
  assert.equal(await reply.getByRole('button',{name:'Unlike',exact:true,includeHidden:true}).count(),0);
@@ -722,7 +647,7 @@ test('proposed Bok reply appears in a loaded conversation and checkpoint-only pr
  const url=page.url();state.revision='3';state.confirmationCheckpoint={number:12,hash:'0x'+'a'.repeat(64)};state.postMetadata['33'].confirmation='confirmed';notify();
  await page.locator('#post-33[data-confirmation="confirmed"]').waitFor();
  assert.equal(page.url(),url);assert.equal(await reply.count(),1);assert.equal(await reply.locator('.post-confirmation').count(),0);assert.equal(await page.getByRole('article').count(),33);
- for(const name of ['Reply','Like','Quote','Repost'])assert.equal(await reply.getByRole('button',{name,exact:true,includeHidden:true}).isEnabled(),true,name);
+ for(const name of ['Reply','Gift 20.00 credits','Quote','Repost'])assert.equal(await reply.getByRole('button',{name,exact:true,includeHidden:true}).isEnabled(),true,name);
  assert.equal(await page.getByRole('button',{name:'Load more',exact:true}).count(),0);assert.deepEqual(state.calls,[0,16,0,16,32,0,16,32]);
 });
 
@@ -787,7 +712,7 @@ for(const locked of [false,true])test(`unknown saved choice delegates one inline
  const {page}=await threadRefreshFixture(t,{total:16,hydrate:true,locked}),bookmark=()=>page.locator('#post-1 [data-private-setting="Bookmark"]');
  if(!locked){await page.waitForFunction(()=>window.hydrationCalls===1);await page.evaluate(()=>finishHydration(null));await page.waitForFunction(()=>!document.querySelector('#post-1 [data-private-setting="Bookmark"]').disabled);}
  assert.equal(await bookmark().textContent(),'Bookmark');assert.equal(await bookmark().isDisabled(),false);await page.locator('#post-1 .post-more > summary').click();await bookmark().click();
- if(locked){await page.waitForFunction(()=>window.privateOpen?.view==='preferences');assert.equal(await page.evaluate(()=>window.inlineCalls??0),0);}
+ if(locked){await page.waitForFunction(()=>window.privateOpen!==undefined);assert.equal(await page.evaluate(()=>window.inlineCalls??0),0);}
  else{await page.waitForFunction(()=>window.inlineCalls===1);assert.equal(await page.evaluate(()=>window.privateOpen),undefined);assert.deepEqual(await page.evaluate(()=>window.inlineAction),{type:'preference',kind:1,target:'1',enabled:undefined});assert.equal(await bookmark().textContent(),'Saving…');assert.equal(await bookmark().isDisabled(),true);}
  await page.evaluate(()=>refreshThread());assert.equal(await page.evaluate(()=>window.hydrationCalls??0),locked?0:1,'no automatic retry loop');
  if(!locked){assert.equal(await bookmark().textContent(),'Saving…');assert.equal(await page.evaluate(()=>window.inlineCalls),1);await page.evaluate(()=>finishInline('failed'));}
@@ -829,10 +754,12 @@ test('conversation back arrow returns to prior app route and direct links return
 
 test('welcome shows approved copy on first visit only',async t=>{
  const {page}=await socialFixture(t,{firstVisit:true,proving:true});
- await page.getByRole('dialog',{name:'Welcome!'}).waitFor();
+ await page.getByRole('dialog',{name:'Welcome to rollingchat'}).waitFor();
  assert.deepEqual(await page.locator('.welcome-dialog p').allTextContents(),[
-  'rolling.chat is a decentralized, anonymous message board, powered by the Aztec network.',
-  'Put up a small ETH deposit to post. Posts that break the rules incur a delay timer before you can post or withdraw your deposit.'
+  'A private messaging board on the Aztec network. Posts are public; your wallet address is not attached to them.',
+  'Every conversation is open. No account needed to read.',
+  'Posts and tips use private Aztec credit. Your wallet address is not published with them. Posts using the same name and replies are publicly linked.',
+  'A small refundable ETH deposit discourages spam. Separate posting credit pays network fees. Posts that break the rules delay posting and withdrawal.'
  ]);
  await page.getByRole('button',{name:'Get started',exact:true}).click();
  await page.getByRole('link',{name:'Main board',exact:true}).first().click();
