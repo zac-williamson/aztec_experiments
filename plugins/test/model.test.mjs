@@ -334,3 +334,17 @@ test('known browser repairs and final mandatory check finish in one response wit
  await createAgent({model,toolbox,instructions:'Help'}).run({text:'Repair exact browser failure',id:'a',postId:'b'});
  assert.equal(calls,1);assert.equal(accepts,1);assert.deepEqual(order,['edit_browser_plan','finish_workspace']);
 });
+
+for(const reason of ['tool_calls','length'])test('hosted bounded repair discards entire truncated batch and accepts smaller corrected work: '+reason,async()=>{
+ let calls=0,accepted=0;const executed=[];
+ const toolbox={open:async()=>({definitions:[],call:async(name,args)=>{executed.push({name,args});return {};},accept:async()=>{accepted++;},summary:x=>x,close:async()=>{}})};
+ const model={complete:async({messages})=>{calls++;if(calls===1)return {finishReason:reason,message:{role:'assistant',tool_calls:[{id:'a',function:{name:'write_file',arguments:'{"path":"untouched.txt","content":"not executed"}'}},{id:'b',function:{name:'write_file',arguments:'{"path":"game.js","content":"truncated'}}]}};if(calls===2){assert.match(messages.at(-1).content,/NONE.*executed/);assert.equal(messages.some(m=>m.tool_calls?.some(c=>c.id==='a')),false);return {finishReason:'tool_calls',message:{role:'assistant',tool_calls:[{id:'small',function:{name:'write_file',arguments:'{"path":"game.js","content":"complete module"}'}}]}};}return {message:{role:'assistant',content:'Done'}};}};
+ await createAgent({model,toolbox,instructions:'Build',maxCalls:4,maxResponseRepairs:2}).run({id:'a',postId:'b',text:'Build'});
+ assert.equal(calls,3);assert.equal(accepted,1);assert.deepEqual(executed,[{name:'write_file',args:{path:'game.js',content:'complete module'}}]);
+});
+for(const maxCalls of [2,10])test('hosted malformed repair remains inside both call and repair budgets: '+maxCalls,async()=>{
+ let calls=0,tools=0,accepted=0;const toolbox={open:async()=>({definitions:[],call:async()=>{tools++;},accept:async()=>{accepted++;},close:async()=>{}})};
+ const model={complete:async()=>{calls++;return {finishReason:'tool_calls',message:{role:'assistant',tool_calls:[{id:'a',function:{name:'write_file',arguments:'{"path":'}}]}};}};
+ await assert.rejects(createAgent({model,toolbox,instructions:'Build',maxCalls,maxResponseRepairs:2}).run({id:'a',postId:'b',text:'Build'}),{code:'MODEL_TOOL_RESPONSE_INVALID'});
+ assert.equal(calls,Math.min(maxCalls,3));assert.equal(tools,0);assert.equal(accepted,0);
+});
