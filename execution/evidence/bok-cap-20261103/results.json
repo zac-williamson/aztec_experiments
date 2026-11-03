@@ -1,0 +1,14 @@
+{
+  "revision": "809a75b2c40205e0bcc215f54098c4cffe1fd699",
+  "publication": "279b8c9e-f8b9-4b56-ac26-218a8382c356",
+  "tests": {
+    "metering": "90 passed",
+    "composer": "198 passed,3 preexisting failures reproduced independently",
+    "new_budget_boundary": "passed"
+  },
+  "liveAssetsVerified": 119,
+  "liveFrontendCapVerified": true,
+  "request": "0x21f624b741b1a64c04ea3dd05d1fefb396fb4ec84c1ca2ea902c5ce19807b332",
+  "providerCreditUSD": 3.77950262,
+  "result": "request blocked at provider admission before model dispatch"
+}
