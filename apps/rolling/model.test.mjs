@@ -140,3 +140,42 @@ test('saved reader captures exact bounded selections and cached follow labels wi
  assert.equal(savedReaderRoute('/notifications'),'/home');assert.equal(savedReaderRoute('/following'),'/following');
  for(const bad of [{...source,bookmarks:['1','1']},{...source,followedNames:Array.from({length:100},(_,i)=>String(i+1))},{...source,bookmarks:['01']}])assert.throws(()=>savedReaderSelection('following',bad));
 });
+
+import {checkBoardAddress,checkNamePart,BOARD_ADDRESS_PATTERN,TEXT_LIMITS} from './model.mjs';
+test('board address check mirrors the contract rule and names each problem',()=>{
+ for(const ok of ['abc','book-club','a-1','x'.repeat(40),'1234'])assert.equal(checkBoardAddress(ok).valid,true,ok);
+ for(const ok of ['abc','book-club'])assert.deepEqual(checkBoardAddress(ok).problems,[]);
+ const upper=checkBoardAddress('Book Club');
+ assert.equal(upper.valid,false);assert.equal(upper.suggestion,'book-club');
+ assert.match(upper.problems.join(' '),/lowercase/);assert.match(upper.problems.join(' '),/Spaces are not allowed/);
+ assert.match(checkBoardAddress('book-club-').problems.join(' '),/End with a letter or number/);
+ assert.equal(checkBoardAddress('book-club-').suggestion,'book-club');
+ assert.match(checkBoardAddress('-book').problems.join(' '),/Start with a letter or number/);
+ assert.match(checkBoardAddress('book--club').problems.join(' '),/single hyphen/);
+ assert.match(checkBoardAddress('book_club!').problems.join(' '),/“_” “!” are not allowed/);
+ assert.equal(checkBoardAddress('book_club!').suggestion,'book-club');
+ assert.match(checkBoardAddress('ab').problems.join(' '),/at least 3/);assert.equal(checkBoardAddress('ab').suggestion,'');
+ assert.match(checkBoardAddress('a'.repeat(41)).problems.join(' '),/at most 40 characters \(41 now\)/);
+ assert.equal(checkBoardAddress('a'.repeat(41)).suggestion,'a'.repeat(40));
+ assert.equal(checkBoardAddress('Café').suggestion,'cafe');
+ assert.deepEqual(checkBoardAddress(''),{valid:false,problems:[],suggestion:''});
+ // A suggestion is only offered when it would itself pass the rule.
+ for(const value of ['Book Club','book-club-','--x--','A_B','  '])if(checkBoardAddress(value).suggestion)assert.match(checkBoardAddress(value).suggestion,BOARD_ADDRESS_PATTERN);
+});
+test('name part check mirrors the registration policy',()=>{
+ for(const ok of ['River','Mary Ann',"O'Neil",'Jean-Luc','a'.repeat(32),''])assert.equal(checkNamePart(ok),'',ok);
+ assert.match(checkNamePart('René'),/“é” is not allowed/);
+ assert.match(checkNamePart('-Lee'),/Start and end with a letter/);
+ assert.match(checkNamePart('Lee '),/^$/);
+ assert.match(checkNamePart("Lee'"),/Start and end with a letter/);
+ assert.match(checkNamePart('a'.repeat(33)),/at most 32 characters \(33 now\)/);
+ assert.match(checkNamePart('bok',{first:true}),/reserved/);assert.match(checkNamePart('BOK',{first:true}),/reserved/);
+ assert.equal(checkNamePart('bok'),'');
+});
+test('allowance accepts a smaller byte budget for contract text fields',()=>{
+ assert.equal(TEXT_LIMITS.boardName,93);assert.equal(TEXT_LIMITS.moderationReason,217);
+ assert.equal(allowance('a'.repeat(93),TEXT_LIMITS.boardName).remaining,0);
+ assert.equal(allowance('a'.repeat(94),TEXT_LIMITS.boardName).overCharacters,1);
+ assert.equal(allowance('🙂'.repeat(24),93).remaining,-3);assert.equal(allowance('🙂'.repeat(24),93).overCharacters,1);
+ assert.equal(allowance('a'.repeat(992)).valid,true);
+});

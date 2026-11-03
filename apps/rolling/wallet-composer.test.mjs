@@ -1474,3 +1474,37 @@ for(const asset of ['ETH','USDC'])test(`posting topup displays USD and AZTEC for
  await f.document.until(()=>f.document.querySelector('.credit-total')?.textContent.includes(asset==='ETH'?'$4.60 USD':'$5.12 USD'));
  assert(f.document.querySelector('input[aria-label="Amount (AZTEC)"]'));assert(f.document.querySelector('.credit-total').textContent.includes('AZTEC'));
 });
+
+test('board address hint names the problem, offers the corrected address and gates the review button',{timeout:3000},async t=>{
+ const f=await fixture(t,{defaults:{type:'subboard'},posting:{},balanceRead:async()=>({available:true,availableCredit:'0'}),ordinaryLimit:'9000000000000000'});
+ const controls=f.document.querySelectorAll('input,textarea').filter(n=>n.getAttribute('type')!=='hidden');const [slug,name,description]=controls;
+ assert.equal(slug.getAttribute('autocapitalize'),'none');
+ const hintOf=node=>f.document.querySelectorAll('.field-hint').find(p=>p.getAttribute('id')===node.getAttribute('aria-describedby'));
+ assert(hintOf(slug).textContent.includes('Lowercase letters, numbers and single hyphens'));assert.equal(hintOf(slug).dataset.tone,'quiet');
+ for(const [node,value] of [[name,'Book club'],[description,'Reading together']]){node.value=value;node.fire('input');}
+ slug.value='Book Club!';slug.fire('input');
+ const review=f.document.querySelector('[data-action-review]');
+ assert.equal(review.disabled,true);assert.equal(slug.getAttribute('aria-invalid'),'true');assert.equal(hintOf(slug).dataset.tone,'error');
+ assert(hintOf(slug).textContent.includes('Use lowercase letters only.'));assert(hintOf(slug).textContent.includes('Spaces are not allowed'));assert(hintOf(slug).textContent.includes('“!” is not allowed'));
+ const fix=hintOf(slug).querySelector('button');assert.equal(fix.textContent,'Use “book-club”');fix.fire('click');
+ assert.equal(slug.value,'book-club');assert.equal(hintOf(slug).dataset.tone,'ok');assert.equal(slug.getAttribute('aria-invalid'),null);assert.equal(review.disabled,false);
+ slug.value='book-club-';slug.fire('input');assert(hintOf(slug).textContent.includes('End with a letter or number'));assert.equal(review.disabled,true);
+ slug.value='book-club';slug.fire('input');assert.equal(review.disabled,false);
+ // Contract text limits are explained before the estimate instead of failing it.
+ name.value='n'.repeat(94);name.fire('input');assert.equal(review.disabled,true);assert.equal(name.getAttribute('aria-invalid'),'true');assert(hintOf(name).textContent.includes('1 character over the limit'));
+ name.value='n'.repeat(85);name.fire('input');assert.equal(review.disabled,false);assert(hintOf(name).textContent.includes('Nearly full'));assert.equal(hintOf(name).dataset.tone,'quiet');
+ name.value='Book club';name.fire('input');assert.equal(hintOf(name).hidden,true);
+ for(const node of [slug,name,description])assert.equal(node.getAttribute('aria-invalid'),null,'valid fields are not marked invalid');
+ review.fire('click');await f.document.until(()=>f.submissions.length===1);
+ assert.deepEqual(f.prepared(),{type:'subboard',slug:'book-club',name:'Book club',description:'Reading together',rules:''});
+});
+test('name part hints follow the registration policy before any preparation',{timeout:3000},async t=>{
+ const f=await fixture(t,{defaults:{type:'name'},posting:{},balanceRead:async()=>({available:true,availableCredit:'0'})});
+ const [first,last]=f.document.querySelectorAll('input').filter(n=>n.getAttribute('type')==='text');const review=f.document.querySelector('[data-action-review]');
+ const hintOf=node=>f.document.querySelectorAll('.field-hint').find(p=>p.getAttribute('id')===node.getAttribute('aria-describedby'));
+ first.value='René';first.fire('input');last.value='Lane';last.fire('input');
+ assert.equal(review.disabled,true);assert(hintOf(first).textContent.includes('“é” is not allowed'));assert.equal(hintOf(last).hidden,true);
+ first.value='Bok';first.fire('input');assert(hintOf(first).textContent.includes('reserved'));assert.equal(review.disabled,true);
+ first.value='River';first.fire('input');assert.equal(hintOf(first).hidden,true);assert.equal(review.disabled,false);
+ last.value='Lane-';last.fire('input');assert(hintOf(last).textContent.includes('Start and end with a letter'));assert.equal(review.disabled,true);
+});

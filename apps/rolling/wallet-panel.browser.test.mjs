@@ -186,7 +186,7 @@ test('funding remains honest and unavailable connection has no action buttons or
  assert.equal((await counts(page)).sessions,1);assert.equal(await page.getByRole('button',{name:'Confirm and send'}).count(),0);assert.equal(await page.getByRole('button',{name:'Check action and review fee'}).count(),0);
  await page.evaluate(()=>{test.failure=null;test.fee='collateral-pending';});await page.getByRole('button',{name:'Reconnect'}).click();await page.getByRole('heading',{name:'One more step before your first post',exact:true}).waitFor();
  assert(await page.getByRole('button',{name:'Set up posting',exact:true}).isVisible());await navigateAccount(page,'Write a post');await page.getByLabel('Message',{exact:true}).fill('No collateral');assert(await page.getByRole('button',{name:'Check action and review fee'}).isDisabled());
- await page.getByLabel('Action').selectOption('subboard');await page.getByLabel('Permanent slug (3–40 lowercase letters, digits or single hyphens)').fill('small-tools');await page.getByLabel('Subboard name').fill('Small tools');await page.getByLabel('Description',{exact:true}).fill('Make useful things');
+ await page.getByLabel('Action').selectOption('subboard');await page.getByLabel('Board address (e.g. book-club)').fill('small-tools');await page.getByLabel('Board name').fill('Small tools');await page.getByLabel('Description',{exact:true}).fill('Make useful things');
  await page.getByRole('button',{name:'Check action and review fee'}).click();await page.getByRole('button',{name:'Confirm and send'}).waitFor();assert.equal((await counts(page)).sends,0);
 });
 
