@@ -289,7 +289,7 @@ a.author:hover{text-decoration:underline}
 .directory-search input{flex:1;min-width:0;min-height:44px;padding:0 16px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink)}
 .directory-item{padding:16px 18px;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-lg);display:flex;gap:14px;margin-bottom:12px;box-shadow:var(--shadow-sm);transition:box-shadow var(--t),border-color var(--t)}
 .directory-item:hover{box-shadow:var(--shadow-md);border-color:var(--line-strong)}
-.directory-item>div{min-width:0;flex:1}
+.directory-item>div{min-width:0;flex:1;overflow-wrap:anywhere}
 .directory-item p{font-size:14px;margin:4px 0 10px;color:var(--muted)}
 .directory-item h2{margin:0;font-size:16px}
 .directory-item h2 a{color:var(--ink);text-decoration:none}
