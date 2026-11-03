@@ -76,3 +76,6 @@ billboard/portal/out/
 /apps/dist/crs/crs.lock
 /apps/dist/crs/grumpkin_g1_v2.flat.dat
 /apps/dist/crs/grumpkin_size
+
+# Local Netlify folder
+.netlify

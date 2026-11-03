@@ -3,7 +3,16 @@
 The product name is **rollingchat** (one word), at rolling.chat. The wordmark sets
 "rolling" in ink and "chat" in brand violet, weight 800, letter-spacing -0.045em,
 beside a rounded violet tile carrying the rolling-bubble mark (a speech bubble with
-a curling arrow). Tagline: *Say it in public. Stay private.*
+a curling arrow). The lockup (`createBrand`) sets the tagline *Private messaging
+board* under the wordmark; the compact header under 700px drops it and the drawer
+shows it again. Social cards keep the longer line *Say it in public. Stay private.*
+
+Privacy is said early and repeated where money moves. A first visit opens a
+welcome dialog (read freely, post privately, fund once); the rail foot, the
+context column ("Private by design") and the help page restate it; the connect,
+funding, top-up, composer, gift and name forms each carry a `.privacy-note` lock
+line saying the action is sent from the private Aztec account and never linked
+to the wallet.
 
 `style.css` is shared by the live application (`live.html`, `reader.mjs`,
 `wallet-panel.mjs`, `profile-view.mjs`) and the disconnected design preview
@@ -50,6 +59,16 @@ the loaded conversation sits at root level and keeps its "In reply to" line.
 The composer shows "Replying to {author}" with a quoted excerpt of the answered
 post; the excerpt is display-only and never part of the signed action.
 
+Home and board feeds show one card per conversation (`createFeedConversation`).
+Public pages list newest first, so a reply can arrive before its root; the card
+is keyed by `record.root`, items are inserted in chain order (`compareChainOrder`)
+and the root heads the card whenever it appears, replacing any context copy. The
+API ships each reply's immediate parent as `contextPosts`; a parent that is not on
+the page renders as a context row (clamped, "Show more"), and a reply whose root
+is unavailable gets a "Part of a longer conversation" header linking into the
+thread. Feed cards preview three direct replies before "Show N more replies"
+(`FEED_THREAD_POLICY`); deeper branches stay behind the thread page.
+
 ## Tokens
 
 Colour (light): background `#f6f7fb`, surfaces `#fff` / `#f1f2f8` / `#e9ebf3`,
@@ -81,7 +100,21 @@ The account dialog is one decision per screen with a three-step progress strip
 Wallet choices are large rows with provider icons; the funding receipt is a list
 of lines with a highlighted maximum total; the primary action is full width.
 The composer keeps its form fields and adds a tools row: `@bok` chip, preview
-toggle and byte counter.
+toggle and byte counter. File inputs are visually hidden behind a "Choose an
+image" button and a chosen-file label; no native control is shown.
+
+Every paid action (post, reply, gift, name, bio, avatar, board, top-up, funding
+claim) drives one transaction status (`createTransactionStatus` in `model.mjs`):
+a headline, a five-step track (Prepare · Prove · Send · Included · Confirmed)
+with an animated current segment, a one-line explanation of the step and the
+privacy line. It sits at the top of the account dialog or inline name form while
+they are open and scrolls into view when it appears; once the dialog closes on
+inclusion it continues as a dismissible strip at the bottom of the page until
+the final confirmation, then hides itself. The plain-text live region keeps the
+screen-reader announcement.
+
+The inline "Create a name" form has a Cancel button, closes on Escape, closes
+when another posting name is chosen, and does not follow route changes.
 
 ## Metadata
 
@@ -95,7 +128,11 @@ template if the brand changes; `favicon.svg` is the vector source.
 
 `node --check` the modules, `node --test apps/rolling/*.test.mjs` for the unit
 suites and `node --test apps/rolling/*.browser.test.mjs` for the Playwright
-suites. Browser checks: home → board → thread → back restores scroll and focus;
+suites (`feed-context.browser.test.mjs` covers feed grouping against a public
+fixture). `apps/rolling/netlify-preview` serves the live app against a mock API
+and mock wallet runtime that replay the progress stages, so the status bar and
+feed grouping can be reviewed without a chain. Browser checks: home → board →
+thread → back restores scroll and focus;
 directory search; composer with `@bok` chip, emoji and oversized text; keyboard
 dialog open/Escape/focus return; 390px drawer and backdrop; reduced-motion mode;
 loading, empty, pending and failure states via the preview-state selector.

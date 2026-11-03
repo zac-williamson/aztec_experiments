@@ -6,7 +6,7 @@ import {createPublicReader} from './reader-client.mjs';
 import {createRankedHomeReader} from './home-reader.mjs';
 import {createFeedPreferences,createFeedObservation} from './feed-preferences.mjs';
 import {createPublicAvatar,createPublicProfile} from './profile-view.mjs';
-import {createMessageContent as richText,createInlineActionRegistry,savedPreferenceControl,savedReaderSelection,savedReaderRoute,createIcon,createBrand,createSkeletonFeed,createThreadView,createFeedReplyGroup,boardTone,boardInitial} from './model.mjs';
+import {createMessageContent as richText,createInlineActionRegistry,savedPreferenceControl,savedReaderSelection,savedReaderRoute,createIcon,createBrand,createSkeletonFeed,createThreadView,createFeedConversation,compareChainOrder,createTransactionStatus,boardTone,boardInitial} from './model.mjs';
 import {captureRoutePosition,focusRoute,skipToContent,revealIncludedPost,createConversationNavigation} from './navigation.mjs';
 
 const analytics=createAnalytics();
@@ -14,6 +14,18 @@ const provingPreference=createProvingPreference({apply:enabled=>prepareAccountTo
 let provingControl;
 const feedObservation=createFeedObservation({report:name=>analytics.track(name)});
 const app=document.querySelector('#app'),positions=new Map(),feedPreferences=createFeedPreferences(),priorityTxs=new Set();
+// The page keeps showing a transaction's progress after the account dialog closes
+// (posts close it on inclusion; tips never open it). Lives outside #app so it
+// survives navigation; a finished or failed action fades out on its own.
+const pageStatus=createTransactionStatus({dismissible:true});pageStatus.node.classList.add('tx-status-page');document.body.append(pageStatus.node);
+let pageStatusTimer=null,pageStatusHeadline='';
+function showPageStatus(snapshot){
+ clearTimeout(pageStatusTimer);pageStatusTimer=null;
+ if(!snapshot||snapshot.inPage){pageStatus.clear();pageStatusHeadline='';return;}
+ pageStatus.set(snapshot);
+ if(snapshot.headline!==pageStatusHeadline){pageStatusHeadline=snapshot.headline;announce(snapshot.headline);}
+ if(['done','error'].includes(snapshot.tone))pageStatusTimer=setTimeout(()=>{pageStatus.clear();pageStatusHeadline='';},8000);
+}
 const read=createRankedHomeReader({read:createPublicReader(),getPreferences:()=>feedPreferences.snapshot(privatePanel?.savedItemsSnapshot?.()),getPriorityTxs:()=>[...priorityTxs]});
 const currentRoute=()=>savedReaderRoute(location.hash==='#/new-account'?'/home':location.hash.slice(1)||'/home');
 const conversationNavigation=createConversationNavigation();
@@ -64,7 +76,7 @@ function privateChanged(){
 }
 async function accountPanel(){
  return walletPanel??=import('./wallet-panel.mjs').then(({mountRollingWalletPanel})=>mountRollingWalletPanel({
-   loadRuntime:prepareAccountTools,onAnalytics:(name,details)=>analytics.track(name,details),onIncludedPostRendered:post=>{activeThread?.reveal(post?.id);const shown=revealIncludedPost(post);if(shown)priorityTxs.delete(post?.txHash);return shown;},onPublicEffect:effect=>{if(['post','reply','quote','repost','thread','bok'].includes(effect?.type)&&/^0x[0-9a-f]{64}$/.test(effect?.txHash)){priorityTxs.add(effect.txHash);if(priorityTxs.size>10)priorityTxs.delete(priorityTxs.values().next().value);}return !main?.querySelector('.public-content')||privateViews.has(route.split('/')[1])||route.split('/')[1]==='directory'?render({live:!!main?.querySelector('.public-content')}):updates.request();},onPrivateChange:privateChanged})).then(panel=>{privatePanel=panel;void Promise.resolve(panel.initialize()).then(privateChanged).catch(()=>{});return panel;});
+   loadRuntime:prepareAccountTools,onAnalytics:(name,details)=>analytics.track(name,details),onStatus:showPageStatus,onIncludedPostRendered:post=>{activeThread?.reveal(post?.id);const shown=revealIncludedPost(post);if(shown)priorityTxs.delete(post?.txHash);return shown;},onPublicEffect:effect=>{if(['post','reply','quote','repost','thread','bok'].includes(effect?.type)&&/^0x[0-9a-f]{64}$/.test(effect?.txHash)){priorityTxs.add(effect.txHash);if(priorityTxs.size>10)priorityTxs.delete(priorityTxs.values().next().value);}return !main?.querySelector('.public-content')||privateViews.has(route.split('/')[1])||route.split('/')[1]==='directory'?render({live:!!main?.querySelector('.public-content')}):updates.request();},onPrivateChange:privateChanged})).then(panel=>{privatePanel=panel;void Promise.resolve(panel.initialize()).then(privateChanged).catch(()=>{});return panel;});
 }
 // `extras` carries display-only hints (such as the post being answered); the action itself is `defaults`.
 async function openWallet(defaults={},extras={}){
@@ -104,7 +116,8 @@ let tipConfirmation;
 function confirmTip(){
  if(tipConfirmation)return Promise.resolve(false);
  return new Promise(resolve=>{
-  const dialog=el('dialog',{class:'tip-confirmation','aria-labelledby':'tip-confirmation-title'},el('h2',{id:'tip-confirmation-title'},'Gift 20.00 credits to the author?'),el('p',{},'Network fees are additional.'));
+  const dialog=el('dialog',{class:'tip-confirmation','aria-labelledby':'tip-confirmation-title'},el('h2',{id:'tip-confirmation-title'},'Gift 20.00 credits to the author?'),el('p',{},'Network fees are additional.'),
+   el('p',{class:'privacy-note'},createIcon('lock'),el('span',{},'Sent from your private Aztec account. The author sees the gift, never who sent it.')));
   tipConfirmation=dialog;
   const finish=confirmed=>{dialog.close();dialog.remove();tipConfirmation=null;resolve(confirmed);};
   dialog.append(el('div',{class:'dialog-actions'},button('Cancel',()=>finish(false)),button('Gift 20.00 credits',()=>finish(true),{class:'button primary'})));
@@ -113,16 +126,20 @@ function confirmTip(){
   document.body.append(dialog);dialog.showModal();
  });
 }
-function updatePreferenceControl(node,blocked=false){const state=preferenceControl(node.dataset.privateSetting,Number(node.dataset.kind),node.dataset.target);labelled(node,state.label);node.disabled=blocked||state.disabled;if(state.busy)node.setAttribute('aria-busy','true');else node.removeAttribute('aria-busy');}
+function updatePreferenceControl(node,blocked=false){const state=preferenceControl(node.dataset.privateSetting,Number(node.dataset.kind),node.dataset.target);const active=state.enabled===false;node.dataset.active=String(active);if(node.dataset.iconOn)node.dataset.icon=active?node.dataset.iconOn:node.dataset.iconOff;labelled(node,state.label);node.disabled=blocked||state.disabled;if(state.busy)node.setAttribute('aria-busy','true');else node.removeAttribute('aria-busy');}
 function welcomeFirstVisit(){
  const key='rolling.welcome.seen';
  try{if(localStorage.getItem(key))return;}catch{/* Storage may be unavailable. */}
+ const point=(icon,heading,copy)=>el('li',{},el('span',{class:'welcome-icon','aria-hidden':'true'},createIcon(icon)),el('div',{},el('strong',{},heading),el('p',{},copy)));
  const dialog=el('dialog',{class:'welcome-dialog','aria-labelledby':'welcome-title'},
-  el('h2',{id:'welcome-title'},'Welcome!'),
-  el('p',{},'rolling.chat is a decentralized, anonymous message board, powered by the Aztec network.'),
-  el('p',{},'Put up a small ETH deposit to post. Posts that break the rules incur a delay timer before you can post or withdraw your deposit.'));
+  el('h2',{id:'welcome-title'},'Welcome to rollingchat'),
+  el('p',{class:'welcome-lead'},'A private messaging board on the Aztec network. What you post is public. Who posted it stays private.'),
+  el('ul',{class:'welcome-points'},
+   point('eye','Read freely','Every conversation is open. No account needed to read.'),
+   point('lock','Post privately','Posts, replies and tips are sent from a private Aztec account. Nothing on-chain links them to your wallet, or to each other.'),
+   point('wallet','Fund once','A small ETH deposit opens your account and pays network fees. Posts that break the rules delay posting and withdrawal for a while.')));
  const dismiss=()=>{dialog.close();dialog.remove();};
- dialog.append(el('div',{class:'dialog-actions'},button('Get started',dismiss,{class:'button primary'})));
+ dialog.append(el('div',{class:'dialog-actions'},link('How privacy works','/help',{class:'button',onClick:dismiss}),button('Get started',dismiss,{class:'button primary'})));
  dialog.addEventListener('cancel',event=>{event.preventDefault();dismiss();});
  document.body.append(dialog);dialog.showModal();
  try{localStorage.setItem(key,'1');}catch{/* Reading does not require browser storage. */}
@@ -172,8 +189,10 @@ function socialButton(label,action,attrs={}){
  const retained=inlineActions.snapshot(key);if(retained)node.renderInlineAction(retained);
  return node;
 }
+// `icon` is one name for both states, or {off,on} to swap it once the preference is set.
 function preferenceButton(label,kind,target,savedLabel,icon){
- const node=socialButton(preferenceControl(label,kind,target).label,()=>({type:'preference',kind,target,enabled:preferenceControl(label,kind,target).enabled,...(savedLabel?{label:savedLabel}:{})}),{'data-private-setting':label,'data-kind':kind,'data-target':target,...(icon?{'data-icon':icon}:{})});
+ const icons=typeof icon==='string'?{'data-icon':icon}:icon?{'data-icon':icon.off,'data-icon-off':icon.off,'data-icon-on':icon.on}:{};
+ const node=socialButton(preferenceControl(label,kind,target).label,()=>({type:'preference',kind,target,enabled:preferenceControl(label,kind,target).enabled,...(savedLabel?{label:savedLabel}:{})}),{'data-private-setting':label,'data-kind':kind,'data-target':target,...icons});
  if(!inlineActions.snapshot(node.dataset.inlineAction))updatePreferenceControl(node);return node;
 }
 function showModeratorButton(node){node.hidden=privatePanel?.moderatorAuthorized?.()!==true;node.style.display=node.hidden?'none':'';}
@@ -225,10 +244,10 @@ function updateAccountButton(){
  const node=app.querySelector('[data-account-button]');if(!node)return;
  const signedIn=privatePanel?.privateStatus?.()&&privatePanel.privateStatus()!=='locked',label=signedIn?'Your account':'Connect wallet';node.querySelector('.label').textContent=label;node.setAttribute('aria-label',label);node.classList.toggle('primary',!signedIn);
 }
-function shell(title,{boardId=null}={}){
+function shell(title,{boardId=null,directory=false}={}){
  document.title=title+' · rollingchat';
  const nav=(label,to,icon)=>link([el('span',{class:'nav-icon','aria-hidden':'true'},createIcon(icon)),label],to);
- const rail=el('aside',{class:'rail',id:'community-navigation'},link(createBrand(),'/home',{class:'brand'}),el('p',{class:'rail-label'},'Browse'),el('nav',{class:'nav-group','aria-label':'Community'},nav('Home','/home','home'),nav('Main board','/board/0','message'),nav('Explore boards','/directory','compass'),nav('Following','/following','users'),nav('Bookmarks','/bookmarks','bookmark')),el('div',{class:'rail-foot'},'Say it in public. Stay private.'));
+ const rail=el('aside',{class:'rail',id:'community-navigation'},link(createBrand(),'/home',{class:'brand'}),el('p',{class:'rail-label'},'Browse'),el('nav',{class:'nav-group','aria-label':'Community'},nav('Home','/home','home'),nav('Main board','/board/0','message'),nav('Explore boards','/directory','compass'),nav('Following','/following','users'),nav('Bookmarks','/bookmarks','bookmark')),el('div',{class:'rail-foot'},el('span',{class:'rail-privacy'},createIcon('lock'),'Private messaging board on Aztec. Your posts are never linked to your wallet.')));
  for(const entry of rail.querySelectorAll('nav a'))if(entry.hash.slice(1)===route||entry.hash==='#/directory'&&route.startsWith('/directory/')){entry.setAttribute('aria-current','page');entry.classList.add('active');}
  rail.querySelector('.rail-foot').append(el('br'),link('Help and privacy','/help'));
  provingControl?.dispose();provingControl=mountProvingPreference(provingPreference);rail.querySelector('.rail-foot').append(provingControl.element);
@@ -242,7 +261,9 @@ function shell(title,{boardId=null}={}){
   const heading=main.querySelector('.page-head>div');heading.classList.add('conversation-heading');
   heading.prepend(button(createIcon('arrow-left'),()=>conversationNavigation.back(),{class:'conversation-back','aria-label':'Back',title:'Back'}));
  }
+ // One primary action per page head: compose on feeds, create on the directory, follow on a profile (added once the name loads).
  if(boardId!==null||route==='/home')main.querySelector('.page-head').append(button([createIcon('pen'),'Write a post'],()=>openWallet({type:'post',subboard:boardId??'0'}),{class:'button primary',...(boardId!==null?{'data-board-compose':'',disabled:''}:{})}));
+ else if(directory)main.querySelector('.page-head').append(button([createIcon('plus'),'Create a board'],()=>openWallet({type:'subboard'}),{class:'button primary'}));
  const bokBalance=el('section',{class:'bok-balance','aria-label':'Bok balance',hidden:''});
  const postingName=el('div',{class:'posting-name','data-posting-name':''});main.insertBefore(postingName,main.querySelector('.page-head').nextSibling);
  void accountPanel().then(panel=>{if(postingName.isConnected){panel.attachIdentityControls(postingName);panel.attachBokControls(bokBalance);}}).catch(()=>{walletPanel=null;postingName.append(button('Load posting names',()=>render()));});
@@ -250,7 +271,7 @@ function shell(title,{boardId=null}={}){
  const context=el('aside',{class:'context'},
   el('section',{},el('h2',{},createIcon('message'),'Your place to talk'),el('p',{},'Start a conversation, join a board, or reply to someone. Post anonymously or under a name you choose.'),link([createIcon('compass'),'Find a board'],'/directory',{class:'button'})),
   el('section',{class:'context-help'},el('h2',{},createIcon('sparkle'),'Meet Bok'),el('p',{},'Bok is the AI assistant in every thread. Mention @bok in a post or reply, set a spending limit, and pay only for the work it does.')),
-  el('section',{},el('h2',{},createIcon('shield'),'How it works'),el('ol',{},el('li',{},'Read everything. No account needed.'),el('li',{},'Connect a wallet to post, reply and like.'),el('li',{},'Nobody can tell which posts share an account.'))));
+  el('section',{class:'context-privacy'},el('h2',{},createIcon('shield'),'Private by design'),el('ol',{},el('li',{},'Read everything. No account needed.'),el('li',{},'Connect a wallet to fund a private account on Aztec.'),el('li',{},'Post, reply and tip from that account. Nothing on-chain links your posts to your wallet, or to each other.')),link('How privacy works','/help',{class:'quiet'})));
  app.replaceChildren(el('div',{class:'shell'},el('header',{class:'topbar'},menu,link(createBrand(),'/home',{class:'brand'}),link([createIcon('search'),'Explore boards'],'/directory',{class:'search-link'}),el('div',{class:'topbar-actions'},button([createIcon('user'),el('span',{class:'label'},'Connect wallet')],()=>openWallet(),{'aria-label':'Connect wallet','data-account-button':''}))),el('div',{class:'shell-body'},rail,el('div',{class:'workspace'},el('div',{class:'layout'},main,context)))));
  updateAccountButton();return main;
 }
@@ -291,8 +312,8 @@ async function render({live=false,publicationRevision}={}){
  if(route==='/help'){
   shell('Help and privacy');
   const section=(heading,...copy)=>el('section',{class:'context-panel'},el('h2',{},heading),...copy.map(value=>typeof value==='string'?el('p',{},value):value));
-  main.append(section('Before you post','Posts, replies and their timing are public. A name is optional. Content and writing style can identify you, and hiding a post here cannot erase it from chain history.'),
-   section('What privacy means here','Ethereum funding addresses, amounts and timing are public. This version uses a trusted proving service that can see the private data it processes. Hosting, network and RPC providers can see connection information; this site is not a network anonymity tool.'),
+  main.append(section('What privacy means here','rollingchat is a private messaging board on the Aztec network. Your Ethereum wallet funds a private Aztec account; posts, replies, tips and names are published from that account. Nothing on-chain links them to your wallet, and other readers cannot tell which posts share an account.','Ethereum funding addresses, amounts and timing are public. This version uses a trusted proving service that can see the private data it processes. Hosting, network and RPC providers can see connection information; this site is not a network anonymity tool.'),
+   section('Before you post','Posts, replies and their timing are public. A name is optional. Content and writing style can identify you, and hiding a post here cannot erase it from chain history.'),
    section('Usage measurement','We collect daily totals for visits, reading activity, account setup, successful posting and broad referral categories. We do not build visitor profiles or put wallet addresses, post text, IP addresses or browsing histories into analytics. No analytics cookie or persistent visitor identifier is created.','Daily analytics totals expire after 90 days. Encrypted operational backups have a separate seven-day retention policy. Do Not Track and Global Privacy Control disable collection.'),
    section('Wallet and payment help','If an action is waiting for confirmation, keep its existing transaction and check the displayed status before trying again. Never share your seed phrase, private key, wallet signature or account storage with someone offering help.'),
    section('Report a problem',el('p',{},'For technical problems or concerns about a public post, ',el('a',{href:'https://github.com/zac-williamson/aztec_experiments/issues',target:'_blank',rel:'noopener noreferrer'},'open an issue on GitHub'),' with only the public link and a short description. GitHub reports are public and use your GitHub account. Do not include private wallet data or sensitive personal information.')));
@@ -310,7 +331,7 @@ async function render({live=false,publicationRevision}={}){
   if(api==='thread'&&parts[2]){expectedRoot=parts[1];api='post';parameters={id:parts[2]};title='Linked post';}
  }
  else if(parts[0]!=='home'){shell('Page not found');return;}
- if(!live)shell(title,{boardId:api==='board'?parameters.id:null});
+ if(!live)shell(title,{boardId:api==='board'?parameters.id:null,directory:api==='directory'});
  if(privateView){
   main.querySelector('.intro').textContent={following:'Posts from the people and boards you follow.',bookmarks:'Posts you saved for later.'}[privateView];
   if(privatePanel?.privateStatus?.()!=='complete'){
@@ -347,14 +368,17 @@ async function render({live=false,publicationRevision}={}){
  }
  const loading=el('div',{class:'feed-loading',role:'status','aria-busy':'true'},createSkeletonFeed(3),el('p',{},'Loading conversations…'));contentHost.append(loading);
  if(api==='directory'){
-  main.querySelector('.intro').textContent='Find a community around something you care about.';contentHost.append(button([createIcon('plus'),'Create a board'],()=>openWallet({type:'subboard'})));
+  main.querySelector('.intro').textContent='Find a community around something you care about.';
   const input=el('input',{type:'search',value:parameters.query,placeholder:'Find a topic or board','aria-label':'Search boards',maxlength:120});
   const form=el('form',{class:'directory-search',onSubmit:event=>{event.preventDefault();location.hash='/directory/'+encodeURIComponent(input.value.trim());}},input,el('button',{class:'button',type:'submit'},'Search'));contentHost.insertBefore(form,loading);
  }
  const container=el('section',{class:'feed'+(api==='thread'?' thread':'')+(live?' live':''),'aria-label':title});let data;
- // A conversation nests each reply under the post it answers; other feeds stay flat.
- const thread=api==='thread'?createThreadView({root:parameters.root,state:threadState(parameters.root),announce,signals:post=>({likes:Number(post.likes)||0,bot:Boolean(post.bot),removed:post.text===null||Boolean(post.removal),pending:post.confirmation==='pending'})}):null;
+ // A conversation nests each reply under the post it answers. Home and board feeds
+ // group every listed item by its conversation, one card per root; other feeds stay flat.
+ const signals=post=>({likes:Number(post.likes)||0,bot:Boolean(post.bot),removed:post.text===null||Boolean(post.removal),pending:post.confirmation==='pending'});
+ const thread=api==='thread'?createThreadView({root:parameters.root,state:threadState(parameters.root),announce,signals}):null;
  if(thread)thread.mount(container);activeThread=thread;
+ const contextual=['home','board'].includes(api),conversations=new Map();let conversationCount=0;
  const seenIds=new Set(),seenCursors=new Set();let lastPosition=null,lastPositionHash=null;
  const pendingPublicPages=[],viewed=new Set(),feedMetrics=['home','board','profile','following','bookmarks'].includes(api);
  const viewObserver=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting&&entry.intersectionRatio>=.5){const id=entry.target.id.slice(5);if(!viewed.has(id)){viewed.add(id);feedPreferences.seen(id);if(feedMetrics&&analytics.enabled()&&!document.hidden&&!entry.target.querySelector('.removed'))feedObservation.observe(id);}viewObserver.unobserve(entry.target);}},{threshold:.5}):null;
@@ -390,26 +414,37 @@ async function render({live=false,publicationRevision}={}){
    if(items.some(item=>privateView==='bookmarks'?!savedSelection.bookmarks.includes(item.id):!savedSelection.boards.includes(item.record?.subboard)&&!savedSelection.names.includes(item.record?.name_id)))throw Error('Unrequested saved item');
   }
   const nodes=visible.map(item=>api==='directory'?boardCard(item):postCard(item,response,{feedMetrics}));
-  const contextual=['home','board'].includes(api);
   const parents=contextual?visible.map(item=>{
    const id=item.record?.parent;if(!field(id)||id==='0')return null;
-   const parent=response.contextPosts?.[id];
+   const parent=response.contextPosts?.[id]??null;
    if(parent&&(parent.id!==id||parent.record?.root!==item.record.root||parent.record?.subboard!==item.record.subboard))throw Error('Invalid reply context');
-   const node=parent?postCard(parent,response):null;
-   if(node){node.id='context-'+id+'-for-'+item.id;node.dataset.contextPost=id;}
-   return {id,node};
+   return {id,parent};
   }):[];
   // Rows rise in sequence on a fresh page; a live refresh swaps content without replaying the motion.
-  if(!live)nodes.forEach((node,index)=>node.style.setProperty('--i',String(Math.min(index,8))));
+  if(!live&&!contextual)nodes.forEach((node,index)=>node.style.setProperty('--i',String(Math.min(index,8))));
   if(nodes.length)container.querySelector('.empty')?.remove();lastPosition=nextPosition;lastPositionHash=nextPositionHash;
   if(thread){visible.forEach((item,index)=>thread.add(item,nodes[index]));thread.commit();}
-  else nodes.forEach((node,index)=>{
-   const parent=parents[index];
-   if(!parent){container.append(node);return;}
-   // Reuse an immediately preceding parent card when it is already in view.
-   const previous=container.lastElementChild,adjacent=previous?.id==='post-'+parent.id?previous:null;
-   container.append(createFeedReplyGroup({parent:adjacent??parent.node,reply:node,parentId:parent.id,root:visible[index].record.root}));
-  });
+  else if(contextual){
+   // Cards keep the feed's order of first appearance; inside a card, items are
+   // added oldest first so every parent is placed before its replies.
+   const touched=new Set(),order=visible.map((item,index)=>index).sort((a,b)=>compareChainOrder(visible[a],visible[b]));
+   for(const item of visible){
+    const root=item.record.root;if(conversations.has(root))continue;
+    const conversation=createFeedConversation({root,state:threadState(root),announce,signals});
+    if(!live)conversation.card.style.setProperty('--i',String(Math.min(conversationCount++,8)));
+    conversations.set(root,conversation);container.append(conversation.card);
+   }
+   for(const index of order){
+    const item=visible[index],conversation=conversations.get(item.record.root),parent=parents[index];
+    if(parent&&!ids.has(parent.id)&&!conversation.has(parent.id)){
+     if(parent.parent)conversation.add(parent.parent,postCard(parent.parent,response),{context:true});
+     else conversation.missingParent(parent.id);
+    }
+    conversation.add(item,nodes[index]);touched.add(conversation);
+   }
+   for(const conversation of touched)conversation.commit();
+  }
+  else nodes.forEach(node=>container.append(node));
   for(const id of ids)seenIds.add(id);if(next)seenCursors.add(next);
   if(api!=='directory'){pendingPublicPages.push({items:api==='home'?(response.observedPosts??items):items,snapshot:{checkpoint:response.checkpoint,confirmationCheckpoint:response.confirmationCheckpoint,revision:response.revision,renderedPosts:visible}});notifyRenderedPosts();}
   return nodes;
@@ -430,7 +465,11 @@ async function render({live=false,publicationRevision}={}){
    const overview=boardOverview(data);overview.querySelector('.board-head-body').append(preferenceButton('Follow board',2,parameters.id,data.board?.name??'Main board'));contentHost.append(overview);
    const compose=document.querySelector('[data-board-compose]');if(compose)compose.disabled=Boolean(data.board?.rejected);
   }
-  if(api==='profile'&&data.identity){main.querySelector('h1').textContent=text(data.identity.first)+' '+text(data.identity.last);contentHost.append(createPublicProfile(data.identity,{signal}),preferenceButton('Follow name',3,parameters.nameId,text(data.identity.first)+' '+text(data.identity.last)),moderatorButton('Remove this avatar',{type:'moderate-avatar',name:parameters.nameId}));}
+  if(api==='profile'&&data.identity){
+   const name=text(data.identity.first)+' '+text(data.identity.last),head=main.querySelector('.page-head');main.querySelector('h1').textContent=name;
+   head.querySelector('[data-private-setting="Follow name"]')?.remove();head.append(preferenceButton('Follow name',3,parameters.nameId,name,{off:'plus',on:'check'}));
+   contentHost.append(createPublicProfile(data.identity,{signal}),moderatorButton('Remove this avatar',{type:'moderate-avatar',name:parameters.nameId}));
+  }
   document.title=main.querySelector('h1').textContent+' · rollingchat';
   if(!container.childElementCount){
    const copy=privateView?{following:['No posts from your follows yet','The people and boards above have no available posts.'],bookmarks:['Saved posts unavailable','Your saved posts are not available in the current public feed.']}[privateView]:api==='directory'?['Find a board',cursor?'No matches on this page. Check the next page or try another search.':'No boards match. Try another topic or create a board.']:api==='home'&&cursor?['More conversations to explore','Continue to the next page.']:['Start the conversation','There are no posts here yet.'];
