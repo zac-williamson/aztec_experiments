@@ -50,14 +50,16 @@ export const AGGREGATE_USDC_SCOPE_KEYS=Object.freeze([...AGGREGATE_SCOPE_KEYS,'u
 export function aggregateWalletScope(scope,network,board,owner){
  return JSON.stringify(['ROLLING_AGGREGATE_FUNDING_V1',network.chainId,network.version,network.rollup,board,scope.router,owner,1]);
 }
-export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,owner,walletSecret,walletSalt,storage,provider,captureWallet,contextGuard,verifyScope,verifyFeeCredit,reconcileClaim,verifyClaim,claimStore,relay,onProgress}){
+export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,owner,walletSecret,walletSalt,storage,provider,captureWallet,contextGuard,verifyScope,verifyFeeCredit,reconcileClaim,verifyClaim,claimStore,relay,onProgress,independentPurchases=false}){
  const captured=freeze(clone(scope)),n=freeze(clone(network));
  const usdc=captured?.usdcRelayAddress!==undefined;
  check(captured&&Object.keys(captured).sort().join()===Array.from(usdc?AGGREGATE_USDC_SCOPE_KEYS:AGGREGATE_SCOPE_KEYS).sort().join());
  const s=freeze(Object.fromEntries(AGGREGATE_SCOPE_KEYS.map(key=>[key,captured[key]])));
  const usdcScope=usdc?freeze(Object.fromEntries(Object.entries(captured).filter(([key])=>key!=='usdcRelayAddress'))):null;
  check(s.chainId===n.chainId&&typeof captureWallet==='function'&&typeof verifyScope==='function');
- const scopeText=aggregateWalletScope(s,n,board,owner);
+ const scopeText=independentPurchases?JSON.stringify([...JSON.parse(aggregateWalletScope(s,n,board,owner)),'posting-purchases']):aggregateWalletScope(s,n,board,owner);
+ let purchaseId=null;
+ const paymentStorage=()=>{if(!independentPurchases)return storage;check(typeof purchaseId==='string','QUOTE_REQUIRED');const prefix='posting-purchase:'+purchaseId+':',keyFor=key=>ethers.keccak256(ethers.toUtf8Bytes(prefix+key)).slice(2);return {read:key=>storage.read(keyFor(key)),compareAndSwap:(key,previous,next)=>storage.compareAndSwap(keyFor(key),previous,next)};};
  const openSlot=text=>sdk.createEncryptedJournalSlot({storage,walletSecret,walletSalt,scopeText:text,keyDomain:'ROLLING_AGGREGATE_FUNDING_V1'});
  const slot=await openSlot(scopeText);
  const archiveSlot=txHash=>{check(typeof txHash==='string'&&/^0x[0-9a-f]{64}$/.test(txHash));const frame=JSON.parse(scopeText);frame.splice(-1,0,txHash);return openSlot(JSON.stringify(frame));};
@@ -76,9 +78,9 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
   if(!deposit)check(ethers.verifyTypedData(typed.domain,typed.types,typed.value,signature).toLowerCase()===wallet.address,'CONSENT');
   await read(wallet.guard);return signature;
  }
- const journal=depositor=>sdk.createEthereumJournal({storage,walletSecret,walletSalt,
+ const journal=depositor=>sdk.createEthereumJournal({storage:paymentStorage(),walletSecret,walletSalt,
   scope:{account:owner,...n,board,portal:s.router,depositor},provider,contextGuard});
- async function stored(){const saved=await read(()=>slot.read());if(saved.value){check(saved.value.schemaVersion===1&&typeof saved.value.depositor==='string');if(saved.value.bokScope!==null)check(saved.value.bokScope?.recipient===bok&&saved.value.bokScope?.portal===s.bokPortal);}return saved;}
+ async function stored(){const saved=await read(()=>slot.read());if(independentPurchases&&saved.value?.purchaseId)purchaseId=saved.value.purchaseId;if(saved.value){check(saved.value.schemaVersion===1&&typeof saved.value.depositor==='string');if(saved.value.bokScope!==null)check(saved.value.bokScope?.recipient===bok&&saved.value.bokScope?.portal===s.bokPortal);}return saved;}
  function original(saved,request){
   const value=saved.value;check(value?.intent,'RECOVERY_REQUIRED');
   for(const key of ['from','to','chainId','nonce','data','value'])check(value.intent[key]===request[key],'MISMATCH');
@@ -156,7 +158,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
  async function prepareUsdc(values,recheckScope){
   check(usdc&&relay&&claimStore&&typeof claimStore.save==='function','UNAVAILABLE');
   check(Object.keys(values).sort().join()==='asset,bokAmount,collateralPoolFee,collateralWei,feeAmount,feePoolFee,privateFeeCap,slippageBps');
-  const previous=await stored(),priorPayment=await archivePrevious(previous);
+  const previous=await stored();if(independentPurchases)purchaseId=sdk.Fr.random().toString();const priorPayment=independentPurchases?null:await archivePrevious(previous);
   check(typeof values.privateFeeCap==='string'&&/^[1-9][0-9]{0,76}$/.test(values.privateFeeCap));
   const wallet=await read(captureWallet);await read(wallet.guard);
   const terms=await read(()=>relay.terms());
@@ -174,7 +176,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
   // Random collateral custody is persisted using the original beneficiary
   // scope. No relayer or collateral-consent nonce derives any user secret.
   if(values.collateralWei!=='0')await read(()=>claimStore.save({l1ChainId:n.chainId,rollupVersion:n.version,rollupAddress:n.rollup,boardAddress:board,portalAddress:s.collateralPortal,depositor:wallet.address},{schemaVersion:1,secret:collateralSecret.toString(),secretHash:collateralSecretHash}));
-  const saved=await read(()=>slot.write(previous,{schemaVersion:1,kind:'usdc',...(values.collateralWei==='0'?{feeOnly:true,amount:values.feeAmount,asset:values.asset}:{}),depositor:wallet.address,recipientSalt,bridgeSecret,bokScope,privateFeeCap,claim:null,intent:null,previousTxHash:priorPayment?.txHash??null,
+  const saved=await read(()=>slot.write(previous,{schemaVersion:1,...(independentPurchases?{purchaseId}:{}),kind:'usdc',...(values.collateralWei==='0'?{feeOnly:true,amount:values.feeAmount,asset:values.asset}:{}),depositor:wallet.address,recipientSalt,bridgeSecret,bokScope,privateFeeCap,claim:null,intent:null,previousTxHash:priorPayment?.txHash??null,
    aggregateCustody:{kind:'aggregate-usdc-custody-v1',planHash:quote.planHash,beneficiary:wallet.address,privateFeeSalt:privateFeeSalt.toString()},relay:{planHash:quote.planHash,submitted:false,request:null}}));
   prepared={kind:'usdc',wallet,quote,saved,recheckScope,feeAmount:values.feeAmount};
   return freeze({kind:quote.kind,breakdown:clone(quote.breakdown),deadline:quote.plan.deadline,beneficiary:wallet.address,router:s.router,walletName:wallet.name,privateFeeCap,slippageBps:values.slippageBps,relayer:terms.relayer,relayGasBudgetWei:terms.gasBudgetWei});
@@ -298,7 +300,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
  }
  async function installEth(candidate){
    const {values,recheckScope,previous,wallet,depositor,existing,nonce,recipientSalt,bridgeSecret,bokScope,privateFeeCap,quote}=candidate;
-   const saved=await timeFundingPreparation(onProgress,'save',()=>read(()=>slot.write(previous,{schemaVersion:1,...(values.collateralWei==='0'?{feeOnly:true,amount:values.feeAmount,asset:values.asset}:{}),depositor,nonce,recipientSalt,bridgeSecret,bokScope,intent:null,privateFeeCap,claim:null,previousTxHash:existing?.txHash??null})));
+   const saved=await timeFundingPreparation(onProgress,'save',()=>read(()=>slot.write(previous,{schemaVersion:1,...(independentPurchases?{purchaseId}:{}),...(values.collateralWei==='0'?{feeOnly:true,amount:values.feeAmount,asset:values.asset}:{}),depositor,nonce,recipientSalt,bridgeSecret,bokScope,intent:null,privateFeeCap,claim:null,previousTxHash:existing?.txHash??null})));
    prepared={wallet,quote,saved,nonce,recheckScope,feeAmount:values.feeAmount};
    // Never return the original secrets or calldata to the renderer.
    return freeze({kind:quote.kind,breakdown:clone(quote.breakdown),deadline:quote.plan.deadline,beneficiary:depositor,router:s.router,
@@ -306,7 +308,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
  }
  return Object.freeze({
   async prepare(allocation){
-   const values=clone(allocation);prepared=null;
+   const values=clone(allocation);prepared=null;if(independentPurchases)pendingJournal=null;
    if(values.asset==='USDC')return prepareUsdc(values,await qualify(values));
    // Wallet identity and the pending nonce do not depend on fee/scope reads.
    // Drain both branches before any journal inspection or archive/custody write.
@@ -316,7 +318,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
    const failure=reads.find(result=>result.status==='rejected');if(failure)throw failure.reason;
    await contextGuard();
    const recheckScope=reads[0].value,capturedInputs=reads[1].value;
-   const {previous,priorPayment}=await timeFundingPreparation(onProgress,'journal',async()=>{const previous=await stored();return {previous,priorPayment:await archivePrevious(previous)};});
+   const {previous,priorPayment}=await timeFundingPreparation(onProgress,'journal',async()=>{const previous=await stored();if(independentPurchases)purchaseId=sdk.Fr.random().toString();return {previous,priorPayment:independentPurchases?null:await archivePrevious(previous)};});
    return installEth({...await constructEth(values,previous,priorPayment,false,capturedInputs),recheckScope});
   },
   // Internal opening capability, never a renderer quote or payment authority.
@@ -367,7 +369,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
    // gas allowance. Its prepareRequest checks fresh fees and the reviewed budget
    // immediately before the sole broadcast; no earlier duplicate estimate.
    await read(wallet.guard);
-   const j=await sdk.createEthereumJournal({storage,walletSecret,walletSalt,scope:{account:owner,...n,board,portal:s.router,depositor:wallet.address},provider,
+   const j=await sdk.createEthereumJournal({storage:paymentStorage(),walletSecret,walletSalt,scope:{account:owner,...n,board,portal:s.router,depositor:wallet.address},provider,
     acknowledgeTx:current.saved.value.previousTxHash,signer:wallet.signer,onSubmitted,prepareRequest:async request=>{
      await wallet.guard();const fees=await read(()=>provider.getFeeData());await wallet.guard();
      const price=fees.maxFeePerGas??fees.gasPrice;check(typeof price==='bigint'&&price>0n&&typeof request.gasLimit==='bigint'&&request.gasLimit*price<=BigInt(quote.breakdown.gasBudgetWei),'GAS_CHANGED');
@@ -487,6 +489,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
     if(matches)result=(await reconcile(txHash)).result;
    }
    if(!result){
+    if(independentPurchases)return null;
     const archive=await archiveSlot(txHash);value=(await read(()=>archive.read())).value;
     if(value===null)return null;
     check(value.txHash===txHash&&value.confirmedRequest,'MISMATCH');original({value},value.confirmedRequest);

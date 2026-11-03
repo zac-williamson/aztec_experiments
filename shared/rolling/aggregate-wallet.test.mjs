@@ -1563,3 +1563,11 @@ test('Rabby EIP-7702 account consent reaches the ETH payment with one signature'
  const app=await f.open();await app.prepare(f.allocation);await app.confirm();
  assert.equal(f.state.signatures,1);assert.equal(f.state.sends,1);
 });
+
+test('independent posting purchases never read a previous payment receipt',async()=>{
+ const f=fixture();f.options.independentPurchases=true;const originalStorage=f.options.storage;f.options.storage={read:async key=>{assert.match(key,/^[0-9a-f]{64}$/);return originalStorage.read(key);},compareAndSwap:async(key,old,value)=>{assert.match(key,/^[0-9a-f]{64}$/);return originalStorage.compareAndSwap(key,old,value);}};const allocation={...f.allocation,collateralWei:'0',bokAmount:'0',bokPoolFee:0};
+ const wallet=await f.open();await wallet.prepare(allocation);await wallet.confirm();
+ f.options.provider.getTransactionReceipt=async()=>assert.fail('previous receipt must not gate new purchase');
+ f.options.provider.getTransaction=async()=>assert.fail('previous transaction must not gate new purchase');
+ const quote=await wallet.prepare({...allocation,feeAmount:'300'});assert.equal(quote.breakdown.fee.amount,'300');
+});

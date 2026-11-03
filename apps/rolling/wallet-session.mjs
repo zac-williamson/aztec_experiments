@@ -586,7 +586,7 @@ export async function createRollingWalletSession({sdk,routing,ethers,config,boar
      resolveScope:async()=>verifyRollingTopupScope({sdk,ethers,node,provider,network,privateFee:deployment.privateFee.address.toString(),bok:kind==='bok'?await ensureBok():undefined,kind,contextGuard:guardRoute}),verifyClaim:txHash=>verifyRollingTopupClaim({sdk,node,txHash,contextGuard:guardRoute,confirmationTier:'proposed'}),reconcileClaim:id=>app.reconcile(id)});
     if(topups.bok)funding.readBokClaimCustody=receipt=>topups.bok.readClaimCustody(receipt);
     const aggregateLookup=funding.loadAggregate;
-    funding.loadAggregate=async(hash,kind)=>{const found=aggregateLookup?await aggregateLookup(hash):null;return found??(kind==='bok'&&topups.bok?await topups.bok.loadAggregate(hash):null);};
+    funding.loadAggregate=async(hash,kind)=>{if(kind==='private-fee'&&topups['private-fee']){const purchase=await topups['private-fee'].loadAggregate(hash);if(purchase)return purchase;}const found=aggregateLookup?await aggregateLookup(hash):null;return found??(kind==='bok'&&topups.bok?await topups.bok.loadAggregate(hash):null);};
    }
    // Funding completion reconciliation uses this raw application's fresh
    // signed-journal receipt check. It needs neither note synchronization nor the signing capsule; the later

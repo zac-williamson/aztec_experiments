@@ -9877,5 +9877,10 @@
     "execution_lane": "root implementation/deploy; budget_review independent review",
     "checkpoint": "50USDC backend/frontend cap live. User100USD converted from Base ETH and fully credited to Venice; balance103.75989478 after run. Original9USDC request completed, RPG published and reply included in Aztec block11206; public thread API verified.",
     "next_action": "Completed; no contract changes or performance work."
+  },
+  "posting_price_display_20261103": {
+    "status": "active",
+    "execution_lane": "root UI implementation; aztec_labels_review read-only review",
+    "checkpoint": "Show posting topup USD reference using existing Chainlink price; AZTEC token labels."
   }
 }

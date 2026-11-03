@@ -1466,3 +1466,11 @@ test('Bok composer allows 50 USDC and blocks larger requests even with sufficien
  budget.value='50.000001';budget.fire('input');assert.equal(f.document.querySelector('[data-action-review]').disabled,true);
  budget.value='9';budget.fire('input');assert.equal(f.document.querySelector('[data-action-review]').disabled,false);
 });
+
+for(const asset of ['ETH','USDC'])test(`posting topup displays USD and AZTEC for ${asset}`,async t=>{
+ const cap={ethAvailable:true,defaultPrivateFeeCap:'1000000000000000000',async prepare(input){return {...input,phase:'deposit',maximumSwapWei:'2000000000000000',maximumUsdc:'5123456',usdEstimate:'4.60'};},async inspect(){return null;}};
+ const f=await fixture(t,{balanceRead:async()=>({available:true,availableCredit:'0'})});f.session.topup['private-fee']=cap;f.panel.close();f.panel.open({});f.document.querySelectorAll('button').find(b=>b.textContent==='Add posting credit').fire('click');
+ if(asset==='USDC'){const select=f.document.querySelector('select[aria-label="Pay with"]');select.value='USDC';select.fire('change');}
+ await f.document.until(()=>f.document.querySelector('.credit-total')?.textContent.includes(asset==='ETH'?'$4.60 USD':'$5.12 USD'));
+ assert(f.document.querySelector('input[aria-label="Amount (AZTEC)"]'));assert(f.document.querySelector('.credit-total').textContent.includes('AZTEC'));
+});

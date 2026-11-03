@@ -211,7 +211,7 @@ export async function createRollingFundingSession({sdk,ethers,config,account,dep
  const currentFees=async()=>{const fees=await readRollingFundingFees({node,gasSettings:selected.privateFee.gasSettings,contextGuard:guard});defaultPrivateFeeCap=fees.maximumFee.toString();try{onFeePricing(structuredClone(fees.gasSettings));}catch{}return fees;};
  const starter=async asset=>{const fees=await currentFees();return starterFundingAllocation({asset,minDeposit:deployment.economics.minDeposit,privateFeeCap:fees.maximumFee.toString(),provider:fundingProvider,chainId:network.chainId});};
  await guard();
- const rawAggregate=await createAggregateWallet({sdk,ethers,scope,network,board:deployment.board.address.toString(),bok:selected.bok?.contractAddress,owner:captured.address,
+ const aggregateOptions={sdk,ethers,scope,network,board:deployment.board.address.toString(),bok:selected.bok?.contractAddress,owner:captured.address,
   walletSecret:captured.secretKey,walletSalt:captured.salt,storage:storage??sdk.createBrowserJournalStorage(),provider:fundingProvider,captureWallet,contextGuard:guard,claimStore,relay,onProgress,
   verifyFeeCredit:(incomingAmount,privateFeeCap)=>verifyRollingFundingCredit({sdk,node,privateFeeCap,gasSettings:selected.privateFee.gasSettings,incomingAmount,contextGuard:guard,readExistingCredit:()=>requirePrivate().readExistingCredit()}),
   verifyScope:async({includeBok,asset})=>{
@@ -228,16 +228,18 @@ export async function createRollingFundingSession({sdk,ethers,config,account,dep
   },
   verifyClaim:txHash=>verifyRollingTopupClaim({sdk,node,txHash,contextGuard:guard,confirmationTier:'proposed'}),
   reconcileClaim:id=>requirePrivate().reconcileClaim(id),
- });
+ };
+ const rawAggregate=await createAggregateWallet(aggregateOptions);
+ const purchaseAggregate=withRollingFundingLease(await createAggregateWallet({...aggregateOptions,independentPurchases:true}),{owner:captured.address,locks,contextGuard:guard});
  const aggregate=withRollingFundingLease(rawAggregate,{owner:captured.address,locks,contextGuard:guard});
- const postingCredit=Object.freeze({...aggregate,async inspect(){const saved=await aggregate.inspect();return saved?.claimAction==='claim-private-fee'?saved:null;},async prepare(input){
+ const postingCredit=Object.freeze({...purchaseAggregate,async inspect(){const saved=await purchaseAggregate.inspect();return saved?.claimAction==='claim-private-fee'?saved:null;},async prepare(input){
   await guard();
   if(!input||Object.keys(input).sort().join()!=='amount,asset,privateFeeCap'||!['ETH','USDC'].includes(input.asset))throw fail('ROLLING_FUNDING_INVALID');
   const {amount,asset}=structuredClone(input),privateFeeCap=(await currentFees()).maximumFee.toString();
   const allocation={asset,collateralWei:'0',feeAmount:amount,bokAmount:'0',feePoolFee:network.chainId==='1'?10000:3000,slippageBps:100,privateFeeCap,
    ...(asset==='USDC'?{collateralPoolFee:0}:{bokPoolFee:0,gasBudgetWei:await automaticFundingGasBudget(fundingProvider)})};
-  const quote=await aggregate.prepare(allocation);await guard();
-  return Object.freeze({kind:'private-fee',phase:'deposit',asset,amount,privateFeeCap,walletName:quote.walletName,
+  const [quote,rate]=await Promise.all([purchaseAggregate.prepare(allocation),asset==='ETH'?fundingUsdRate({ethers,provider:fundingProvider,chainId:network.chainId}):null]);await guard();
+  return Object.freeze({usdEstimate:asset==='ETH'?usdAmount(rate,quote.breakdown.fee.maxEth):null,kind:'private-fee',phase:'deposit',asset,amount,privateFeeCap,walletName:quote.walletName,
    ...(asset==='ETH'?{maximumSwapWei:quote.breakdown.fee.maxEth}:{maximumUsdc:quote.breakdown.maximumUsdc,relayFeeUsdc:quote.breakdown.relayFeeUsdc})});
  }});
  await guard();

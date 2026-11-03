@@ -116,11 +116,11 @@ let tipConfirmation;
 function confirmTip(){
  if(tipConfirmation)return Promise.resolve(false);
  return new Promise(resolve=>{
-  const dialog=el('dialog',{class:'tip-confirmation','aria-labelledby':'tip-confirmation-title'},el('h2',{id:'tip-confirmation-title'},'Gift 20.00 credits to the author?'),el('p',{},'Network fees are additional.'),
+  const dialog=el('dialog',{class:'tip-confirmation','aria-labelledby':'tip-confirmation-title'},el('h2',{id:'tip-confirmation-title'},'Gift 20.00 AZTEC to the author?'),el('p',{},'Network fees are additional.'),
    el('p',{class:'privacy-note'},createIcon('lock'),el('span',{},'Sent from your private Aztec account. The gift does not publish your wallet address.')));
   tipConfirmation=dialog;
   const finish=confirmed=>{dialog.close();dialog.remove();tipConfirmation=null;resolve(confirmed);};
-  dialog.append(el('div',{class:'dialog-actions'},button('Cancel',()=>finish(false)),button('Gift 20.00 credits',()=>finish(true),{class:'button primary'})));
+  dialog.append(el('div',{class:'dialog-actions'},button('Cancel',()=>finish(false)),button('Gift 20.00 AZTEC',()=>finish(true),{class:'button primary'})));
   dialog.addEventListener('cancel',event=>{event.preventDefault();finish(false);});
   dialog.addEventListener('close',()=>{if(tipConfirmation===dialog){dialog.remove();tipConfirmation=null;resolve(false);}});
   document.body.append(dialog);dialog.showModal();
@@ -155,7 +155,7 @@ function updateLikeControls(){
  for(const node of app.querySelectorAll('[data-like-post]')){
   const retained=inlineActions.snapshot(node.dataset.inlineAction);
   if(retained)node.renderInlineAction(retained);
-  else{node.disabled=false;labelled(node,'Gift 20.00 credits');}
+  else{node.disabled=false;labelled(node,'Gift 20.00 AZTEC');}
  }
 }
 function socialButton(label,action,attrs={}){
@@ -173,7 +173,7 @@ function socialButton(label,action,attrs={}){
  node.renderInlineAction=({state,captured,result},notify=false)=>{
   feedback?.remove();feedback=null;
   node.disabled=['pending','unknown'].includes(state)||state==='included'&&!result;
-  if(state==='pending'){node.setAttribute('aria-busy','true');labelled(node,({like:'Sending 20.00 credits…'})[captured.type]??'Saving…');return;}
+  if(state==='pending'){node.setAttribute('aria-busy','true');labelled(node,({like:'Sending 20.00 AZTEC…'})[captured.type]??'Saving…');return;}
   if(state==='included'&&!result){node.setAttribute('aria-busy','true');labelled(node,'Confirmation pending');if(notify)announce('Change included. Confirmation pending.');return;}
   node.removeAttribute('aria-busy');
   if(attrs['data-private-setting'])updatePreferenceControl(node,node.disabled);else labelled(node,label);
@@ -231,7 +231,7 @@ function postCard(post,data,{feedMetrics=false}={}){
  }
  article.append(richText(post.text),el('div',{class:'post-actions'},
   button([createIcon('reply'),'Reply'],()=>openWallet({type:'reply',parent:post.id,root:r.root,subboard:r.subboard},{context:{author,excerpt:text(post.text).slice(0,200)}})),
-  socialButton('Gift 20.00 credits',()=>({type:'like',post:post.id,tipKey:post.tipKey}),{'data-icon':'heart-dollar',class:'button gift-button',title:'Gift 20.00 credits to the author'}),el('span',{class:'action likes'},`${text(post.likes)} ${post.likes==='1'?'gift':'gifts'}`),preferenceButton('Bookmark',1,post.id,undefined,'bookmark'),
+  socialButton('Gift 20.00 AZTEC',()=>({type:'like',post:post.id,tipKey:post.tipKey}),{'data-icon':'heart-dollar',class:'button gift-button',title:'Gift 20.00 AZTEC to the author'}),el('span',{class:'action likes'},`${text(post.likes)} ${post.likes==='1'?'gift':'gifts'}`),preferenceButton('Bookmark',1,post.id,undefined,'bookmark'),
   more(button([createIcon('quote'),'Quote'],()=>openWallet({type:'quote',reference:post.id,subboard:r.subboard})),
    button([createIcon('repeat'),'Repost'],()=>openWallet({type:'repost',reference:post.id,subboard:r.subboard})),provenance),
   link([createIcon('message'),'View conversation'],'/thread/'+r.root,{class:'post-link'})));
