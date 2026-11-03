@@ -9873,9 +9873,9 @@
     "next_action": "Deploy canonical FPC, Board, portals and Bok; switch all services and rolling.chat coherently."
   },
   "bok_budget_20261103": {
-    "status": "active",
+    "status": "complete",
     "execution_lane": "root implementation/deploy; budget_review independent review",
-    "checkpoint": "809a75b2 pushed and live. Backend and frontend50USDC cap verified. Original9USDC invocation resumed; provider admission failed: Venice credit3.77950262USD, operator BaseUSDC0. No model dispatch. User asked to fund10USDC Base to existing operator0x69b8592991aa7445b14249f074f35e7f9cca7f52.",
-    "next_action": "When funded, use existing veniceClient.topUp(5) twice (quotes5USD each), confirm credit>=9; inspect original journal and restart only pre-dispatch request with no calls/operations. Observe published reply."
+    "checkpoint": "50USDC backend/frontend cap live. User100USD converted from Base ETH and fully credited to Venice; balance103.75989478 after run. Original9USDC request completed, RPG published and reply included in Aztec block11206; public thread API verified.",
+    "next_action": "Completed; no contract changes or performance work."
   }
 }

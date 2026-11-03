@@ -10,5 +10,15 @@
   "liveFrontendCapVerified": true,
   "request": "0x21f624b741b1a64c04ea3dd05d1fefb396fb4ec84c1ca2ea902c5ce19807b332",
   "providerCreditUSD": 3.77950262,
-  "result": "request blocked at provider admission before model dispatch"
+  "result": "original request completed; application and reply published; reply included in Aztec and public thread API",
+  "providerTopupUSD": 100,
+  "providerCreditAfterTopupUSD": 13.77950262,
+  "baseSwapTx": "0x99b0e0fc6b68e83846449a4ce6e7237a19cf65c86ec73689611be06acf93f81c",
+  "fundedResumeCommand": "02f80901-113d-45c5-bef6-a985376db80a",
+  "providerCreditAfterRunUSD": 103.75989478,
+  "remainingBaseSwapTx": "0x5d8a52e80f02c6382fb2c6e5dc2df70dc4a05f96a73c1c457b348f5d97a38495",
+  "providerTopup90PaymentId": "x402-ae31dcc1628fe693b75855a1d0b3b48a",
+  "replyTx": "0x14e31707c1c396a7c2c987f0a804f7b193aceab2c568a5f3f208ba801f257f42",
+  "replyBlock": 11206,
+  "appUrl": "https://dy2q03rao3se7.cloudfront.net/t/40a19fe52ef2682e8bde542bee6b426f61035bf980b9ef91ea43359c50513c34/latest/"
 }
