@@ -56,3 +56,26 @@ test('feed items group into one conversation per root, keep their actions, redac
  assert(!calls.some(route=>route==='/api/post'||route==='/api/thread'));
  await page.goBack();await page.getByRole('heading',{name:'Main board',exact:true}).waitFor();await page.locator('#context-10').waitFor();assert.deepEqual(cursorCalls,[],'Back finds the context anchor without fetching later feed pages');
 });
+
+
+test('later feed ancestors reparent existing replies without losing nodes, handlers or folding state',async t=>{
+ const {page,origin}=await fixture(t);await page.addInitScript(()=>localStorage.setItem('rolling.welcome.seen','1'));await page.goto(origin);
+ const result=await page.evaluate(async()=>{
+  const {createFeedConversation}=await import('/model.mjs');
+  const state={collapsed:new Set(),expanded:new Set()},group=createFeedConversation({root:'100',state,signals:()=>({likes:1})});
+  document.body.append(group.card);
+  const post=(id,parent,height)=>({id,record:{root:'100',parent},position:{blockNumber:String(height),txIndexWithinBlock:'0',logIndexWithinTx:'0'}});
+  let clicks=0;
+  const article=id=>{const node=document.createElement('article');node.id='test-'+id;node.innerHTML='<span class="author">Author</span><p data-parent-line>In reply to earlier post</p><button class="test-action">Reply</button>';node.querySelector('button').onclick=()=>clicks++;return node;};
+  const b=article('300'),c=article('400');group.add(post('300','200',3),b,{context:true});group.add(post('400','300',4),c);group.commit();
+  const bWrapper=b.parentElement,cWrapper=c.parentElement;
+  const before={orphan:bWrapper.classList.contains('orphan'),depth:bWrapper.dataset.depth};
+  group.card.querySelector('[data-post="300"] > .collapse-toggle').click();
+  const root=article('100'),a=article('200');group.add(post('200','100',2),a);group.add(post('100','0',1),root);group.commit();
+  b.querySelector('.test-action').click();c.querySelector('.test-action').click();
+  const after={nested:bWrapper.parentElement.parentElement.dataset.post,depth:bWrapper.dataset.depth,childDepth:cWrapper.dataset.depth,orphan:bWrapper.classList.contains('orphan'),sameNodes:b.parentElement===bWrapper&&c.parentElement===cWrapper,collapsed:bWrapper.hasAttribute('data-collapsed'),parentLine:!!b.querySelector('[data-parent-line]'),clicks,articleCount:group.card.querySelectorAll('article').length};
+  group.reveal('400');after.revealed=!b.hidden&&!c.hidden;group.card.remove();return {before,after};
+ });
+ assert.deepEqual(result.before,{orphan:true,depth:'1'});
+ assert.deepEqual(result.after,{nested:'200',depth:'2',childDepth:'3',orphan:false,sameNodes:true,collapsed:true,parentLine:false,clicks:2,articleCount:4,revealed:true});
+});

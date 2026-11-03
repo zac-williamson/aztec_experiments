@@ -337,7 +337,8 @@ export function createThreadView({ root, signals, state, announce = () => {}, po
   function branchFor(id, depth) {
     if (id === root) { if (!rootBranch) { rootBranch = make('div', 'replies thread-replies'); container.append(rootBranch); } return rootBranch; }
     let branch = branches.get(id);
-    if (!branch) { branch = make('div', 'replies' + (depth >= 5 ? ' deep' : '') + (depth >= 3 ? ' deep-m' : '')); wrappers.get(id).append(branch); branches.set(id, branch); }
+    if (!branch) { branch = make('div', 'replies'); wrappers.get(id).append(branch); branches.set(id, branch); }
+    branch.classList.toggle('deep', depth >= 5); branch.classList.toggle('deep-m', depth >= 3);
     return branch;
   }
   function wrap(node) {
@@ -396,17 +397,21 @@ export function createThreadView({ root, signals, state, announce = () => {}, po
     },
     commit() {
       if (!pending.length) return;
-      const tree = threadTree(posts, root, parentOf, rootOf), fresh = new Set(pending); pending = [];
+      const tree = threadTree(posts, root, parentOf, rootOf); pending = [];
+      // Later feed pages can introduce a missing ancestor. Reuse existing nodes
+      // but reconcile their position and depth against the complete loaded tree.
       for (const id of tree.order) {
-        if (!fresh.has(id)) continue;
         const node = tree.nodes.get(id);
-        if (id === root) { container.prepend(articles.get(id)); continue; }
-        const branch = branchFor(node.parent.id, node.depth), wrapper = wrap(node), siblings = node.parent.children, index = siblings.indexOf(node);
+        if (id === root) { if (container.firstChild !== articles.get(id)) container.prepend(articles.get(id)); continue; }
+        const branch = branchFor(node.parent.id, node.depth), wrapper = wrappers.get(id) ?? wrap(node), siblings = node.parent.children, index = siblings.indexOf(node);
+        wrapper.dataset.depth = String(node.depth); wrapper.classList.toggle('orphan', node.orphan);
+        if (!node.orphan) articles.get(id).querySelector('[data-parent-line]')?.remove();
         wrapper.style.setProperty('--i', String(Math.min(index, 8)));
         // Keep sibling order: insert before the next sibling already in the branch, else before the expander.
         const following = siblings.slice(index + 1).map(sibling => wrappers.get(sibling.id)).find(other => other && other.parentNode === branch);
         const expander = expanders.get(node.parent.id);
-        branch.insertBefore(wrapper, following ?? (expander && expander.parentNode === branch ? expander : null));
+        const before = following ?? (expander && expander.parentNode === branch ? expander : null);
+        if (wrapper.parentNode !== branch || wrapper.nextSibling !== before) branch.insertBefore(wrapper, before);
       }
       refresh();
     },
