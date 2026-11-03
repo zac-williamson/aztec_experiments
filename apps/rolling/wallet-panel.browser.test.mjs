@@ -19,6 +19,7 @@ const write=value=>sessionStorage.setItem('labelled-ui-intent',JSON.stringify(va
 const error=()=>{throw Object.defineProperty(Error('PRIVATE_SENTINEL'), 'code',{get(){throw Error('GETTER_SENTINEL');}});};
 async function boundary(name){for(const row of state.refreshRecords?.[name]??[])state.sessionProgress(row);if(state.hold===name)await new Promise(resolve=>state.release=resolve);if(state.failure===name)error();}
 const application={
+ async readFundingState(){const intent=read();return intent&&!['confirmed','reverted','cancelled'].includes(intent.status)?{status:'recovering',intent}:{status:'ready'};},
  async readBalances({cursor}){state.balanceReads=(state.balanceReads??0)+1;state.balanceCursor=cursor;await boundary('balances');return state.balances;},
  async readBokAccounting({cursor}){(state.accountingReads??=[]).push(cursor);await boundary('accounting');return state.accountingPages.shift();},
  async readModeratorStatus(){state.moderatorReads=(state.moderatorReads??0)+1;await boundary('moderator');return {authorized:state.moderator===true};},
@@ -88,7 +89,7 @@ async function browserFixture(t){
   if(req.url==='/'){res.writeHead(200,{'content-type':'text/html','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src blob: data:; base-uri 'none'; form-action 'none'"});res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="stylesheet" href="/style.css"><button id="open">Open account</button><div id="reader">Public reader</div><script type="module" src="/fixture.mjs"></script>');return;}
   if(req.url==='/fixture.mjs'){res.writeHead(200,{'content-type':'text/javascript'});res.end(fixture);return;}
   if(req.url==='/aggregate-wallet.mjs'){res.writeHead(200,{'content-type':'text/javascript'});res.end(await fs.readFile(new URL('../../shared/rolling/aggregate-wallet.mjs',import.meta.url)));return;}
-  const diagnosticModules={'/deployment-registration.mjs':'../../shared/rolling/deployment-registration.mjs','/deployment.mjs':'../../shared/rolling/deployment.mjs','/protocol-commitments.mjs':'../../shared/protocol-commitments.mjs','/protocol-schema.mjs':'../../shared/protocol-schema.mjs'};
+  const diagnosticModules={'/deposit-consent.mjs':'../../shared/rolling/deposit-consent.mjs','/deployment-registration.mjs':'../../shared/rolling/deployment-registration.mjs','/deployment.mjs':'../../shared/rolling/deployment.mjs','/protocol-commitments.mjs':'../../shared/protocol-commitments.mjs','/protocol-schema.mjs':'../../shared/protocol-schema.mjs'};
   if(Object.hasOwn(diagnosticModules,req.url)){res.writeHead(200,{'content-type':'text/javascript'});res.end(await fs.readFile(new URL(diagnosticModules[req.url],import.meta.url)));return;}
   if(req.url==='/invocation.mjs'){res.writeHead(200,{'content-type':'text/javascript'});res.end(await fs.readFile(new URL('../../shared/rolling/invocation.mjs',import.meta.url)));return;}
   if(!['/wallet-panel.mjs','/automatic-withdrawal.mjs','/performance.mjs','/wallet-action.mjs','/reader-client.mjs','/avatar-upload.mjs','/model.mjs','/style.css'].includes(req.url)){res.writeHead(404);res.end();return;}
@@ -271,7 +272,7 @@ for(const [code,copy] of [['ROLLING_NAME_INVALID','Enter a valid first and last 
 });
 test('name availability does not clear recovery for unknown failures or claim a check for legacy saved actions',async t=>{
  const {page}=await browserFixture(t);await open(page);await unlock(page);await page.getByLabel('Action').selectOption('name');await page.getByLabel('First name',{exact:true}).fill('John');await page.getByLabel('Last name',{exact:true}).fill('Doe');await page.evaluate(()=>test.failure='prepare');
- await page.getByRole('button',{name:'Check action and review fee'}).click();await page.getByRole('alert').waitFor();assert(await page.getByRole('button',{name:'Check account recovery',exact:true}).isVisible());assert.equal(await page.getByLabel('First name',{exact:true}).count(),0);assert(!(await page.locator('body').innerText()).includes('GETTER_SENTINEL'));assert.equal((await counts(page)).sends,0);
+ await page.getByRole('button',{name:'Check action and review fee'}).click();await page.getByRole('alert').waitFor();assert(await page.getByRole('button',{name:'Check account recovery',exact:true}).isVisible());assert.equal(await page.getByLabel('First name',{exact:true}).isVisible(),false);assert(!(await page.locator('body').innerText()).includes('GETTER_SENTINEL'));assert.equal((await counts(page)).sends,0);
  await page.evaluate(()=>{test.failure=null;const saved=JSON.parse(sessionStorage.getItem('labelled-ui-intent'));delete saved.nameAvailability;sessionStorage.setItem('labelled-ui-intent',JSON.stringify(saved));});await page.getByRole('button',{name:'Check account recovery',exact:true}).click();await page.getByRole('button',{name:'Confirm and send'}).waitFor();assert.equal(await page.getByText(/This name was available when checked/).count(),0);assert.equal((await counts(page)).sends,0);
 });
 test('random names remain editable local proposals until an explicit action check',async t=>{
@@ -1801,4 +1802,12 @@ test('main-page posting credit opens ETH or USDC payment directly without pause 
  await page.waitForFunction(()=>test.topupReview?.asset==='USDC'&&document.querySelector('.credit-total')?.textContent.includes('0.75 USDC'));
  assert.equal(await page.getByRole('button',{name:'Pause checks',exact:true}).count(),0);
  assert.equal(await page.evaluate(()=>test.topupPayments??0),0);
+});
+
+test('inline name draft survives feed refresh but closes on route navigation',async t=>{
+ const {page}=await browserFixture(t);await inlineNames(page);await page.locator('#posting-names select').selectOption('create');await page.getByLabel('First name',{exact:true}).fill('Ada');
+ await page.evaluate(()=>panel.attachIdentityControls(document.querySelector('#posting-names')));
+ assert.equal(await page.getByLabel('First name',{exact:true}).inputValue(),'Ada');
+ await page.evaluate(()=>panel.attachIdentityControls(document.querySelector('#posting-names'),{route:'/directory'}));
+ assert.equal(await page.getByLabel('First name',{exact:true}).isVisible(),false);
 });

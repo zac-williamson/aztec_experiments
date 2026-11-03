@@ -266,7 +266,7 @@ function shell(title,{boardId=null,directory=false}={}){
  else if(directory)main.querySelector('.page-head').append(button([createIcon('plus'),'Create a board'],()=>openWallet({type:'subboard'}),{class:'button primary'}));
  const bokBalance=el('section',{class:'bok-balance','aria-label':'Bok balance',hidden:''});
  const postingName=el('div',{class:'posting-name','data-posting-name':''});main.insertBefore(postingName,main.querySelector('.page-head').nextSibling);
- void accountPanel().then(panel=>{if(postingName.isConnected){panel.attachIdentityControls(postingName);panel.attachBokControls(bokBalance);}}).catch(()=>{walletPanel=null;postingName.append(button('Load posting names',()=>render()));});
+ void accountPanel().then(panel=>{if(postingName.isConnected){panel.attachIdentityControls(postingName,{route});panel.attachBokControls(bokBalance);}}).catch(()=>{walletPanel=null;postingName.append(button('Load posting names',()=>render()));});
  main.insertBefore(bokBalance,postingName.nextSibling);
  const context=el('aside',{class:'context'},
   el('section',{},el('h2',{},createIcon('message'),'Your place to talk'),el('p',{},'Start a conversation, join a board, or reply to someone. Post anonymously or under a name you choose.'),link([createIcon('compass'),'Find a board'],'/directory',{class:'button'})),

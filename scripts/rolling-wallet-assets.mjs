@@ -42,7 +42,7 @@ const sources={...Object.fromEntries(Object.entries(scripts).map(([name,file])=>
 };
 const invalid=()=>Error('Invalid Rolling wallet assets or public configuration');
 const requiredInputs=['apps/rolling/wallet-runtime.mjs','apps/rolling/wallet-session.mjs','apps/rolling/wallet-worker-entry.mjs','apps/rolling/wallet-worker-client.mjs','apps/rolling/wallet-worker-protocol.mjs','shared/rolling/funding-session.mjs',
- 'shared/rolling/saved-items.mjs','shared/rolling/aggregate-wallet.mjs','shared/rolling/application.mjs','shared/rolling/synchronized-application.mjs','shared/rolling/deployment.mjs','shared/rolling/deployment-registration.mjs','shared/rolling/name-policy.mjs','shared/rolling/invocation.mjs',
+ 'shared/rolling/saved-items.mjs','shared/rolling/aggregate-wallet.mjs','shared/rolling/deposit-consent.mjs','shared/rolling/application.mjs','shared/rolling/synchronized-application.mjs','shared/rolling/deployment.mjs','shared/rolling/deployment-registration.mjs','shared/rolling/name-policy.mjs','shared/rolling/invocation.mjs',
  'shared/journal-record.mjs','shared/l2-journal.mjs','shared/transaction-outcomes.mjs','shared/protocol-commitments.mjs','shared/protocol-schema.mjs',
  'scripts/rolling-wallet-assets.mjs','scripts/capture-rolling-registration.mjs','scripts/check-rolling-worker-startup.mjs',...projectionInputs,...Object.values(scripts),'crs-manifest.json','.build/contracts-manifest.json','.build/sdk/sdk-manifest.json'];
 const keys=(value,names)=>{if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join()!==names.sort().join())throw invalid();};

@@ -254,7 +254,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  let postingInProgress=false,actionInProgress=false,actionOperation=null,operationSettled=Promise.resolve(),pendingReply=null;
  let bokHost=null,updateBokForm=()=>{},bokRefreshNeeded=false;
  const ownBokPosts=new Map();
- let identityHost=null,inlineCreation=false,accountSettingsOpen=false,selectedName='0',selectedLabel='Anonymous',createdNameFeedback=null;
+ let identityRoute=null,identityHost=null,inlineCreation=false,accountSettingsOpen=false,selectedName='0',selectedLabel='Anonymous',createdNameFeedback=null;
  const actionFeedback=el('span',{class:'inline-action-feedback',role:'status','aria-live':'polite',hidden:''});
  const identityControls=el('div',{class:'posting-name-controls'}),inlineName=el('section',{class:'inline-name',hidden:''});
  const postingCreditControls=el('div',{class:'posting-credit',hidden:''});
@@ -1823,9 +1823,10 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    const cancel=button('Cancel',()=>{if(busy||intent)return;dismissInlineCreation();renderIdentityControls();});cancel.disabled=busy||!!intent;identityControls.append(cancel);
   }else if(notice.startsWith('Name created.')||notice.startsWith('Your previous posting name'))identityControls.append(el('span',{class:'quiet',role:'status'},notice));
  }
- function attachIdentityControls(host){
-  // A new page drops an idle inline name form instead of carrying it along.
-  if(inlineCreation&&!inlineCreationLocked())dismissInlineCreation();
+ function attachIdentityControls(host,{route=globalThis.location?.hash??""}={}){
+  // Feed refreshes keep the draft; navigation drops an idle inline form.
+  if(identityRoute!==null&&identityRoute!==route&&inlineCreation&&!inlineCreationLocked())dismissInlineCreation();
+  identityRoute=route;
   identityHost=host;host.append(identityControls,inlineName);renderIdentityControls();
   // Existing names load when this selector is used, without opening a dialog.
  }
