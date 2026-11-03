@@ -1498,9 +1498,9 @@ test('G18 main-page names carry to posts and replies without a selection dialog'
 });
 test('G18 creates a name entirely inline, waits for confirmation and selects verified ownership',async t=>{
  const {page}=await browserFixture(t);await inlineNames(page);const select=page.locator('#posting-names select');await select.selectOption('create');
- await page.getByLabel('First name',{exact:true}).fill(' Quinn ');await page.getByLabel('Last name',{exact:true}).fill('Stone');await page.locator('[data-action-review]').click();await page.locator('[data-action-confirm]').waitFor();
- assert.equal(await page.locator('dialog[open]').count(),0);assert.equal((await counts(page)).sends,0);
- await page.evaluate(()=>{test.hold='submit';});await page.locator('[data-action-confirm]').click();await page.waitForFunction(()=>test.submitCalls===1);
+ await page.getByLabel('First name',{exact:true}).fill(' Quinn ');await page.getByLabel('Last name',{exact:true}).fill('Stone');
+ await page.evaluate(()=>{test.hold='submit';});await page.locator('[data-action-review]').click();await page.waitForFunction(()=>test.submitCalls===1);
+ assert.equal(await page.locator('dialog[open]').count(),0);assert.equal((await counts(page)).sends,1);
  assert.equal(await select.locator('option[value="55"]').count(),0);assert.equal(await select.isDisabled(),true);
  await page.evaluate(()=>{test.namesPages={0:{identities:['7'],records:[{id:'7',first:'River',last:'Lane'}],nextCursor:8},8:{identities:['55'],records:[{id:'55',first:'Quinn',last:'Stone'}],nextCursor:null}};test.hold=null;test.release();});
  await page.waitForFunction(()=>document.querySelector('#posting-names select').value==='55');assert.equal(await page.locator('dialog[open]').count(),0);assert.equal(await page.locator('.inline-name').isVisible(),false);assert.equal((await counts(page)).sends,1);
