@@ -1,0 +1,29 @@
+{
+  "revision": "a3b138ddfb7edc287b5e8f6f1987f19f55f3338e",
+  "pr": "https://github.com/zac-williamson/aztec_experiments/pull/12",
+  "deploymentCommand": "c050828e-23a8-454f-b0f9-a75ed3503d0b",
+  "deploymentStatus": "Success",
+  "sealedAssets": 119,
+  "servicesActive": [
+    "rolling-application",
+    "rolling-staging",
+    "board-prover",
+    "rolling-query",
+    "rolling-moderator"
+  ],
+  "tests": {
+    "modelAndComposer": 229,
+    "journey": 15,
+    "releaseChecks": "passed"
+  },
+  "contractChanges": false,
+  "packagingCorrection": "Exclude macOS resource-fork entries; regenerate archive using Python tarfile.",
+  "liveBrowserVerification": {
+    "accountOpened": true,
+    "boardAddressInvalidInput": "Book Club!",
+    "inlineCorrection": "book-club",
+    "correctedInputValidated": true,
+    "transactionSubmitted": false,
+    "testFormClosed": true
+  }
+}

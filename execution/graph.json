@@ -9884,8 +9884,8 @@
     "checkpoint": "Show posting topup USD reference using existing Chainlink price; AZTEC token labels."
   },
   "david_input_validation_20261103": {
-    "status": "active",
+    "status": "complete",
     "execution_lane": "root integration; pr12_review independent review",
-    "checkpoint": "Merge PR12, close normalized name and thread hint gaps, fix cancellation controls, update affected stale assertions, publish UI without contracts."
+    "checkpoint": "PR12 merged as a3b138dd; live release sealed with 119 assets; five services active. Model/composer229, journey15 and release checks passed."
   }
 }
