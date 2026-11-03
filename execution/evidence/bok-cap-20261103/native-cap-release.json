@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-03",
+  "bokCommit": "b24c6842",
+  "postingCommit": "c7a104ad52f346f40ca0d2a2a153a0463fb35802",
+  "bokDeploymentCommand": "b45d3306-8d71-4051-a010-0595707ff8ac",
+  "postingDeploymentCommand": "c8f808ad-fdae-44a0-ac8c-93aba4ac0a96",
+  "bokHealth": "ready; active 0; no failure",
+  "tests": {"bokFocused": 151, "failed": 0},
+  "outputLimit": 65536,
+  "repairRetries": false,
+  "notes": [
+    "Our configured 8192 output limit truncated the failed tool response; do not attribute the incident to the provider.",
+    "Actual output remains clamped to model capacity and affordable remaining request budget.",
+    "Historical request accounting is not overwritten; the finalized failed request was not replayed.",
+    "Posting release initially failed staging because browser bundle was not rebuilt. Rebuilt with scripts/rolling-wallet-assets.mjs, sealed staging and live successfully; five core services active.",
+    "Live browser shows AZTEC labels and new credit modal; actual quote verification waits on MetaMask connection. No user payment submitted."
+  ]
+}

@@ -640,3 +640,5 @@ Root owns the patch and live deployment. `bok_funding_review` independently trac
 
 ## 3 November: Bok request cap
 Root owns implementation/deployment. budget_review reviewed 50 USDC defaults and exact pre-provider journal reset read-only. No contracts change.
+
+2026-11-03: bok_cap_review read-only audit completed. Confirmed application-owned 8192 caps and live config override; reviewed native/budget clamp and found context-fit mismatch. Root integrated native output clamp, 65536 hosted limits, modular editing guidance. 151 focused tests pass. No repair-response retry introduced.
