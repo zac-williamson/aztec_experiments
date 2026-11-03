@@ -1,6 +1,6 @@
 import {beginRollingMeasure,measureRollingStage,rollingStageObserver} from './performance.mjs';
 // Presentation only. Account restoration is delegated to the runtime; wallet prompts require a click.
-import {allowance,MAX_THREAD_POSTS,splitMessage,createMessageBudget,createMessageContent,createIcon,mentionsBok,createTransactionStatus,TRANSACTION_PRIVACY} from './model.mjs';
+import {allowance,MAX_THREAD_POSTS,splitMessage,createMessageBudget,createMessageContent,createIcon,mentionsBok,createTransactionStatus,TRANSACTION_PRIVACY,checkBoardAddress,BOARD_ADDRESS_RULES,checkNamePart,TEXT_LIMITS} from './model.mjs';
 import {createPublicReader} from './reader-client.mjs';
 import {prepareAvatarUpload} from './avatar-upload.mjs';
 // Presentation-only diagnostic projection. Keep this vocabulary closed even if
@@ -911,15 +911,21 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    }
    if(!pendingWithdrawal){
    fundingWalletView();const recipient=runtime.fundingWalletStatus?.()?.address?.toLowerCase();
-   const amount=el('input',{type:'text',inputmode:'decimal','aria-label':'Bok credit to withdraw in USDC',value:bokExitAmount});amount.addEventListener('input',()=>bokExitAmount=amount.value);
-   content.append(label('Bok credit to withdraw (USDC)',amount));
-   if(recipient)content.append(paragraph('Receive at '+recipient));
-   content.append(paragraph('Max cost '+formatCredits(session.postingFeeLimit,{roundUp:true})+' AZTEC. Ethereum gas is paid separately.'),button('Withdraw Bok credit',()=>{
+   const amount=el('input',{type:'text',inputmode:'decimal','aria-label':'Bok credit to withdraw in USDC',value:bokExitAmount,autocomplete:'off'}),amountHint=el('p',{class:'field-hint',id:'bok-exit-hint','data-tone':'error',hidden:''});amount.setAttribute('aria-describedby','bok-exit-hint');
+   const available=BigInt(balances.bok.available);
+   const withdraw=button('Withdraw Bok credit',()=>{
     const amount=bokExitAmount;
     void work(async()=>{requireNoPendingWithdrawal();const action={type:'withdraw-bok',amount:units(amount,6),recipient};const selected=runtime.fundingWalletStatus?.();if(!selected?.connected||!recipient||selected.address?.toLowerCase()!==recipient)throw connectionFailure;
      refundQuote=null;await executeAction(action,{immediate:true});
     },withdrawalFailure,{action:true});
-   },true));
+   },true);
+   // A typo used to surface as a connection error after the click; explain it under
+   // the field instead and keep the button unavailable until the amount can be sent.
+   const paintAmount=()=>{const problem=amountProblem(bokExitAmount,6,{balance:available,unit:'USDC',balanceLabel:'available Bok credit'});amountHint.textContent=problem;amountHint.hidden=!problem;if(problem)amount.setAttribute('aria-invalid','true');else amount.removeAttribute('aria-invalid');let usable=!problem;if(usable)try{units(bokExitAmount,6);}catch{usable=false;}withdraw.dataset.unavailable=String(!usable);withdraw.disabled=busy||!usable;};
+   amount.addEventListener('input',()=>{bokExitAmount=amount.value;paintAmount();});
+   content.append(label('Bok credit to withdraw (USDC)',amount),amountHint);
+   if(recipient)content.append(paragraph('Receive at '+recipient));
+   content.append(paragraph('Max cost '+formatCredits(session.postingFeeLimit,{roundUp:true})+' AZTEC. Ethereum gas is paid separately.'),withdraw);paintAmount();
    }
   }
   for(const d of balances.collateral.deposits){
@@ -1286,10 +1292,38 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  function form(){
   if(MODERATOR_TYPES.has(draft.type)&&moderatorStatus?.authorized!==true)draft={type:'post',subboard:'0',content:''};
   const fields=new Map();let updateInvitation=()=>{},transferConsent,bokChip;
-  function input(name,text,{area=false,initial='',required=true}={}){
-   const node=el(area?'textarea':'input',area?{rows:'5'}:{type:'text'});node.value=draft[name]??initial;if(required)node.required=true;
+  function input(name,text,{area=false,initial='',required=true,attrs={}}={}){
+   const node=el(area?'textarea':'input',{...(area?{rows:'5'}:{type:'text'}),...attrs});node.value=draft[name]??initial;if(required)node.required=true;
    node.addEventListener('input',()=>{draft[name]=node.value;if(name==='content')updateInvitation();if(name==='subboard')updateRules();validate();});fields.set(name,node);content.append(label(text,node));return node;
   }
+  // Field hints explain, under the control, why a value cannot be sent yet (and
+  // what to do about it). They repaint on every validate(); a hint may offer one
+  // corrective action. The control is marked aria-invalid while the hint is an error.
+  const hints=[];let hintCount=0;
+  function hint(node,describe){
+   const id=`field-hint-${renderEpoch}-${++hintCount}`,out=el('p',{class:'field-hint',id,hidden:''});node.setAttribute('aria-describedby',id);
+   const anchor=node.parentElement?.tagName==='LABEL'?node.parentElement:node;anchor.parentElement.insertBefore(out,anchor.nextSibling);
+   hints.push({node,out,describe});return out;
+  }
+  function paintHints(){
+   for(const {node,out,describe}of hints){
+    const result=describe(node.value)??'';const {text='',tone='quiet',action=null}=typeof result==='string'?{text:result,tone:result?'error':'quiet'}:result;
+    out.hidden=!text;out.dataset.tone=tone;
+    if(!text)out.replaceChildren();
+    else if(action){const apply=button(action.label,action.run);apply.className='hint-action';out.replaceChildren(text,apply);}
+    else out.replaceChildren(text);
+    if(tone==='error')node.setAttribute('aria-invalid','true');else node.removeAttribute('aria-invalid');
+   }
+  }
+  const lengthHint=(value,max)=>{
+   const a=allowance(value,max);
+   if(a.remaining<0)return {text:`${a.overCharacters} ${a.overCharacters===1?'character':'characters'} over the limit. Shorten the end to fit.`,tone:'error'};
+   if(a.remaining<=Math.max(12,Math.floor(max/10)))return {text:`Nearly full: about ${a.remaining} ${a.remaining===1?'character':'characters'} left. Emoji and accented letters use more space.`};
+   return null;
+  };
+  const textFits=(value,max)=>allowance(value,max).remaining>=0&&value.isWellFormed()&&!value.includes('\0');
+  const idHint=value=>!value||field(value)&&BigInt(value)>0n?null:{text:'Enter the numeric ID.',tone:'error'};
+  const budgetHint=value=>amountProblem(value,6,{max:50000000n,unit:'USDC',balance:typeof bokStatus?.availableCredit==='string'?BigInt(bokStatus.availableCredit):null,balanceLabel:'Bok balance'});
   function avatarInput(optional=false){
    // The native file control stays for input; a styled button opens it.
    const file=el('input',{type:'file',accept:'image/png,image/jpeg,image/webp','aria-label':'Avatar image',class:'sr-only',tabindex:'-1'});
@@ -1309,9 +1343,9 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   function target(name){const node=el('input',{type:'hidden'});node.value=draft[name]??'';node.required=true;fields.set(name,node);return node;}
   if(MODERATOR_TYPES.has(kind)){
    content.append(paragraph('Moderator controls. Removal keeps the stable link and a visible reason. It cannot edit or delete the underlying chain history.'));
-   if(kind==='transfer-moderator'){const successor=input('successor','Successor Aztec address');content.append(el('p',{class:'quiet'},'The successor takes control immediately. Only the successor can transfer authority back.'));transferConsent=el('input',{type:'checkbox','aria-label':'Confirm transfer of moderator control'});transferConsent.addEventListener('change',validate);successor.addEventListener('input',()=>{transferConsent.checked=false;validate();});content.append(label('Transfer moderator control to this address',transferConsent));}
-   else if(kind==='set-main-policy')input('rules','New parent rules',{area:true});
-   else{input(kind==='moderate-post'?'post':kind==='moderate-avatar'?'name':'subboard',kind==='moderate-post'?'Post ID':kind==='moderate-avatar'?'Profile name ID':'Subboard ID');input('reason','Public moderation reason',{area:true});}
+   if(kind==='transfer-moderator'){const successor=input('successor','Successor Aztec address',{attrs:{autocapitalize:'none',autocorrect:'off',spellcheck:'false',autocomplete:'off'}});hint(successor,value=>!value||field(value)&&BigInt(value)>0n?null:{text:'Enter an Aztec address: 0x followed by 64 lowercase hex characters.',tone:'error'});content.append(el('p',{class:'quiet'},'The successor takes control immediately. Only the successor can transfer authority back.'));transferConsent=el('input',{type:'checkbox','aria-label':'Confirm transfer of moderator control'});transferConsent.addEventListener('change',validate);successor.addEventListener('input',()=>{transferConsent.checked=false;validate();});content.append(label('Transfer moderator control to this address',transferConsent));}
+   else if(kind==='set-main-policy')hint(input('rules','New parent rules',{area:true}),value=>lengthHint(value,TEXT_LIMITS.policy));
+   else{hint(input(kind==='moderate-post'?'post':kind==='moderate-avatar'?'name':'subboard',kind==='moderate-post'?'Post ID':kind==='moderate-avatar'?'Profile name ID':'Subboard ID',{attrs:{inputmode:'numeric',autocomplete:'off'}}),idHint);hint(input('reason','Public moderation reason',{area:true}),value=>lengthHint(value,TEXT_LIMITS.moderationReason));}
   }else if(kind==='bio'||kind==='avatar'){
    const names=el('select',{'aria-label':'Profile name'},el('option',{value:''},'Choose an owned name'));
    for(const record of identityRecords)names.append(el('option',{value:record.id},`${record.first} ${record.last}`));
@@ -1326,7 +1360,8 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    }
   }else if(kind==='name'){
    content.append(paragraph('Choose a public name, not necessarily your real one. Names are unique and cannot be renamed. You can create more names or switch to Anonymous in Post as. Use letters, spaces, apostrophes or hyphens.'));
-   const first=input('first','First name'),last=input('last','Last name');
+   const first=input('first','First name',{attrs:{autocapitalize:'words',autocomplete:'off',spellcheck:'false'}}),last=input('last','Last name',{attrs:{autocapitalize:'words',autocomplete:'off',spellcheck:'false'}});
+   hint(first,value=>checkNamePart(value,{first:true})||null);hint(last,value=>checkNamePart(value)||null);
    // Reversible proposal vocabulary: eight valid values per part, uniformly picked
    // from local cryptographic random bits. Availability is never inferred locally.
    const firstNames=['River','Ellis','Mira','Rowan','Sage','Robin','Avery','Quinn'],lastNames=['Lane','Moss','Reed','Vale','Stone','Brook','Finch','Wren'];
@@ -1335,7 +1370,18 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
 
   }else if(kind==='subboard'){
    content.append(paragraph('Create a space for a topic or community. Its web address is permanent. The site’s rules apply alongside your board’s rules.'));
-   input('slug','Board address (e.g. book-club)');input('name','Board name');input('description','Description',{area:true});input('rules','Additional rules',{area:true,required:false});
+   // Mobile keyboards capitalise the first letter of a text field by default, which
+   // alone makes an address invalid; the hint below names each problem and offers a fix.
+   const slug=input('slug','Board address (e.g. book-club)',{attrs:{autocapitalize:'none',autocorrect:'off',spellcheck:'false',autocomplete:'off',maxlength:'64'}});
+   hint(slug,value=>{
+    if(!value)return {text:BOARD_ADDRESS_RULES};
+    const check=checkBoardAddress(value);
+    if(check.valid)return {text:'Valid address. Whether it is still free is checked when the board is created.',tone:'ok'};
+    return {text:check.problems.join(' ')||BOARD_ADDRESS_RULES,tone:'error',action:check.suggestion?{label:`Use “${check.suggestion}”`,run:()=>{if(busy)return;slug.value=check.suggestion;draft.slug=check.suggestion;validate();slug.focus();}}:null};
+   });
+   hint(input('name','Board name'),value=>lengthHint(value,TEXT_LIMITS.boardName));
+   hint(input('description','Description',{area:true}),value=>lengthHint(value,TEXT_LIMITS.boardDescription));
+   hint(input('rules','Additional rules',{area:true,required:false}),value=>lengthHint(value,TEXT_LIMITS.boardRules));
   }else if(kind==='like'){target('post');content.append(paragraph('Gift 20.00 AZTEC to the author. Network fees are additional.'),privacyNote('Sent from your private Aztec account. The gift does not publish your wallet address.'));}
   else{
    const names=el('select',{'aria-label':'Posting identity'},el('option',{value:'0'},'Anonymous'));
@@ -1360,7 +1406,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     const invitation=el('div',{class:'bok-invitation'}),balance=el('p',{'data-composer-bok-balance':'','aria-live':'polite'});
     const budget=input('budget','Maximum Bok cost (up to 50 USDC)',{initial:'0.25'});budget.inputMode='decimal';const budgetLabel=budget.parentElement;
     const add=button('Add Bok credit',addBokCredit);
-    invitation.append(paragraph('Bok will reply to this message. You only pay for the work it does, up to your limit.'),balance,budgetLabel,add);content.append(invitation);
+    invitation.append(paragraph('Bok will reply to this message. You only pay for the work it does, up to your limit.'),balance,budgetLabel,add);content.append(invitation);hint(budget,budgetHint);
     const paint=()=>{const state=bokBalance.snapshot();balance.textContent=state.phase==='ready'?`Bok balance: ${decimal(state.value.availableCredit,6)} USDC`:bokBalanceText();};
     updateInvitation=()=>{
      kind=draft.type=mentionsBok(draft.content)?'bok':replyContext(draft)?'reply':'post';if(kind==='bok'&&draft.parent===undefined)Object.assign(draft,{parent:'0',root:'0'});invitation.hidden=kind!=='bok';
@@ -1403,7 +1449,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
      area.addEventListener('input',()=>{entry.content=area.value;validate();});budget.addEventListener('input',()=>{entry.budget=budget.value;validate();});
      threadFields.push({area,meter,budget,invitation});
      if(index===threadPosts.length-1)toolbar.append(addPost(area,entry));
-     row.append(heading,area,invitation,toolbar);list.append(row);
+     row.append(heading,area,invitation,toolbar);list.append(row);hint(budget,value=>invitation.hidden?null:budgetHint(value));
     });content.append(list);
    }
   }
@@ -1439,6 +1485,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    },actionFailure,{posting:postingTypes.has(action.type),action:direct});
   };
   const cost=el('strong',{'data-estimated-cost':'','aria-live':'polite'},'—'),balance=el('strong');
+  const costNote=el('p',{class:'field-hint','data-tone':'error',hidden:''},'The cost could not be estimated. Check the fields above, or try again in a moment.');
   const activeSession=session,estimateEpoch=accountEpoch,formEpoch=renderEpoch;
   const feePreview=createDraftFeePreview({
    estimate:async(action,{signal})=>{
@@ -1451,13 +1498,14 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     cost.setAttribute('aria-busy',String(result.state==='pending'));
     if(result.state==='pending')cost.replaceChildren(el('span',{class:'cost-pending','aria-hidden':'true'}),el('span',{class:'sr-only'},'Estimating cost'));
     else cost.textContent=result.state==='ready'?formatCredits(result.estimatedFee)+' AZTEC':result.state==='unavailable'?'Unavailable':'—';
+    costNote.hidden=result.state!=='unavailable';
    }
   });
   cancelCostPreview=()=>feePreview.cancel();
   if(immediateTypes.has(draft.type)){
    const balanceLabel=el('span');
    updatePostingBalance=()=>{balanceLabel.textContent=accountRefreshNeeded||accountRefreshPending?'Balance (updating) ':'Balance ';balance.textContent=typeof status?.privateFeeCredit==='string'?formatCredits(status.privateFeeCredit):status?.status==='fee-needed'?'0.00':'—';if(typeof status?.privateFeeCredit==='string')balance.setAttribute('title',formatCredits(status.privateFeeCredit));else balance.removeAttribute('title');validate();};
-   content.append(el('div',{class:'composer-cost'},el('span',{},balanceLabel,balance),el('span',{},'Estimated cost: ',cost)));
+   content.append(el('div',{class:'composer-cost'},el('span',{},balanceLabel,balance),el('span',{},'Estimated cost: ',cost)),costNote);
    content.append(privacyNote(postingTypes.has(draft.type)?'Published from your private Aztec account. Your wallet address is not attached to the post. Posts using the same name and replies are publicly linked.':'Sent from your private Aztec account. Your wallet address is not attached to your posts.'));
   }
   const review=button(reviewLabel(draft),prepareReview,true);
@@ -1490,7 +1538,9 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    if(kind==='reply')valid=valid&&replyContext(draft);
    if(kind==='bok'){const {parent,root,subboard}=draft;valid=valid&&field(subboard)&&field(parent)&&field(root)&&((BigInt(parent)===0n)===(BigInt(root)===0n));try{const v=BigInt(units(fields.get('budget').value,6));valid=valid&&v>0n&&v<=50000000n&&v<=BigInt(bokStatus?.availableCredit??'0');}catch{valid=false;}}
    if(kind==='bio'||kind==='avatar')valid=valid&&!!profileSnapshot&&identities.includes(draft.name)&&BigInt(profileSnapshot.name)===BigInt(draft.name)&&(kind!=='avatar'||!!avatarDraft);
-   if(kind==='subboard')valid=valid&&/^[a-z0-9](?:[a-z0-9]|-(?!-)){1,38}[a-z0-9]$/.test(fields.get('slug').value);
+   if(kind==='subboard')valid=valid&&checkBoardAddress(fields.get('slug').value).valid&&textFits(fields.get('name').value,TEXT_LIMITS.boardName)&&textFits(fields.get('description').value,TEXT_LIMITS.boardDescription)&&textFits(fields.get('rules').value,TEXT_LIMITS.boardRules);
+   if(kind==='name')valid=valid&&!!fields.get('first').value.trim()&&!!fields.get('last').value.trim()&&!checkNamePart(fields.get('first').value,{first:true})&&!checkNamePart(fields.get('last').value);
+   paintHints();
    feePreview.update(valid&&!busy&&(dialog.open||inlineCreation)&&formEpoch===renderEpoch&&estimateEpoch===accountEpoch&&activeSession===session&&typeof activeSession?.application.estimateDraftFee==='function'?captureComposerAction():null,[estimateEpoch,status?.privateFeeCredit]);
    review.textContent=postingInProgress?'Posting…':threadPosts.length?'Post all':reviewLabel(draft);review.dataset.unavailable=String(!valid);review.disabled=busy||!valid;return valid;
   }
@@ -1514,6 +1564,22 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  function units(value,decimals){
   if(typeof value!=='string'||!new RegExp('^(0|[1-9][0-9]{0,30})(?:\\.[0-9]{1,'+decimals+'})?$').test(value))throw connectionFailure;
   const [whole,fraction='']=value.split('.');const result=BigInt(whole)*10n**BigInt(decimals)+BigInt(fraction.padEnd(decimals,'0'));if(result<=0n)throw connectionFailure;return result.toString();
+ }
+ // Why a typed amount cannot be used yet, in the reader's words; '' when it is fine
+ // or still empty. A value that is merely incomplete ("1.") gets no message while typing.
+ function amountProblem(value,decimals,{max=null,balance=null,unit='',balanceLabel='balance'}={}){
+  if(typeof value!=='string'||!value)return '';
+  if(!/^[0-9.]*$/.test(value))return 'Enter a number using digits and a decimal point only, like 2.50.';
+  if((value.match(/\./g)??[]).length>1)return 'Use a single decimal point.';
+  if(/^\.[0-9]+$/.test(value))return `Start with a digit, like 0${value}.`;
+  if(/^0[0-9]/.test(value))return 'Remove the leading zero.';
+  if(value.endsWith('.'))return '';
+  const fraction=value.split('.')[1]??'';
+  if(fraction.length>decimals)return `Use up to ${decimals} decimal places.`;
+  let parsed;try{parsed=BigInt(units(value,decimals));}catch{return /^[0.]+$/.test(value)?'Enter an amount greater than 0.':'Enter a smaller number.';}
+  if(max!==null&&parsed>max)return `The maximum is ${decimal(max,decimals)} ${unit}.`;
+  if(balance!==null&&parsed>balance)return `That is more than your ${balanceLabel} (${decimal(balance,decimals)} ${unit}).`;
+  return '';
  }
  function currentFundingAttempt(capability=session?.funding){
   return fundingAttempt?.epoch===accountEpoch&&fundingAttempt.session===session&&fundingAttempt.capability===capability?fundingAttempt:null;
@@ -1645,7 +1711,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   if(!topupInputs.amount)topupInputs.amount=isBok?'1':formatCredits(BigInt(cap.defaultPrivateFeeCap)*2n,{roundUp:true});
   if(!topupInputs.asset)topupInputs.asset=cap.ethAvailable?'ETH':'USDC';
   content.append(paragraph(isBok?'Bok credit pays the assistant when you mention @bok in a post. It is separate from posting credit.':'Posting credit pays network fees for posts, replies, tips and account updates. It is separate from your refundable deposit and Bok credit.'),privacyNote('Credit moves into your private Aztec account. Your wallet address is not published with your posts or tips.'));
-  const amountName=isBok?'Amount (USD)':'Amount (AZTEC)',amount=el('input',{type:'text',inputmode:'decimal','aria-label':amountName});amount.value=topupInputs.amount;const edits=[amount];
+  const amountName=isBok?'Amount (USD)':'Amount (AZTEC)',amount=el('input',{type:'text',inputmode:'decimal','aria-label':amountName,autocomplete:'off','aria-describedby':'topup-feedback'});amount.value=topupInputs.amount;const edits=[amount];
   amount.addEventListener('input',()=>{topupInputs.amount=amount.value;resetTopupQuote();requestTopupQuote();});
   amount.addEventListener('change',requestTopupQuote);content.append(label(amountName,amount));
   if(isBok){
@@ -1655,7 +1721,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    const asset=el('select',{'aria-label':'Pay with'});if(cap.ethAvailable)asset.append(el('option',{value:'ETH'},'ETH'));if(cap.usdcAvailable!==false)asset.append(el('option',{value:'USDC'},'USDC'));asset.value=topupInputs.asset;edits.push(asset);
    asset.addEventListener('change',()=>{topupInputs.asset=asset.value;resetTopupQuote();requestTopupQuote();});content.append(label('Pay with',asset));
   }
-  const summary=el('div',{class:'credit-total','aria-live':'polite'}),feedback=el('p',{role:'status',class:'quiet'});
+  const summary=el('div',{class:'credit-total','aria-live':'polite'}),feedback=el('p',{role:'status',class:'quiet',id:'topup-feedback'});
   const pay=button('Pay',()=>void work(async()=>{
    const selected=topupSelection(),q=topupQuote,epoch=accountEpoch;
    if(!q||selected?.key!==topupQuoteKey)throw topupFailure(Error('Price changed'),'quote');
@@ -1665,7 +1731,11 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     checkAccount(epoch);if(payment&&!payment.pending)metric('payment_confirmed');topupSaved={paymentSaved:true,phase:'deposit',...selected.input};fundingAutomatic=true;try{await advanceFunding();}catch(error){stopFunding();throw topupFailure(error,'claim');}
    }catch(failure){topupQuoteError=aggregateFundingFailure(failure)??'The payment could not complete. Refresh the price and try again.';// Do not hold failed-payment controls hostage to another wallet read.
     // Continue checks the saved transaction before authorizing any new payment.
-    topupSaved??={paymentSaved:true,phase:'deposit',...selected.input};
+    if(failure?.code==='BB_ETH_REQUEST_CANCELLED'){
+     // A rejected prompt is not a submitted payment. Inspect only this attempt
+     // to retain any earlier completed swap or approval, never invent a payment.
+     topupSaved=await cap.inspect?.()??null;
+    }else topupSaved??={paymentSaved:true,phase:'deposit',...selected.input};
     dialog.setAttribute('data-rolling-funding',JSON.stringify({stage:'funding',step:failure.topupStage??'payment',state:'failed',...fundingErrorShape(failure)}));throw failure;}
   },aggregateFundingFailure),true);
   const retry=button('Refresh price',()=>{resetTopupQuote();requestTopupQuote();});
@@ -1679,7 +1749,11 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    if(!isBok&&q){const usd=q.asset==='ETH'?q.usdEstimate:Number(decimal(q.maximumUsdc??q.amount,6)).toFixed(2);summary.append(el('span',{},'Estimated cost ',el('strong',{},usd?'≈ $'+usd+' USD':'USD estimate unavailable')));}
    const pending=!!topupSaved?.paymentSaved&&!topupSaved.completed;for(const edit of edits){edit.dataset.unavailable=String(pending);edit.disabled=busy||pending;}pay.hidden=pending||fundingAutomatic;pay.dataset.unavailable=String(!valid);pay.disabled=busy||!valid;
    retry.hidden=!topupQuoteError||pending;resume.hidden=!pending||fundingAutomatic;
-   feedback.textContent=topupQuotePending?'Getting the current price…':topupQuoteError||(q?(q.maximumUsdc?'Includes the relay fee. No ETH is needed; unused USDC is returned.':'Plus the Ethereum fee shown in your wallet.'):'Enter an amount to see the price.');
+   // An unusable amount is explained in place; the quote request silently skips it.
+   const amountIssue=amountProblem(topupInputs.amount,isBok?6:18,{unit:isBok?'USD':'AZTEC'});
+   if(amountIssue)amount.setAttribute('aria-invalid','true');else amount.removeAttribute('aria-invalid');
+   feedback.textContent=amountIssue||(topupQuotePending?'Getting the current price…':topupQuoteError||(q?(q.maximumUsdc?'Includes the relay fee. No ETH is needed; unused USDC is returned.':'Plus the Ethereum fee shown in your wallet.'):'Enter an amount to see the price.'));
+   feedback.dataset.tone=amountIssue||!topupQuotePending&&topupQuoteError?'error':'quiet';
   };
   content.append(summary,feedback,pay,retry,resume);updateTopupQuote();
  }

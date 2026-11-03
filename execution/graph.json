@@ -9882,5 +9882,10 @@
     "status": "active",
     "execution_lane": "root UI implementation; aztec_labels_review read-only review",
     "checkpoint": "Show posting topup USD reference using existing Chainlink price; AZTEC token labels."
+  },
+  "david_input_validation_20261103": {
+    "status": "active",
+    "execution_lane": "root integration; pr12_review independent review",
+    "checkpoint": "Merge PR12, close normalized name and thread hint gaps, fix cancellation controls, update affected stale assertions, publish UI without contracts."
   }
 }

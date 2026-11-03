@@ -272,7 +272,7 @@ test('Bok credit automatically quotes and keeps amount editable, discarding an o
  const amount=f.document.querySelector('input[aria-label="Amount (USD)"]');assert(amount);assert.equal(amount.disabled,false);assert.equal(f.document.querySelector('select[aria-label="Top-up credit"]'),null);assert(!f.document.body.textContent.includes('Review cost'));assert(!f.document.querySelectorAll('button').some(b=>b.textContent==='Continue top-up'));
  amount.value='5';amount.fire('input');amount.fire('change');assert.equal(amount.disabled,false);assert.equal(f.document.querySelector('input[aria-label="Amount (USD)"]'),amount);gate.resolve();
  const pay=await f.document.until(()=>f.document.querySelectorAll('button').find(b=>b.textContent==='Pay'&&!b.disabled&&!b.hidden));assert.deepEqual(quotes.map(q=>q.amount),['1000000','5000000']);assert(f.document.querySelector('.credit-total').textContent.includes('2 USDC'));assert(f.document.querySelector('.credit-total').textContent.includes('0.002 ETH'));
- pay.fire('click');await f.document.until(()=>f.document.querySelector('dialog').getAttribute('aria-busy')==='false');assert.equal(payments,1);assert.equal(quotes.length,2);
+ pay.fire('click');await f.document.until(()=>f.document.querySelector('dialog').getAttribute('aria-busy')==='false');assert.equal(payments,1);assert.equal(quotes.length,2);await new Promise(setImmediate);
 });
 for(const completed of [false,true])test(`failed automatic Bok quote offers price retry without unrelated payment continuation (${completed?'completed payment':'no payment'})`,{timeout:3000},async t=>{
  const cap={ethAvailable:true,defaultPrivateFeeCap:'100',async prepare(){throw Object.assign(Error('PRIVATE_SENTINEL'),{code:'BB_ETH_READ_FAILED'});},async inspect(){return completed?{paymentSaved:true,completed:true}:null;}};
@@ -936,13 +936,13 @@ for(const orphaned of [false,true])test('included Bok funding keeps only indepen
  const f=await fixture(t,{topup:cap,balanceRead:count=>{if(count===1)return Promise.resolve({available:true,availableCredit:'0'});nativeStarted.resolve();return native.promise;},posting:{balanceRefresh:async()=>assert.equal(orphaned,true,'only an independent invalidation requests a refresh')}});
  await f.document.until(()=>f.host.textContent.includes('0 USDC available'));f.panel.close();f.host.querySelectorAll('button').find(b=>b.textContent==='Add credit').fire('click');
  const pay=await f.document.until(()=>f.document.querySelectorAll('button').find(b=>b.textContent==='Pay'&&!b.disabled));pay.fire('click');await nativeStarted.promise;
- assert.equal(f.core().status,1,'no unrelated account scan ahead of native Bok balance');assert.equal(f.document.querySelector('dialog').getAttribute('aria-busy'),'true');assert(!f.host.textContent.includes('1 USDC available'));
+ assert.equal(f.core().status,1,'no unrelated account scan ahead of native Bok balance');assert.equal(f.document.querySelector('dialog').getAttribute('aria-busy'),'false','successful funding releases the modal before the display refresh');assert(!f.host.textContent.includes('1 USDC available'));
  if(orphaned){
   f.session.observeIncluded=async({txHash})=>({txHash,status:'orphaned'});
-  f.panel.observePublicPosts([],{checkpoint:{number:4,hash:'0x'+'6'.repeat(64)}});await new Promise(setImmediate);assert.equal(f.core().status,1,'orphan refresh waits for held claim balance');
+  f.panel.observePublicPosts([],{checkpoint:{number:4,hash:'0x'+'6'.repeat(64)}});await new Promise(setImmediate);assert.equal(f.core().status,2,'orphan refresh does not wait for an unrelated balance display');
  }
  native.resolve({available:true,availableCredit:'1000000'});
- await f.document.until(()=>f.document.querySelector('dialog').getAttribute('aria-busy')==='false');assert(f.host.textContent.includes('1 USDC available'));assert.equal(f.reads(),2);assert.equal(claims,1);assert.match(f.document.body.textContent,/Confirmation pending/i);
+ await f.document.until(()=>f.host.textContent.includes('1 USDC available'));assert.equal(f.document.querySelector('dialog').getAttribute('aria-busy'),'false');assert.equal(f.reads(),2);assert.equal(claims,1);assert.match(f.document.body.textContent,/Confirmation pending/i);
  await new Promise(setImmediate);assert.equal(f.core().status,orphaned?2:1);
  f.panel.close();f.panel.open({type:'post'});if(!orphaned)assert.match(f.document.querySelector('.composer-cost').textContent,/Balance —/,'spent fee display is invalidated');
  assert.equal((await f.panel.act({type:'like',post:'42'})).status,'confirmed');assert.equal(f.submissions.length,1);assert.equal(f.core().status,orphaned?2:1);
@@ -1030,7 +1030,7 @@ for(const mode of ['success','no-collateral','zero-credit','native-failure','acc
   assert.equal(f.document.querySelectorAll('button').some(b=>b.textContent==='Write a post'),mode==='success');
   if(mode==='no-collateral')assert(f.document.querySelectorAll('button').some(b=>b.textContent==='Set up posting'));
   if(mode==='zero-credit')assert(f.document.body.textContent.includes('Your deposit is already in place.'));
-  f.panel.close();f.panel.open({});f.document.querySelectorAll('button').find(b=>b.textContent==='Add posting credit').fire('click');assert(f.document.querySelectorAll('strong').some(n=>n.textContent===(mode==='zero-credit'?'0.00':'2.00')));
+  f.panel.close();f.panel.open({});f.document.querySelectorAll('button').find(b=>b.textContent==='Add posting credit').fire('click');assert(f.document.querySelectorAll('strong').some(n=>n.textContent===(mode==='zero-credit'?'0.00 AZTEC':'2.00 AZTEC')));
   if(mode==='success'){f.panel.close();assert.equal((await f.panel.act({type:'like',post:'42'})).status,'confirmed');assert.equal(f.submissions.length,1);}
  }else{
   await f.document.until(()=>f.document.querySelector('dialog').getAttribute('aria-busy')==='false');assert(!f.document.body.textContent.includes('Posting credit added'));assert.equal(f.core().status,1);
@@ -1325,7 +1325,7 @@ test('tip confirmation observes an already rendered checkpoint without blocking 
  f.session.observeIncluded=async input=>{observations++;return {status:'confirmed',txHash:input.txHash};};
  f.panel.observePublicPosts([],{checkpoint:{number:3,hash:blockHash},confirmationCheckpoint:{number:3,hash:blockHash}});
  await f.panel.act({type:'like',post:'9',tipKey:{x:'1',y:'2'}});await new Promise(setImmediate);
- assert.equal(observations,1);assert(f.document.body.textContent.includes('Send 20-credit tip: confirmed.'));
+ assert.equal(observations,1);assert(f.document.body.textContent.includes('Send 20-AZTEC tip: confirmed.'));
 });
 
 test('successful posting-credit claim survives unavailable display read and refreshes once without another payment',{timeout:3000},async t=>{
@@ -1341,7 +1341,7 @@ test('successful posting-credit claim survives unavailable display read and refr
  assert.match(identity.textContent,/Updating/);assert.equal(identity.querySelector('[data-posting-credit]').title,undefined);
  await entered.promise;assert.equal(payments,1);assert.equal(claims,1);assert.equal(reads,2);
  refreshed.resolve({availableCredit:'539000000000000000000'});
- await f.document.until(()=>identity.querySelector('[data-posting-credit]')?.textContent==='539.00');
+ await f.document.until(()=>identity.querySelector('[data-posting-credit]')?.textContent==='539.00 AZTEC');
  assert.equal(payments,1);assert.equal(claims,1);assert.equal(reads,2);assert.equal(f.core().status,1);
 });
 
@@ -1473,4 +1473,39 @@ for(const asset of ['ETH','USDC'])test(`posting topup displays USD and AZTEC for
  if(asset==='USDC'){const select=f.document.querySelector('select[aria-label="Pay with"]');select.value='USDC';select.fire('change');}
  await f.document.until(()=>f.document.querySelector('.credit-total')?.textContent.includes(asset==='ETH'?'$4.60 USD':'$5.12 USD'));
  assert(f.document.querySelector('input[aria-label="Amount (AZTEC)"]'));assert(f.document.querySelector('.credit-total').textContent.includes('AZTEC'));
+});
+
+test('board address hint names the problem, offers the corrected address and gates the review button',{timeout:3000},async t=>{
+ const f=await fixture(t,{defaults:{type:'subboard'},posting:{},balanceRead:async()=>({available:true,availableCredit:'0'}),ordinaryLimit:'9000000000000000'});
+ const controls=f.document.querySelectorAll('input,textarea').filter(n=>n.getAttribute('type')!=='hidden');const [slug,name,description]=controls;
+ assert.equal(slug.getAttribute('autocapitalize'),'none');
+ const hintOf=node=>f.document.querySelectorAll('.field-hint').find(p=>p.getAttribute('id')===node.getAttribute('aria-describedby'));
+ assert(hintOf(slug).textContent.includes('Lowercase letters, numbers and single hyphens'));assert.equal(hintOf(slug).dataset.tone,'quiet');
+ for(const [node,value] of [[name,'Book club'],[description,'Reading together']]){node.value=value;node.fire('input');}
+ slug.value='Book Club!';slug.fire('input');
+ const review=f.document.querySelector('[data-action-review]');
+ assert.equal(review.disabled,true);assert.equal(slug.getAttribute('aria-invalid'),'true');assert.equal(hintOf(slug).dataset.tone,'error');
+ assert(hintOf(slug).textContent.includes('Use lowercase letters only.'));assert(hintOf(slug).textContent.includes('Spaces are not allowed'));assert(hintOf(slug).textContent.includes('“!” is not allowed'));
+ const fix=hintOf(slug).querySelector('button');assert.equal(fix.textContent,'Use “book-club”');fix.fire('click');
+ assert.equal(slug.value,'book-club');assert.equal(hintOf(slug).dataset.tone,'ok');assert.equal(slug.getAttribute('aria-invalid'),null);assert.equal(review.disabled,false);
+ slug.value='book-club-';slug.fire('input');assert(hintOf(slug).textContent.includes('End with a letter or number'));assert.equal(review.disabled,true);
+ slug.value='book-club';slug.fire('input');assert.equal(review.disabled,false);
+ // Contract text limits are explained before the estimate instead of failing it.
+ name.value='n'.repeat(94);name.fire('input');assert.equal(review.disabled,true);assert.equal(name.getAttribute('aria-invalid'),'true');assert(hintOf(name).textContent.includes('1 character over the limit'));
+ name.value='n'.repeat(85);name.fire('input');assert.equal(review.disabled,false);assert(hintOf(name).textContent.includes('Nearly full'));assert.equal(hintOf(name).dataset.tone,'quiet');
+ name.value='Book club';name.fire('input');assert.equal(hintOf(name).hidden,true);
+ for(const node of [slug,name,description])assert.equal(node.getAttribute('aria-invalid'),null,'valid fields are not marked invalid');
+ review.fire('click');await f.document.until(()=>f.submissions.length===1);
+ assert.deepEqual(f.prepared(),{type:'subboard',slug:'book-club',name:'Book club',description:'Reading together',rules:''});
+});
+test('name part hints follow the registration policy before any preparation',{timeout:3000},async t=>{
+ const f=await fixture(t,{defaults:{type:'name'},posting:{},balanceRead:async()=>({available:true,availableCredit:'0'})});
+ const [first,last]=f.document.querySelectorAll('input').filter(n=>n.getAttribute('type')==='text');const review=f.document.querySelector('[data-action-review]');
+ const hintOf=node=>f.document.querySelectorAll('.field-hint').find(p=>p.getAttribute('id')===node.getAttribute('aria-describedby'));
+ first.value='René';first.fire('input');last.value='Lane';last.fire('input');
+ assert.equal(review.disabled,true);assert(hintOf(first).textContent.includes('“é” is not allowed'));assert.equal(hintOf(last).hidden,true);
+ first.value='Bok';first.fire('input');assert(hintOf(first).textContent.includes('reserved'));assert.equal(review.disabled,true);
+ first.value='   ';first.fire('input');assert.equal(review.disabled,true);assert(hintOf(first).textContent.includes('Enter a name'));
+ first.value='River';first.fire('input');assert.equal(hintOf(first).hidden,true);assert.equal(review.disabled,false);
+ last.value='Lane-';last.fire('input');assert(hintOf(last).textContent.includes('Start and end with a letter'));assert.equal(review.disabled,true);
 });

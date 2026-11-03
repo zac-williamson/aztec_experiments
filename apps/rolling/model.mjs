@@ -2,17 +2,62 @@ export const MAX_BYTES = 992;
 export const MAX_THREAD_POSTS = 4;
 const messageEncoder = new TextEncoder();
 const messageSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
-export function allowance(text) {
+export function allowance(text, max = MAX_BYTES) {
   const bytes = messageEncoder.encode(text).length;
   const segments = [...messageSegmenter.segment(text)];
   // Count whole visible characters beyond the longest prefix that fits. Never
   // split emoji or combining characters, or describe UTF-8 bytes as characters.
-  let excess = bytes - MAX_BYTES, overCharacters = 0;
+  let excess = bytes - max, overCharacters = 0;
   for (let i = segments.length - 1; excess > 0 && i >= 0; i--) {
     excess -= messageEncoder.encode(segments[i].segment).length;
     overCharacters++;
   }
-  return { bytes, characters: segments.length, overCharacters, remaining: MAX_BYTES - bytes, valid: bytes > 0 && bytes <= MAX_BYTES };
+  return { bytes, characters: segments.length, overCharacters, remaining: max - bytes, valid: bytes > 0 && bytes <= max };
+}
+// Contract text fields are packed 31 bytes per field (shared/rolling/application.mjs
+// `text(value, count)`): a board name has 3 fields, a description 16, rules and a
+// bio 32, a moderation reason 7.
+export const TEXT_LIMITS = Object.freeze({ boardName: 3 * 31, boardDescription: 16 * 31, boardRules: 32 * 31, moderationReason: 7 * 31, policy: 32 * 31 });
+// Board addresses (subboard slugs) follow `subboard_id` in rolling_contract/encoding.nr
+// and the identical check in shared/rolling/application.mjs: 3–40 lowercase ASCII
+// letters, digits and single hyphens, starting and ending with a letter or digit.
+export const BOARD_ADDRESS_PATTERN = /^[a-z0-9](?:[a-z0-9]|-(?!-)){1,38}[a-z0-9]$/;
+export const BOARD_ADDRESS_RULES = 'Lowercase letters, numbers and single hyphens only, 3–40 characters. Start and end with a letter or number.';
+const quote = chars => chars.map(c => `“${c === ' ' ? 'space' : c}”`).join(' ');
+export function checkBoardAddress(value) {
+  const text = typeof value === 'string' ? value : '', problems = [];
+  if (/[A-Z]/.test(text)) problems.push('Use lowercase letters only.');
+  if (/\s/.test(text)) problems.push('Spaces are not allowed. Put a hyphen between words instead.');
+  const other = [...new Set([...text].filter(c => !/^[A-Za-z0-9\s-]$/.test(c)))];
+  if (other.length) problems.push(`${quote(other)} ${other.length === 1 ? 'is' : 'are'} not allowed. Use only letters, numbers and hyphens.`);
+  if (text.startsWith('-')) problems.push('Start with a letter or number, not a hyphen.');
+  if (text.endsWith('-')) problems.push('End with a letter or number, not a hyphen.');
+  if (text.includes('--')) problems.push('Use a single hyphen between words.');
+  const length = [...text].length;
+  if (length > 0 && length < 3) problems.push('Use at least 3 characters.');
+  if (length > 40) problems.push(`Use at most 40 characters (${length} now).`);
+  const valid = BOARD_ADDRESS_PATTERN.test(text);
+  // A corrected form the reader can apply: accents stripped, lowercased, runs of
+  // anything else turned into one hyphen, trimmed to the length limit.
+  let suggestion = text.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  if (suggestion.length > 40) suggestion = suggestion.slice(0, 40).replace(/-+$/, '');
+  return { valid, problems, suggestion: !valid && suggestion !== text && BOARD_ADDRESS_PATTERN.test(suggestion) ? suggestion : '' };
+}
+// Name parts follow shared/rolling/name-policy.mjs (enforced again by the contract):
+// ASCII letters, spaces, apostrophes and hyphens, 1–32 characters once trimmed and
+// with repeated spaces collapsed, starting and ending with a letter. "Bok" is the
+// assistant's reserved first name. Returns '' when the part is empty or valid.
+export function checkNamePart(value, { first = false } = {}) {
+  const text = typeof value === 'string' ? value : '';
+  if (!text) return '';
+  if (!text.trim()) return 'Enter a name using letters.';
+  const other = [...new Set([...text].filter(c => !/^[A-Za-z '-]$/.test(c)))];
+  if (other.length) return `${quote(other)} ${other.length === 1 ? 'is' : 'are'} not allowed. Use unaccented letters (A–Z), spaces, apostrophes or hyphens.`;
+  const display = text.trim().replace(/ +/g, ' ');
+  if (display.length > 32) return `Use at most 32 characters (${display.length} now).`;
+  if (!/^[A-Za-z]/.test(display) || !/[A-Za-z]$/.test(display)) return 'Start and end with a letter.';
+  if (first && display.toLowerCase() === 'bok') return 'Bok is reserved for the assistant. Choose another first name.';
+  return '';
 }
 export function splitMessage(text) {
   let bytes = 0, end = text.length;

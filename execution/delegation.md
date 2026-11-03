@@ -642,3 +642,5 @@ Root owns the patch and live deployment. `bok_funding_review` independently trac
 Root owns implementation/deployment. budget_review reviewed 50 USDC defaults and exact pre-provider journal reset read-only. No contracts change.
 
 2026-11-03: bok_cap_review read-only audit completed. Confirmed application-owned 8192 caps and live config override; reviewed native/budget clamp and found context-fit mismatch. Root integrated native output clamp, 65536 hosted limits, modular editing guidance. 151 focused tests pass. No repair-response retry introduced.
+
+2026-11-03 PR12: pr12_review independently reviewed David's field-validation changes. Root fixed whitespace-only name submission and stale thread budget hints, plus existing cancelled-payment UI state. Final reviewer found no actionable issues. Model/composer 229/229; journey UI15/15; release JavaScript123/123 and Python suites passed.

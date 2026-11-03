@@ -116,6 +116,20 @@ screen-reader announcement.
 The inline "Create a name" form has a Cancel button, closes on Escape, closes
 when another posting name is chosen, and does not follow route changes.
 
+Every rule a transaction would reject is explained under its field before the
+cost estimate runs (`.field-hint`, linked by `aria-describedby`; the control is
+`aria-invalid` while the hint is an error). The board address names each problem
+(uppercase, spaces, other punctuation, leading or trailing hyphen, double
+hyphen, length) with a one-click "Use “book-club”" correction, and confirms a
+valid address; the rules themselves live in `checkBoardAddress` (`model.mjs`),
+mirroring the contract. Name parts follow `checkNamePart`; board name,
+description, rules and moderation text report byte-limit overruns in whole
+characters (`allowance(text, max)` with `TEXT_LIMITS`); Bok budgets, top-up
+amounts and Bok withdrawals explain malformed or oversized amounts and amounts
+above the balance. Text inputs that must stay lowercase set `autocapitalize`
+off so mobile keyboards do not break them. When the network cannot estimate a
+cost, a line under the estimate says so instead of a bare "Unavailable".
+
 ## Metadata
 
 `live.html` carries the description, canonical URL, theme colour, Open Graph and
