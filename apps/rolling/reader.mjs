@@ -251,6 +251,7 @@ function shell(title,{boardId=null,directory=false}={}){
  for(const entry of rail.querySelectorAll('nav a'))if(entry.hash.slice(1)===route||entry.hash==='#/directory'&&route.startsWith('/directory/')){entry.setAttribute('aria-current','page');entry.classList.add('active');}
  rail.querySelector('.rail-foot').append(el('br'),link('Help and privacy','/help'));
  provingControl?.dispose();provingControl=mountProvingPreference(provingPreference);rail.querySelector('.rail-foot').append(provingControl.element);
+ rail.querySelector('.rail-foot').append(el('a',{href:'https://github.com/zac-williamson/aztec_experiments/issues/new',target:'_blank',rel:'noopener noreferrer',class:'feedback-link'},'Report bug/give feedback'));
  const closeMenu=()=>{rail.classList.remove('open');rail.inert=narrow.matches;document.querySelector('.workspace').inert=false;menu.setAttribute('aria-expanded','false');menu.focus();};
  const menu=button(createIcon('menu'),()=>{rail.inert=false;rail.classList.add('open');document.querySelector('.workspace').inert=true;menu.setAttribute('aria-expanded','true');rail.querySelector('a').focus();},{class:'menu-toggle','aria-label':'Open navigation','aria-expanded':'false','aria-controls':'community-navigation'});
  rail.append(button(createIcon('close'),closeMenu,{class:'mobile-close','aria-label':'Close navigation'}));rail.inert=narrow.matches;

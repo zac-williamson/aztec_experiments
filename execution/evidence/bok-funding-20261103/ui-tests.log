@@ -1,0 +1,13 @@
+✔ G18 guest inline name entry can create an account and obtain a funding quote (835.074333ms)
+✔ regular post becomes visible at inclusion while checkpoint is pending (937.036958ms)
+✔ regular post becomes visible at inclusion while checkpoint later fails (482.639292ms)
+✔ Bok ETH payment failure releases close without waiting for optional inspection (511.38425ms)
+✔ Bok ETH credit success survives a failed balance refresh (479.009375ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3405.518708

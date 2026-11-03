@@ -9844,14 +9844,13 @@
   },
   "current_operating_request": {
     "date": "2026-11-03",
-    "task": "Integrate PR11 and fix website issues in David/Tyler Slack feedback over last24hours",
+    "task": "Repair Bok funding failure and disabled modal close after failure",
     "status": "active",
     "lanes": [
-      "root UI integration/publication",
-      "Rabby payment diagnosis",
-      "generated SDK CI repair"
+      "root funding diagnostics and integration",
+      "independent funding lifecycle review"
     ],
-    "checkpoint": "Slack messages read; PR11 merged locally; wallet and build investigations delegated; no contract redeployment"
+    "checkpoint": "Inspect current mainnet top-up paths and safe browser diagnostics; preserve deployed contracts"
   },
   "completed_operating_requests": [
     {

@@ -185,6 +185,9 @@ function fundingFailureText(failure){
 
 export function aggregateFundingFailure(failure){
  const paymentState=Object.getOwnPropertyDescriptor(failure??{},'fundingPaymentState')?.value;
+ if(paymentState==='credited')return 'Your credit was added. The balance display could not refresh; you can close this window.';
+ const causeCode=Object.getOwnPropertyDescriptor(failure??{},'code')?.value;
+ if(paymentState==='confirmed'&&causeCode==='PRIVATE_FEE_BALANCE_INSUFFICIENT')return 'Your payment arrived. Add posting credit to cover the network fee, then finish adding your Bok credit. Do not pay again.';
  if(fundingPaymentStates.has(paymentState))return paymentState==='unknown'?'Payment status is uncertain. Continue checking this payment.':paymentState==='credited'?'Credit received. Account setup could not finish.':paymentState==='confirmed'?'Payment received. Account setup could not finish.':'Payment is still being checked. Account setup could not finish.';
  const message=fundingFailureText(failure);
  const exchanged=Object.getOwnPropertyDescriptor(failure??{},'topupExchanged')?.value===true;
@@ -564,7 +567,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     const selector=identityControls.querySelector('select');if(selector?.isConnected){selector.focus({preventScroll:true});selector.scrollIntoView({block:'nearest'});}
    }
    // Failed actions must expose their feedback even when the form was scrolled.
-   if(error&&dialog.open){const alert=content.querySelector('[role=alert]');alert.focus({preventScroll:true});alert.scrollIntoView({block:'nearest'});}}finally{transactionTiming.complete();finishTiming();finishOperation();requestAccountRefresh();requestPostingCredit();requestComposerPreparation();}
+   if(error&&dialog.open){const alert=content.querySelector('[role=alert]');alert?.focus({preventScroll:true});alert?.scrollIntoView({block:'nearest'});}}finally{busy=false;dialog.setAttribute('aria-busy','false');closeButton.disabled=false;transactionTiming.complete();finishTiming();finishOperation();requestAccountRefresh();requestPostingCredit();requestComposerPreparation();}
   }
  }
  function unlocked(){if(invalidated||reloadRequired)return false;const current=runtime?runtime.getAccount():null;if(accountIdentity&&current!==accountIdentity){invalidated=true;clearPrivateView();note('The account changed. Reload before continuing.');return false;}return !!current;}
@@ -1557,11 +1560,9 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    if(provisional){const claimed=result.intent;includedObservation={txHash:claimed.txHash,action:claimed.action,inclusion:claimed.inclusion,observed:null};actionFeedback.textContent='Credit added: confirmation pending.';actionFeedback.hidden=false;requestIncludedObservation();}
    const bokTopup=view==='topup'&&topupKind==='bok';stopFunding();
    if(bokTopup){
-    // The fresh native Bok balance is the completion read. This claim does
-    // not change collateral; invalidate its spent fee display without another
-    // full inventory scan. The next transaction still checks native state.
-    invalidateBokBalance();await measureRollingStage('action.required-account-refresh',loadBok);checkAccount(epoch);
-    if(bokBalance.snapshot().phase!=='ready'||bokStatus?.available!==true)throw connectionFailure;
+    // Inclusion completes funding. Refresh the display independently; a failed
+    // balance read must never turn received credit into a failed payment.
+    invalidateBokBalance();bokRefreshNeeded=true;
     if(status){status={...status};delete status.privateFeeCredit;}
     intent=null;blocked=false;balances=null;bokAccounting=null;
    }else if(view==='topup'&&topupKind==='private-fee'){
@@ -1623,6 +1624,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     if(epoch!==accountEpoch||view!=='topup')return;
     let current;try{current=topupSelection();}catch{return;}if(current?.key!==key)return;
     topupQuoteError=aggregateFundingFailure(topupFailure(failure,'quote'));
+    dialog.setAttribute('data-rolling-funding',JSON.stringify({stage:'funding',step:'quote',state:'failed',...fundingErrorShape(failure)}));
     try{const saved=await cap.inspect();checkAccount(epoch);if(saved?.paymentSaved&&!saved.completed)topupSaved=saved;}catch{}
    }
   })().finally(()=>{topupQuotePending=null;updateTopupQuote();if(view==='topup'&&!busy)queueMicrotask(requestTopupQuote);});
@@ -1661,7 +1663,10 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    try{
     const payment=await runTopupPayment(cap,selected.input,q,phase=>{checkAccount(epoch);note(phase==='confirmation'?'Waiting for Ethereum confirmation…':phase==='approval'?(isBok?'Approve USDC spending in your wallet…':'Approve FEE spending in your wallet…'):'Confirm your payment in your wallet…');});
     checkAccount(epoch);if(payment&&!payment.pending)metric('payment_confirmed');topupSaved={paymentSaved:true,phase:'deposit',...selected.input};fundingAutomatic=true;try{await advanceFunding();}catch(error){stopFunding();throw topupFailure(error,'claim');}
-   }catch(failure){topupQuoteError=aggregateFundingFailure(failure)??'The payment could not complete. Refresh the price and try again.';try{topupSaved=await cap.inspect();}catch{}throw failure;}
+   }catch(failure){topupQuoteError=aggregateFundingFailure(failure)??'The payment could not complete. Refresh the price and try again.';// Do not hold failed-payment controls hostage to another wallet read.
+    // Continue checks the saved transaction before authorizing any new payment.
+    topupSaved??={paymentSaved:true,phase:'deposit',...selected.input};
+    dialog.setAttribute('data-rolling-funding',JSON.stringify({stage:'funding',step:failure.topupStage??'payment',state:'failed',...fundingErrorShape(failure)}));throw failure;}
   },aggregateFundingFailure),true);
   const retry=button('Refresh price',()=>{resetTopupQuote();requestTopupQuote();});
   const resume=button('Continue payment',()=>void work(()=>continueTopup(cap,isBok),aggregateFundingFailure));
@@ -1921,7 +1926,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    }
   }
  }
- function close(){if(!actionOperation?.included&&(busy||!initializing&&session?.busy&&!bokBalance.pending&&!topupQuotePending&&!postingCreditPending&&!accountRefreshPending&&!composerPreparation)){note('An account operation is in progress. Wait before closing.');return false;}pendingReply=null;cancelCostPreview();stopFunding();stopRefundWatch();recoveryInspection=null;releasePreviews();if(dialog.open)dialog.close();return true;}
+ function close(){if(!actionOperation?.included&&(busy||!error&&!initializing&&session?.busy&&!bokBalance.pending&&!topupQuotePending&&!postingCreditPending&&!accountRefreshPending&&!composerPreparation)){note('An account operation is in progress. Wait before closing.');return false;}pendingReply=null;cancelCostPreview();stopFunding();stopRefundWatch();recoveryInspection=null;releasePreviews();if(dialog.open)dialog.close();return true;}
  dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
  dialog.addEventListener('close',()=>{cancelCostPreview();emitStatus();if(returnFocus?.isConnected)returnFocus.focus();});
  dialog.addEventListener('keydown',event=>{

@@ -633,3 +633,7 @@ Root integrates conversation navigation, fee presentation and tip confirmation. 
 
 ## 3 November — David/Tyler feedback and PR11
 Root integrates PR11 and Slack UX feedback. pr11_build_fix repairs generated-consumer drift in isolated checkout; rabby_payment_fix investigates Rabby payment in isolated checkout; pr11_review reviews status, grouping and privacy claims read-only. No contract deployment.
+
+## 3 November: Bok funding completion and dismissal
+
+Root owns the patch and live deployment. `bok_funding_review` independently traced failure cleanup, worker busy state and successful-claim balance refresh. Review found no blocking regression. Scope includes the owner's sidebar GitHub feedback link; no contract changes.

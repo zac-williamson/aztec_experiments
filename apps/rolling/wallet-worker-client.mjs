@@ -6,7 +6,7 @@ import {APPLICATION_METHODS,FUNDING_METHODS,TOPUP_METHODS,WITHDRAWAL_METHODS,DEP
 export function createRollingWorkerClient({worker,contextGuard=()=>{},captureFundingWallet,onProgress=()=>{},profile=false}){
  let next=0,closed=false,closing=false,active=0,blocking=0,metadata={},progress=onProgress;const requests=new Map(),wallets=new Map();let walletId=0;const backgroundState=new Map();
  const check=async()=>{if(closed)throw workerFailure();await contextGuard();if(closed)throw workerFailure();};
- function failAll(){if(closed)return;closed=true;for(const request of requests.values()){request.cleanup();request.reject(workerFailure());}requests.clear();wallets.clear();worker.terminate();}
+ function failAll(){if(closed)return;closed=true;for(const request of requests.values()){request.cleanup();request.reject(workerFailure());}requests.clear();wallets.clear();active=0;blocking=0;backgroundState.clear();worker.terminate();}
  async function custody(message){
   try{
    await check();if(!CUSTODY_METHODS.includes(message.method))throw workerFailure();
@@ -60,7 +60,7 @@ export function createRollingWorkerClient({worker,contextGuard=()=>{},captureFun
    const abort=()=>{if(!closed)worker.postMessage({type:'abort',id});};
    const cleanup=()=>signals.forEach(signal=>signal.removeEventListener('abort',abort));
    requests.set(id,{resolve,reject,callbacks,cleanup,blocking:ownsBusy});active++;if(ownsBusy)blocking++;
-   Promise.resolve().then(check).then(()=>{if(!requests.has(id))return;worker.postMessage({type:'call',id,method,args:payload,callbacks:[...callbacks.keys()],signal:signals.length>0});for(const signal of signals){signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();}},error=>{if(requests.delete(id)){active--;if(ownsBusy)blocking--;cleanup();reject(error);}});
+   Promise.resolve().then(check).then(()=>{if(!requests.has(id))return;worker.postMessage({type:'call',id,method,args:payload,callbacks:[...callbacks.keys()],signal:signals.length>0});for(const signal of signals){signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();}}).catch(error=>{if(requests.delete(id)){active--;if(ownsBusy)blocking--;cleanup();reject(error);}});
   });
  }
  const group=(prefix,names)=>Object.freeze(Object.fromEntries(names.map(name=>[name,(...args)=>invoke(prefix+'.'+name,args)])));

@@ -49,9 +49,9 @@ const funding={async prepareStarter({asset}){return this.prepare({asset,collater
  async recover(){state.fundingRecovers=(state.fundingRecovers??0)+1;return {receipt:{txHash:'0x'+'1'.repeat(64)},feeReceipt:{txHash:'0x'+'1'.repeat(64)},...(state.fundingAllocation?.bokAmount==='0'?{}:{bokReceipt:{txHash:'0x'+'1'.repeat(64)}})};}
 };
 const topup=Object.fromEntries(['private-fee','bok'].map(kind=>{const local={};const cap={defaultPrivateFeeCap:'1000',get ethAvailable(){return state.ethTopup===true;},usdcAvailable:true,pauseClaim:()=>{local.paused=true;},advanceClaim:()=>{local.paused=false;return advanceAggregateClaim({application,funding:cap,onProgress:row=>state.sessionProgress(row),paused:()=>local.paused});},
- async prepare(input){input={gasBudgetWei:'3000000000000000',...input};state.topupReview={kind,...input};await boundary('topup-review');local.phase=local.approved?'deposit':'approval';return {kind,phase:local.phase,...input,...(state.ethTopup?{maximumSwapWei:'250000000000000',maximumUsdc:'750000'}:{}),walletName:'MetaMask'};},
+ async prepare(input){input={gasBudgetWei:'3000000000000000',...input};state.topupReview={kind,...input};await boundary('topup-review');local.phase=state.ethTopup||local.approved?'deposit':'approval';return {kind,phase:local.phase,...input,...(state.ethTopup?{maximumSwapWei:'250000000000000',maximumUsdc:'750000'}:{}),walletName:'MetaMask'};},
  async confirm(){state.topupPayments=(state.topupPayments??0)+1;await boundary('topup-payment');if(local.phase==='approval'){local.approved=true;return {approved:true};}local.paid=true;return cap.recover();},
- async inspect(){return {paymentSaved:local.paid,claim:local.claim??null,privateFeeCap:'1000',claimAction:kind==='bok'?'claim-bok':'claim-private-fee'};},
+ async inspect(){state.topupInspects=(state.topupInspects??0)+1;await boundary('topup-inspect');return {paymentSaved:local.paid,claim:local.claim??null,privateFeeCap:'1000',claimAction:kind==='bok'?'claim-bok':'claim-private-fee'};},
  async checkpointClaim(value){local.claim=value;},async recover(){return {receipt:{txHash:'0x'+'1'.repeat(64),amount:'300'}};},async reviewRevertedClaim(){local.claim=null;}
  };return [kind,cap];}));
 application.executeAction=(action,options)=>executeRollingAction(application,structuredClone(action),options);
@@ -1810,4 +1810,26 @@ test('inline name draft survives feed refresh but closes on route navigation',as
  assert.equal(await page.getByLabel('First name',{exact:true}).inputValue(),'Ada');
  await page.evaluate(()=>panel.attachIdentityControls(document.querySelector('#posting-names'),{route:'/directory'}));
  assert.equal(await page.getByLabel('First name',{exact:true}).isVisible(),false);
+});
+
+async function bokTopupForm(page){
+ await page.evaluate(()=>{test.topupEnabled=true;test.ethTopup=true;test.bokCredit='0';});await open(page);await navigateAccount(page,'Add Bok credit');
+ await page.waitForFunction(()=>document.querySelector('.credit-total')?.textContent.includes('0.00025 ETH'));
+}
+test('Bok ETH payment failure releases close without waiting for optional inspection',async t=>{
+ const {page}=await browserFixture(t);await bokTopupForm(page);
+ await page.evaluate(()=>{test.failure='topup-payment';test.hold='topup-inspect';});
+ await page.getByRole('button',{name:'Pay',exact:true}).click();await page.getByRole('alert').waitFor();
+ assert.equal(await page.getByRole('button',{name:'Close account panel',exact:true}).isEnabled(),true);
+ assert.equal(await page.evaluate(()=>test.topupInspects??0),0);
+ assert.equal(await page.getByRole('button',{name:'Pay',exact:true}).isVisible(),false);
+ await page.getByRole('button',{name:'Close account panel',exact:true}).click();assert.equal(await page.locator('dialog').isVisible(),false);
+});
+test('Bok ETH credit success survives a failed balance refresh',async t=>{
+ const {page}=await browserFixture(t);await bokTopupForm(page);
+ await page.evaluate(()=>test.failure='bok');await page.getByRole('button',{name:'Pay',exact:true}).click();
+ await page.getByText('Bok credit added.',{exact:true}).waitFor();
+ assert.equal(await page.getByRole('alert').count(),0);assert.equal(await page.evaluate(()=>test.topupPayments),1);
+ assert.equal(await page.evaluate(()=>JSON.parse(sessionStorage.getItem('labelled-ui-intent')).action.type),'claim-bok');
+ await page.getByRole('button',{name:'Close account panel',exact:true}).click();assert.equal(await page.locator('dialog').isVisible(),false);
 });

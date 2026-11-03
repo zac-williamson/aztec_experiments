@@ -1,0 +1,24 @@
+{
+  "originalDeposit": {
+    "transaction": "0x8d38eb13e780e2101f0caa2dd43cc85b1b55e692e8312384054ffdc1b3f4a3ab",
+    "ethereumStatus": 1,
+    "block": 26331722,
+    "usdc": 10
+  },
+  "managedTestDeposit": {
+    "transaction": "0x70680cad5540ad8edc8e86fbf5e82050287bd401dd83586d08139c36ad39db53",
+    "ethereumStatus": 1,
+    "block": 26331772,
+    "usdc": 1,
+    "path": "createStandaloneTopupWallet prepare and confirm; real Ethereum journal and effect verification",
+    "aztecClaimTested": false
+  },
+  "regressions": [
+    "successful claim survives failed balance refresh",
+    "failed ETH payment releases Close without inspecting again",
+    "worker error/messageerror releases busy state",
+    "failed message dispatch releases busy state"
+  ],
+  "contractsChanged": false,
+  "reviewer": "bok_funding_review"
+}

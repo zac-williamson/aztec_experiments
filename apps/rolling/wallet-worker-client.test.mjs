@@ -32,3 +32,15 @@ const switchLocal=client.setRemoteProving(false);const switchCall=await next(m=>
 const switchRemote=client.setRemoteProving(true);const remoteCall=await next(m=>m.type==='call');port2.postMessage({type:'result',id:remoteCall.id,error:{name:'Error',code:'ROLLING_BUSY'}});await assert.rejects(switchRemote,{code:'ROLLING_BUSY'});assert.equal(client.busy,false);
 const restored=restoreError(errorRecord(new AggregateError([new ReferenceError('SECRET')],'SECRET')));assert(restored instanceof AggregateError);assert(restored.errors[0] instanceof ReferenceError);assert(!JSON.stringify(errorRecord(restored)).includes('SECRET'));
 assert.equal(client.topup['private-fee'].ethAvailable,true);assert.equal(client.topup['private-fee'].usdcAvailable,true);assert.equal(client.topup.bok.ethAvailable,true);client.terminate();assert(stopped);console.log('PASS actual MessageChannel: distinct callback IDs + held/rejected preparation, presentation isolation, exact custody hash, abort/nonblocking observation, safe real error kinds, metadata, termination');
+
+for(const event of ['error','messageerror']){
+ const handlers=new Map();let terminated=false;
+ const crashed=createRollingWorkerClient({worker:{postMessage(){},addEventListener:(name,fn)=>handlers.set(name,fn),terminate(){terminated=true;}}});
+ const pending=crashed.topup.bok.confirm();const rejected=assert.rejects(pending);assert.equal(crashed.busy,true);
+ handlers.get(event)();await rejected;assert.equal(crashed.busy,false);assert(terminated);assert.deepEqual(crashed.backgroundStatus,[]);
+}
+console.log('PASS worker failure releases busy state');
+
+const unsendable=createRollingWorkerClient({worker:{postMessage(){throw new Error('transport failed');},addEventListener(){},terminate(){}}});
+await assert.rejects(unsendable.topup.bok.prepare({amount:'1'}),/transport failed/);assert.equal(unsendable.busy,false);unsendable.terminate();
+console.log('PASS failed message dispatch releases busy state');
