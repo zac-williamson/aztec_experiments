@@ -111,8 +111,9 @@ export function veniceMeteredProvider({client,model='kimi-k2-5',autoTopUp=false,
    // Conservative byte-sized input allowance: do not estimate four characters
    // per token. Include the exact outgoing JSON and reserve the requested output.
    // The provider's actual tokenizer/context enforcement remains authoritative.
-   const bytes=Buffer.byteLength(JSON.stringify(completionBody(input,modelId,input.maxTokens)));
-   return bytes+input.maxTokens<=spec.availableContextTokens;
+   const maxTokens=Math.min(input.maxTokens,spec.maxCompletionTokens??spec.availableContextTokens);
+   const bytes=Buffer.byteLength(JSON.stringify(completionBody(input,modelId,maxTokens)));
+   return bytes+maxTokens<=spec.availableContextTokens;
   },
   async quote(input,available){
    const modelId=input.modelId??model;

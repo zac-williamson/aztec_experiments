@@ -53,3 +53,11 @@ test('an uncertain later call retains the whole reservation without replay or pa
  const model=meteredModel({postId:'p',provider:{quote:async(_,n)=>({maximum:n}),execute:async()=>{if(++calls===2)throw Error('timeout');return {charge:7n,receipt:'one',message:{}};}},escrow:{available:async()=>100n,reserve:async(_,maximum)=>({call:0,maximum}),assertUsable:async()=>{},settle:async()=>settles++,close:async()=>closes++}});
  await model.complete({});await assert.rejects(model.complete({}),/timeout/);await model.closeWithoutReply();await assert.rejects(model.complete({}),/Uncertain/);assert.deepEqual([calls,settles,closes],[2,0,1]);
 });
+
+ test('large native completion limits respect model and remaining task budget',()=>{
+ const model={availableContextTokens:256000,maxCompletionTokens:65536,capabilities:{supportsFunctionCalling:true},pricing:{input:{usd:0.6},output:{usd:2.5}}};
+ const full=quoteCall(model,9000000n,65536);
+ assert.equal(full.maxTokens,65536);assert.ok(full.maximum<9000000n);
+ const limited=quoteCall(model,200000n,65536);assert.ok(limited.maxTokens<65536);assert.ok(limited.maximum<=200000n);
+ assert.equal(quoteCall({...model,maxCompletionTokens:32768},9000000n,65536).maxTokens,32768);
+ });

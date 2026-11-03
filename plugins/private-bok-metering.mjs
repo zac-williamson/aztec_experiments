@@ -73,7 +73,7 @@ export function privateBokMetering({provider,escrow,store,identity,limits={},acc
  const mode=accountingMode;
  if(savedMode&&(savedMode.accountingMode??'per-call')!==mode)throw Error('Request accounting mode mismatch');
  if(!['per-call','invocation-v1'].includes(mode))throw Error('Unsupported accounting mode');
- const cap={maxCalls:limits.maxCalls??8,maxInputBytes:limits.maxInputBytes??65536,maxTokens:limits.maxTokens??(mode==='invocation-v1'?8192:1500),
+ const cap={maxCalls:limits.maxCalls??8,maxInputBytes:limits.maxInputBytes??65536,maxTokens:limits.maxTokens??(mode==='invocation-v1'?65536:1500),
   maxReservation:amount(limits.maxReservation??50000000n),maxBudget:amount(limits.maxBudget??50000000n)};
  if(!uint(cap.maxCalls,64)||!cap.maxCalls||!uint(cap.maxInputBytes,1048576)||!cap.maxInputBytes||!uint(cap.maxTokens,1000000)||!cap.maxTokens||!cap.maxReservation||!cap.maxBudget)throw Error('Invalid request limits');
  const savedCaps={...cap,maxReservation:String(cap.maxReservation),maxBudget:String(cap.maxBudget)};

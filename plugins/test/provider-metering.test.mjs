@@ -180,7 +180,8 @@ test('capacity uses whole outgoing UTF-8 body plus output, reusing invocation ca
  const request={messages:[{role:'user',content:'x'.repeat(8200)}],tools:[{type:'function',function:{name:'tool',parameters:{type:'object'}}}],maxTokens:100};
  assert.equal(await provider.canFitInput(request),true);
  assert.equal(await provider.canFitInput({...request,messages:[{role:'user',content:'🌎'.repeat(2500)}]}),false);
- assert.equal(await provider.canFitInput({...request,maxTokens:2000}),false);
+ // The provider caps this model at 100 output tokens, even when more are requested.
+ assert.equal(await provider.canFitInput({...request,maxTokens:65536}),true);
  assert.deepEqual([catalogues,credits,inference],[1,0,0]);
  await provider.quote(request,1000000n);assert.deepEqual([catalogues,credits,inference],[1,1,0]);provider.close();
  await assert.rejects(async()=>provider.canFitInput(request),/closed/);
