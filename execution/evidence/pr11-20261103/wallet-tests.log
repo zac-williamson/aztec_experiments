@@ -1,0 +1,14 @@
+✔ G18 creates a name entirely inline, waits for confirmation and selects verified ownership (644.22675ms)
+✔ G18 inline name failure preserves the draft without sending and cancel stays on page (694.54175ms)
+✔ G18 guest inline name entry can create an account and obtain a funding quote (601.875875ms)
+✔ regular post becomes visible at inclusion while checkpoint is pending (914.788042ms)
+✔ regular post becomes visible at inclusion while checkpoint later fails (465.978375ms)
+✔ inline name draft survives feed refresh but closes on route navigation (157.326917ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3640.083875

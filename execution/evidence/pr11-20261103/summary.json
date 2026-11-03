@@ -1,0 +1,44 @@
+{
+  "sourceRevision": "9a0163f33af01c9ba7d2fda40ade9112819f500d",
+  "pullRequest": 11,
+  "slackChannel": "C0C7FH5472L",
+  "feedbackWindow": "2026-11-02T01:44:38Z/2026-11-03T01:44:38Z",
+  "site": "https://rolling.chat",
+  "contractsRedeployed": false,
+  "checks": {
+    "generatedConsumers": 229,
+    "paymentAndFeed": 281,
+    "readerAndProfile": 70,
+    "walletFocused": 6,
+    "stagingPublicAssets": 119,
+    "livePublicAssets": 119
+  },
+  "browserVerified": [
+    "existing posts render",
+    "replies grouped with parents",
+    "gift confirmation and cancellation",
+    "gift count labels",
+    "named avatar opens profile",
+    "profile exposes Follow name",
+    "thread Back returns to previous profile"
+  ],
+  "paymentValidation": {
+    "cause": "EIP-7702 delegated wallet requires ERC-1271 signature envelope",
+    "validated": "Read-only Ethereum calls using actual Alchemy delegate bytecode and ephemeral signer, versions 1.0.0 and 1.1.0",
+    "liveUserPaymentSent": false
+  },
+  "ciRun": "https://github.com/zac-williamson/aztec_experiments/actions/runs/41563591526",
+  "ciAtPublication": "in progress",
+  "outOfScopeObservations": [
+    "Core bootstrap-era monitor still compares against historical testnet configuration; application/prover/query services are running.",
+    "Legacy release pruning expects release directory names to match historical manifest revisions."
+  ],
+  "liveServices": {
+    "rolling-application": "active",
+    "rolling-staging": "active",
+    "board-prover": "active",
+    "rolling-query": "active",
+    "rolling-moderator": "active"
+  },
+  "deploymentCommand": "b6278979-2b1d-4628-b45a-8de227ec4df7"
+}
