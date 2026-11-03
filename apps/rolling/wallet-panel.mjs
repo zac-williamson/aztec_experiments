@@ -461,7 +461,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
  function stageCopy(stage,kind){
   const noun=currentNoun(kind);
   return {headline:{prepare:`Preparing ${noun}…`,prove:`Proving ${noun} privately…`,submit:`Sending ${noun} to Aztec…`,included:`${capital(noun)} is on Aztec. Final confirmation pending…`}[stage],
-   help:{prepare:'Checking your private balance and the current rules. Nothing has been sent yet.',prove:'A zero-knowledge proof lets the network verify this action without learning who you are. This is the longest step.',submit:'Keep this page open until Aztec accepts the transaction.',included:'Accepted into a block. Final confirmation usually follows within a minute; you can keep reading.'}[stage]};
+   help:{prepare:'Checking your private balance and the current rules. Nothing has been sent yet.',prove:'A zero-knowledge proof lets the network verify this action without learning who you are. ',submit:'Keep this page open until Aztec accepts the transaction.',included:'Accepted into a block. Waiting for the network checkpoint, not moderator approval. You can keep reading.'}[stage]};
  }
  function emitStatus(){const inPage=dialog.open||(inlineCreation&&!inlineName.hidden);try{onStatus(statusSnapshot?{...statusSnapshot,inPage}:null);}catch{}}
  // A status that has just appeared scrolls into view: on small screens the
@@ -475,7 +475,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   if(!outcome||error){hideStatus();return;}
   const noun=capital(nouns[outcome.type]??'your action');
   if(outcome.confirmed)showStatus({stage:'done',headline:noun+' is confirmed on Aztec.',help:'',tone:'done'});
-  else showStatus({stage:'included',headline:noun+' is on Aztec. Final confirmation pending…',help:'You can keep reading. This finishes on its own.'});
+  else showStatus({stage:'included',headline:noun+' is on Aztec. Final confirmation pending…',help:'Waiting for the network checkpoint, not moderator approval. This updates automatically.'});
  }
  // `stage` names the transaction step for the status bar; `live` keeps the plain
  // announcement. Account setup keeps its own full-height progress layout.
@@ -611,9 +611,9 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    let stage;try{const own=Object.getOwnPropertyDescriptor(progress??{},'stage');if(own&&Object.hasOwn(own,'value')&&typeof own.value==='string')stage=own.value;}catch{}
    transactionTiming.progress(stage);
    const funding=fundingAutomatic||fundingActiveCapability,kind=funding?(fundingKind==='bok'?'bok-credit':'posting-credit'):null;
-   const txStage=diagnostic?.stage==='funding-claim'?({inspect:'prepare',recover:'prepare','account-status':'prepare',prepare:'prove',checkpoint:'prove',submit:'submit',reconcile:'included'})[diagnostic.step]??'prepare':diagnostic?.stage?null:({estimating:'prepare',preparing:'prepare',proving:'prove',submitting:'submit',confirming:'included','posting-waiting':'prepare'})[stage]??null;
+   const txStage=diagnostic?.stage==='funding-claim'?({inspect:'prepare',recover:'prepare','account-status':'prepare',prepare:'prove',checkpoint:'prove',submit:'submit',reconcile:'submit'})[diagnostic.step]??'prepare':diagnostic?.stage?null:({estimating:'prepare',preparing:'prepare',proving:'prove',submitting:'submit',confirming:'submit','posting-waiting':'prepare'})[stage]??null;
    const setupMessages={'account-lock':'Opening your account…','trusted-node':'Connecting to the network…',deployment:'Checking the network…','account-derive':'Preparing your private account…','store-open':'Saving your account on this device…','pxe-create':'Preparing your private account…','account-register':'Preparing your private account…','contracts-register':'Preparing your private account…','initial-sync':'Syncing your account with the network…','journal-open':'Finishing account setup…','wallet-bind':'Finishing account setup…','account-manager':'Finishing account setup…','application-bind':'Finishing account setup…'};
-   note(setupMode&&diagnostic?.stage==='session-initialization'?(setupMessages[diagnostic.step]??'Finishing account setup…'):setupMode&&diagnostic?.stage==='private-refresh'?'Checking your account balance…':diagnostic?.stage==='funding-claim'?fundingProgressMessage(diagnostic,fundingKind):Object.hasOwn(stages,stage)?stages[stage]:fundingAutomatic||fundingActiveCapability?(diagnostic?.stage==='private-refresh'?`Checking your ${credit}…`:`Adding your ${credit}…`):postingInProgress?'Posting…':'Loading your account…',{stage:txStage,kind});progressNote=true;
+   note(setupMode&&diagnostic?.stage==='session-initialization'?(setupMessages[diagnostic.step]??'Finishing account setup…'):setupMode&&diagnostic?.stage==='private-refresh'?'Checking your account balance…':diagnostic?.stage==='funding-claim'?fundingProgressMessage(diagnostic,fundingKind):Object.hasOwn(stages,stage)?stages[stage]:fundingAutomatic||fundingActiveCapability?(diagnostic?.stage==='private-refresh'?`Checking your ${credit}…`:`Adding your ${credit}…`):postingInProgress?'Posting…':'Loading your account…',{stage:txStage,kind,help:stage==='confirming'||diagnostic?.step==='reconcile'?'Waiting for Aztec to include the transaction.':undefined});progressNote=true;
   }});}
   if(setupMode&&runtime.startedFreshAccount?.()&&session.funding){
    // An explicit new test account has a new derivation nonce. Its payment does
@@ -658,7 +658,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   render();return initializationPending;
  }
  const privacyNote=text=>el('p',{class:'privacy-note'},createIcon('lock'),el('span',{},text));
- function privacyDetails(){return el('details',{class:'account-details'},el('summary',{},'How privacy works'),paragraph('Your wallet funds a private account on the Aztec network. Posts, replies, tips and names are published from that account, so nothing on-chain links them to your wallet, and other readers cannot tell which posts share an account.'),paragraph('Posts themselves are public. Ethereum funding amounts and timing are public. This version uses a trusted proving service that can see the private data it processes.'));}
+ function privacyDetails(){return el('details',{class:'account-details'},el('summary',{},'How privacy works'),paragraph('Your wallet funds a private account on the Aztec network. Posts, replies, tips and names are published from that account, without publishing your wallet address beside your posts. Posts using the same name and replies are publicly linked.'),paragraph('Posts themselves are public. Ethereum funding amounts and timing are public. This version uses a trusted proving service that can see the private data it processes.'));}
  function walletChoices(target,connectWallet){
   const choices=runtime.fundingWallets();
   if(!Array.isArray(choices)||choices.length>32)throw connectionFailure;
@@ -681,7 +681,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   target.append(list,button('Refresh wallet list',()=>render()));
  }
  function custody(){
-  content.append(paragraph(runtime.startingTestAccount?.()?'Connect your wallet to start a new test account with an empty posting balance.':'Connect your Ethereum wallet to open a private account on Aztec. Use the same wallet whenever you come back.'),privacyNote('Your wallet only opens and funds the account. It is never shown beside your posts, and nothing on-chain links the two.'));
+  content.append(paragraph(runtime.startingTestAccount?.()?'Connect your wallet to start a new test account with an empty posting balance.':'Connect your Ethereum wallet to open a private account on Aztec. Use the same wallet whenever you come back.'),privacyNote('Your wallet only opens and funds the account. Your wallet address is not published beside your posts.'));
   if(typeof runtime.fundingWallets!=='function'||typeof runtime.signInWallet!=='function'){content.append(paragraph('Wallet sign-in is unavailable. Reload the page to try again.'));return;}
   walletChoices(content,choice=>void work(async()=>{
    startSetup();note('Approve sign-in in '+choice.name+'…');await runtime.signInWallet(choice.id);metric('wallet_connected');await connect();
@@ -1321,7 +1321,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     avatarInput();
    }
   }else if(kind==='name'){
-   content.append(paragraph('Choose a public name, not necessarily your real one. Names are unique and cannot be changed. Use letters, spaces, apostrophes or hyphens.'));
+   content.append(paragraph('Choose a public name, not necessarily your real one. Names are unique and cannot be renamed. You can create more names or switch to Anonymous in Post as. Use letters, spaces, apostrophes or hyphens.'));
    const first=input('first','First name'),last=input('last','Last name');
    // Reversible proposal vocabulary: eight valid values per part, uniformly picked
    // from local cryptographic random bits. Availability is never inferred locally.
@@ -1332,7 +1332,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   }else if(kind==='subboard'){
    content.append(paragraph('Create a space for a topic or community. Its web address is permanent. The site’s rules apply alongside your board’s rules.'));
    input('slug','Board address (e.g. book-club)');input('name','Board name');input('description','Description',{area:true});input('rules','Additional rules',{area:true,required:false});
-  }else if(kind==='like'){target('post');content.append(paragraph('Gift 20.00 credits to the author. Network fees are additional.'),privacyNote('Sent from your private Aztec account. The author sees the gift, never who sent it.'));}
+  }else if(kind==='like'){target('post');content.append(paragraph('Gift 20.00 credits to the author. Network fees are additional.'),privacyNote('Sent from your private Aztec account. The gift does not publish your wallet address.'));}
   else{
    const names=el('select',{'aria-label':'Posting identity'},el('option',{value:'0'},'Anonymous'));
    for(const record of identityRecords)names.append(el('option',{value:record.id},`${record.first} ${record.last}`));
@@ -1454,7 +1454,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    const balanceLabel=el('span');
    updatePostingBalance=()=>{balanceLabel.textContent=accountRefreshNeeded||accountRefreshPending?'Balance (updating) ':'Balance ';balance.textContent=typeof status?.privateFeeCredit==='string'?formatCredits(status.privateFeeCredit):status?.status==='fee-needed'?'0.00':'—';if(typeof status?.privateFeeCredit==='string')balance.setAttribute('title',formatCredits(status.privateFeeCredit));else balance.removeAttribute('title');validate();};
    content.append(el('div',{class:'composer-cost'},el('span',{},balanceLabel,balance),el('span',{},'Estimated cost: ',cost)));
-   content.append(privacyNote(postingTypes.has(draft.type)?'Published from your private Aztec account. Readers see the post, never your wallet, and cannot tell which posts share an account.':'Sent from your private Aztec account. Nothing on-chain links this to your wallet.'));
+   content.append(privacyNote(postingTypes.has(draft.type)?'Published from your private Aztec account. Your wallet address is not attached to the post. Posts using the same name and replies are publicly linked.':'Sent from your private Aztec account. Your wallet address is not attached to your posts.'));
   }
   const review=button(reviewLabel(draft),prepareReview,true);
   const threadNotice=el('p',{class:'thread-limit-note',role:'status',hidden:''});
@@ -1641,7 +1641,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   const cap=session.topup[topupKind],isBok=topupKind==='bok';
   if(!topupInputs.amount)topupInputs.amount=isBok?'1':formatCredits(BigInt(cap.defaultPrivateFeeCap)*2n,{roundUp:true});
   if(!topupInputs.asset)topupInputs.asset=cap.ethAvailable?'ETH':'USDC';
-  content.append(paragraph(isBok?'Bok credit pays the assistant when you mention @bok in a post. It is separate from posting credit.':'Posting credit pays network fees for posts, replies, tips and account updates. It is separate from your refundable deposit and Bok credit.'),privacyNote('Credit moves into your private Aztec account. Posts and tips paid from it are never linked to the wallet that paid.'));
+  content.append(paragraph(isBok?'Bok credit pays the assistant when you mention @bok in a post. It is separate from posting credit.':'Posting credit pays network fees for posts, replies, tips and account updates. It is separate from your refundable deposit and Bok credit.'),privacyNote('Credit moves into your private Aztec account. Your wallet address is not published with your posts or tips.'));
   const amountName=isBok?'Amount (USD)':'Posting credit amount',amount=el('input',{type:'text',inputmode:'decimal','aria-label':amountName});amount.value=topupInputs.amount;const edits=[amount];
   amount.addEventListener('input',()=>{topupInputs.amount=amount.value;resetTopupQuote();requestTopupQuote();});
   amount.addEventListener('change',requestTopupQuote);content.append(label(amountName,amount));
@@ -1699,7 +1699,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    const maximum=(isUsdc?decimal(b.maximumUsdc,6):compactAmount(b.maximumTotalWei,18,8,true))+currency;
    const usd=isUsdc?Number(decimal(b.maximumUsdc,6)).toFixed(2):q.usdEstimate;
    content.append(el('section',{class:'wallet-payment-total','aria-label':'Total payable'},el('span',{},'Total payable · maximum'),el('strong',{},usd?'≈ $'+usd+' USD':maximum),el('p',{class:'quiet',title:decimal(isUsdc?b.maximumUsdc:b.maximumTotalWei,isUsdc?6:18)+currency},usd?'Up to '+maximum:'USD estimate unavailable. This is the maximum payment.'),el('p',{class:'quiet'},'Includes your deposit, posting credit and payment fees.')),
-    privacyNote('Your wallet pays once on Ethereum. The deposit and credit land in your private Aztec account, and nothing you post from it can be traced back to this wallet.'),
+    privacyNote('Your wallet pays once on Ethereum. The deposit and credit land in your private Aztec account, without publishing your wallet address beside your posts.'),
     paragraph(runtime.canStartTestAccount?'Test network · test funds only.':'Ethereum mainnet.'),
     paragraph(isUsdc?'Your wallet will ask for two signatures to approve this payment.':'Approve the payment in your wallet.'));
    const details=el('details',{class:'account-details wallet-cost-breakdown'},el('summary',{},'Cost breakdown'),
@@ -1723,10 +1723,10 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     }
    },aggregateFundingFailure),true));
   }else if(!fundingAutomatic){
-   content.append(el('h3',{},'Set up posting'),paragraph('A refundable deposit discourages spam. Your posting balance pays for posts and account updates.'),privacyNote('Both move into a private account on Aztec. Posts paid from it are never linked to the wallet that funded it.'));
+   content.append(el('h3',{},'Set up posting'),paragraph('A refundable deposit discourages spam. Your posting balance pays for posts and account updates.'),privacyNote('Both move into a private account on Aztec. Your wallet address is not attached to your posts.'));
    if(fundingQuoteRequested&&!busy)content.append(button('Refresh price',()=>void work(prepareFundingQuote,aggregateFundingFailure),true));
   }
-  if(fundingAutomatic)content.append(paragraph('Keep this page open until your posting balance is ready.'),privacyNote('Your credit is being moved into your private Aztec account. From here on, nothing you post is linked to your wallet.'));
+  if(fundingAutomatic)content.append(paragraph('Keep this page open until your posting balance is ready.'),privacyNote('Your credit is being moved into your private Aztec account. Your wallet address is not attached to your posts.'));
  }
  function fundingView(){
   const connected=fundingWalletView();if(connected)aggregateFundingView();
@@ -1849,7 +1849,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
   const signedIn=!!runtime&&unlocked();
   title.textContent=!signedIn?'Connect your wallet':view==='funding'?'Set up posting':view==='topup'?(topupKind==='bok'?'Add Bok credit':'Add posting credit'):view==='preferences'?'Follows and bookmarks':view==='names'?'Your names':view==='balances'?'Balance and withdrawals':view==='refund'?'Pending Ethereum refund':view==='action'?(TYPES[draft.type]??'Your account'):'Your account';
   if(signedIn&&intent&&['prepared','replacement-prepared'].includes(intent.status))title.textContent=intent.status==='replacement-prepared'?'Review replacement':reviewLabel(intent.action);
-  description.textContent=!signedIn?'Connect a wallet to fund a private account on Aztec. Your posts are never linked to it.':'';
+  description.textContent=!signedIn?'Connect a wallet to fund a private account on Aztec. Your wallet address is not attached to your posts.':'';
   description.hidden=!!setupMode||!description.textContent;
   const onboardingFunding=signedIn&&['fee-needed','collateral-pending'].includes(status?.status);
   steps.hidden=!!intent||invalidated||reloadRequired||!(!signedIn||!!setupMode||view==='funding'||onboardingFunding&&view==='topup');
@@ -1877,7 +1877,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     else{
      if(view==='overview'){
       const needsFunding=status?.status==='fee-needed'||status?.status==='collateral-pending',needsTopup=status?.status==='fee-needed'&&status?.depositIds?.length>0;
-      if(needsFunding)content.append(el('section',{class:'wallet-setup-prompt'},el('h3',{},needsTopup?'Add posting credit':'Set up posting'),paragraph(needsTopup?'Your deposit is already in place. Add posting credit to keep going.':'A refundable deposit and posting credit open your private account. Posts from it are never linked to your wallet.'),button(needsTopup?'Add posting credit':'Set up posting',()=>{if(needsTopup){topupKind='private-fee';topupInputs={amount:''};resetTopupQuote();topupSaved=null;}selectView(needsTopup?'topup':'funding');},true)));
+      if(needsFunding)content.append(el('section',{class:'wallet-setup-prompt'},el('h3',{},needsTopup?'Add posting credit':'Set up posting'),paragraph(needsTopup?'Your deposit is already in place. Add posting credit to keep going.':'A refundable deposit and posting credit open your private account. Your wallet address is not attached to your posts.'),button(needsTopup?'Add posting credit':'Set up posting',()=>{if(needsTopup){topupKind='private-fee';topupInputs={amount:''};resetTopupQuote();topupSaved=null;}selectView(needsTopup?'topup':'funding');},true)));
       const menu=el('nav',{class:'wallet-account-menu','aria-label':'Your account'});
       menu.append(button('Your names',()=>selectView('names')),button('Follows and bookmarks',()=>selectView('preferences')));
       if(typeof session.application.readBalances==='function')menu.append(button('Balance and withdrawals',()=>{balances=null;bokAccounting=null;selectView('balances');}));

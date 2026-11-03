@@ -117,7 +117,7 @@ function confirmTip(){
  if(tipConfirmation)return Promise.resolve(false);
  return new Promise(resolve=>{
   const dialog=el('dialog',{class:'tip-confirmation','aria-labelledby':'tip-confirmation-title'},el('h2',{id:'tip-confirmation-title'},'Gift 20.00 credits to the author?'),el('p',{},'Network fees are additional.'),
-   el('p',{class:'privacy-note'},createIcon('lock'),el('span',{},'Sent from your private Aztec account. The author sees the gift, never who sent it.')));
+   el('p',{class:'privacy-note'},createIcon('lock'),el('span',{},'Sent from your private Aztec account. The gift does not publish your wallet address.')));
   tipConfirmation=dialog;
   const finish=confirmed=>{dialog.close();dialog.remove();tipConfirmation=null;resolve(confirmed);};
   dialog.append(el('div',{class:'dialog-actions'},button('Cancel',()=>finish(false)),button('Gift 20.00 credits',()=>finish(true),{class:'button primary'})));
@@ -133,11 +133,11 @@ function welcomeFirstVisit(){
  const point=(icon,heading,copy)=>el('li',{},el('span',{class:'welcome-icon','aria-hidden':'true'},createIcon(icon)),el('div',{},el('strong',{},heading),el('p',{},copy)));
  const dialog=el('dialog',{class:'welcome-dialog','aria-labelledby':'welcome-title'},
   el('h2',{id:'welcome-title'},'Welcome to rollingchat'),
-  el('p',{class:'welcome-lead'},'A private messaging board on the Aztec network. What you post is public. Who posted it stays private.'),
+  el('p',{class:'welcome-lead'},'A private messaging board on the Aztec network. Posts are public; your wallet address is not attached to them.'),
   el('ul',{class:'welcome-points'},
    point('eye','Read freely','Every conversation is open. No account needed to read.'),
-   point('lock','Post privately','Posts, replies and tips are sent from a private Aztec account. Nothing on-chain links them to your wallet, or to each other.'),
-   point('wallet','Fund once','A small ETH deposit opens your account and pays network fees. Posts that break the rules delay posting and withdrawal for a while.')));
+   point('lock','Post privately','Posts and tips use private Aztec credit. Your wallet address is not published with them. Posts using the same name and replies are publicly linked.'),
+   point('wallet','Set up posting','A small refundable ETH deposit discourages spam. Separate posting credit pays network fees. Posts that break the rules delay posting and withdrawal.')));
  const dismiss=()=>{dialog.close();dialog.remove();};
  dialog.append(el('div',{class:'dialog-actions'},link('How privacy works','/help',{class:'button',onClick:dismiss}),button('Get started',dismiss,{class:'button primary'})));
  dialog.addEventListener('cancel',event=>{event.preventDefault();dismiss();});
@@ -208,9 +208,9 @@ function postCard(post,data,{feedMetrics=false}={}){
  const r=post.record,isBot=Boolean(post.bot),named=!isBot&&r.name_id!=='0'?data.names?.[r.name_id]:null,board=data.board?.id===r.subboard?data.board:data.boards?.[r.subboard];
  const author=isBot?'Bok':r.name_id==='0'?'Anonymous':named?`${text(named.first)} ${text(named.last)}`:'Registered name';
  const article=el('article',{class:'post',id:'post-'+post.id,'data-tx-hash':post.position?.txHash,'data-block-number':post.position?.blockNumber,'data-block-hash':post.position?.blockHash,'aria-label':'Post by '+author,...(post.confirmation?{'data-confirmation':post.confirmation}:{})});
- const who=isBot||r.name_id==='0'?el('span',{class:'author'},author):link(author,'/profile/'+r.name_id,{class:'author'});
+ const who=isBot||r.name_id==='0'?el('span',{class:'author',...(r.name_id==='0'&&!isBot?{title:'Anonymous posts have no public profile to follow.'}:{})},author):link(author,'/profile/'+r.name_id,{class:'author'});
  if(isBot)article.classList.add('bot-post');
- article.append(el('div',{class:'post-top'},named?createPublicAvatar(named,{signal:controller.signal}):el('span',{class:'avatar '+(isBot?'bot':'anonymous'),'aria-hidden':'true'},createIcon(isBot?'sparkle':'user')),el('div',{class:'post-meta'},who,isBot?el('span',{class:'bot-badge'},createIcon('sparkle'),'AI assistant'):null,pending?el('span',{class:'post-confirmation',role:'status'},'Confirmation pending'):null,el('div',{class:'post-context'},field(r.subboard)?link(r.subboard==='0'?'Main board':board?text(board.name):'Subboard','/board/'+r.subboard):'Board unavailable',el('span',{class:'post-time'},timestamp(post.timestamp))))));
+ article.append(el('div',{class:'post-top'},named?link(createPublicAvatar(named,{signal:controller.signal}),'/profile/'+r.name_id,{'aria-label':'View '+author+' profile'}):el('span',{class:'avatar '+(isBot?'bot':'anonymous'),'aria-hidden':'true'},createIcon(isBot?'sparkle':'user')),el('div',{class:'post-meta'},who,isBot?el('span',{class:'bot-badge'},createIcon('sparkle'),'AI assistant'):null,pending?el('span',{class:'post-confirmation',role:'status',title:'Already included on Aztec. Waiting for the network checkpoint, not moderator approval.'},'Network confirmation pending'):null,el('div',{class:'post-context'},field(r.subboard)?link(r.subboard==='0'?'Main board':board?text(board.name):'Subboard','/board/'+r.subboard):'Board unavailable',el('span',{class:'post-time'},timestamp(post.timestamp))))));
  const provenance=el('details',{class:'post-provenance'},el('summary',{},'Post details'));const authoredPolicy=policyLabel('Published under policy',post.mainVersion,post.localVersion);if(authoredPolicy)provenance.append(authoredPolicy);
  if(Array.isArray(data.policies)){const policy=data.policies.find(p=>p.version===post.mainVersion);if(policy&&policyVersion(policy.version))provenance.append(el('details',{},el('summary',{},'Parent rules at publication · v'+policy.version),richText(policy.text)));}
  if(field(r.parent)&&r.parent!=='0')article.append(el('p',{class:'reply-line','data-parent-line':''},'In reply to ',link('an earlier post','/thread/'+r.root+'/'+r.parent)));
@@ -231,7 +231,7 @@ function postCard(post,data,{feedMetrics=false}={}){
  }
  article.append(richText(post.text),el('div',{class:'post-actions'},
   button([createIcon('reply'),'Reply'],()=>openWallet({type:'reply',parent:post.id,root:r.root,subboard:r.subboard},{context:{author,excerpt:text(post.text).slice(0,200)}})),
-  socialButton('Gift 20.00 credits',()=>({type:'like',post:post.id,tipKey:post.tipKey}),{'data-icon':'heart-dollar',class:'button gift-button',title:'Gift 20.00 credits to the author'}),el('span',{class:'action likes'},`${text(post.likes)} ${post.likes==='1'?'like':'likes'}`),preferenceButton('Bookmark',1,post.id,undefined,'bookmark'),
+  socialButton('Gift 20.00 credits',()=>({type:'like',post:post.id,tipKey:post.tipKey}),{'data-icon':'heart-dollar',class:'button gift-button',title:'Gift 20.00 credits to the author'}),el('span',{class:'action likes'},`${text(post.likes)} ${post.likes==='1'?'gift':'gifts'}`),preferenceButton('Bookmark',1,post.id,undefined,'bookmark'),
   more(button([createIcon('quote'),'Quote'],()=>openWallet({type:'quote',reference:post.id,subboard:r.subboard})),
    button([createIcon('repeat'),'Repost'],()=>openWallet({type:'repost',reference:post.id,subboard:r.subboard})),provenance),
   link([createIcon('message'),'View conversation'],'/thread/'+r.root,{class:'post-link'})));
@@ -247,7 +247,7 @@ function updateAccountButton(){
 function shell(title,{boardId=null,directory=false}={}){
  document.title=title+' · rollingchat';
  const nav=(label,to,icon)=>link([el('span',{class:'nav-icon','aria-hidden':'true'},createIcon(icon)),label],to);
- const rail=el('aside',{class:'rail',id:'community-navigation'},link(createBrand(),'/home',{class:'brand'}),el('p',{class:'rail-label'},'Browse'),el('nav',{class:'nav-group','aria-label':'Community'},nav('Home','/home','home'),nav('Main board','/board/0','message'),nav('Explore boards','/directory','compass'),nav('Following','/following','users'),nav('Bookmarks','/bookmarks','bookmark')),el('div',{class:'rail-foot'},el('span',{class:'rail-privacy'},createIcon('lock'),'Private messaging board on Aztec. Your posts are never linked to your wallet.')));
+ const rail=el('aside',{class:'rail',id:'community-navigation'},link(createBrand(),'/home',{class:'brand'}),el('p',{class:'rail-label'},'Browse'),el('nav',{class:'nav-group','aria-label':'Community'},nav('Home','/home','home'),nav('Main board','/board/0','message'),nav('Explore boards','/directory','compass'),nav('Following','/following','users'),nav('Bookmarks','/bookmarks','bookmark')),el('div',{class:'rail-foot'},el('span',{class:'rail-privacy'},createIcon('lock'),'Public posts. Private accounts. Powered by Aztec.')));
  for(const entry of rail.querySelectorAll('nav a'))if(entry.hash.slice(1)===route||entry.hash==='#/directory'&&route.startsWith('/directory/')){entry.setAttribute('aria-current','page');entry.classList.add('active');}
  rail.querySelector('.rail-foot').append(el('br'),link('Help and privacy','/help'));
  provingControl?.dispose();provingControl=mountProvingPreference(provingPreference);rail.querySelector('.rail-foot').append(provingControl.element);
@@ -256,7 +256,7 @@ function shell(title,{boardId=null,directory=false}={}){
  rail.append(button(createIcon('close'),closeMenu,{class:'mobile-close','aria-label':'Close navigation'}));rail.inert=narrow.matches;
  rail.addEventListener('keydown',event=>{if(event.key==='Escape')closeMenu();if(event.key==='Tab'&&rail.classList.contains('open')){const targets=[...rail.querySelectorAll('a,button')],first=targets[0],last=targets.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}});
  // A route returning to a saved position skips entrance motion: the restore measures the anchor's box, which a transform would shift.
- main=el('main',{id:'content',tabindex:'-1',...(positions.get(route)?{class:'restored'}:{})},el('header',{class:'page-head'},el('div',{},el('h1',{tabindex:'-1'},title),el('p',{class:'intro'},title==='Home'?'Conversations for you, from across the community.':title==='Conversation'?'Join in with a reply.':'Public conversations. Private participation.'))));
+ main=el('main',{id:'content',tabindex:'-1',...(positions.get(route)?{class:'restored'}:{})},el('header',{class:'page-head'},el('div',{},el('h1',{tabindex:'-1'},title),el('p',{class:'intro'},title==='Home'?'Public conversations. Your wallet address stays off your posts.':title==='Conversation'?'Join in with a reply.':'Public conversations. Private participation.'))));
  if(/^\/(thread|post)\//.test(route)){
   const heading=main.querySelector('.page-head>div');heading.classList.add('conversation-heading');
   heading.prepend(button(createIcon('arrow-left'),()=>conversationNavigation.back(),{class:'conversation-back','aria-label':'Back',title:'Back'}));
@@ -271,7 +271,7 @@ function shell(title,{boardId=null,directory=false}={}){
  const context=el('aside',{class:'context'},
   el('section',{},el('h2',{},createIcon('message'),'Your place to talk'),el('p',{},'Start a conversation, join a board, or reply to someone. Post anonymously or under a name you choose.'),link([createIcon('compass'),'Find a board'],'/directory',{class:'button'})),
   el('section',{class:'context-help'},el('h2',{},createIcon('sparkle'),'Meet Bok'),el('p',{},'Bok is the AI assistant in every thread. Mention @bok in a post or reply, set a spending limit, and pay only for the work it does.')),
-  el('section',{class:'context-privacy'},el('h2',{},createIcon('shield'),'Private by design'),el('ol',{},el('li',{},'Read everything. No account needed.'),el('li',{},'Connect a wallet to fund a private account on Aztec.'),el('li',{},'Post, reply and tip from that account. Nothing on-chain links your posts to your wallet, or to each other.')),link('How privacy works','/help',{class:'quiet'})));
+  el('section',{class:'context-privacy'},el('h2',{},createIcon('shield'),'Private by design'),el('ol',{},el('li',{},'Read everything. No account needed.'),el('li',{},'Connect a wallet to fund a private account on Aztec.'),el('li',{},'Post, reply and tip without attaching your wallet address. Posts under the same name and replies are publicly linked.')),link('How privacy works','/help',{class:'quiet'})));
  app.replaceChildren(el('div',{class:'shell'},el('header',{class:'topbar'},menu,link(createBrand(),'/home',{class:'brand'}),link([createIcon('search'),'Explore boards'],'/directory',{class:'search-link'}),el('div',{class:'topbar-actions'},button([createIcon('user'),el('span',{class:'label'},'Connect wallet')],()=>openWallet(),{'aria-label':'Connect wallet','data-account-button':''}))),el('div',{class:'shell-body'},rail,el('div',{class:'workspace'},el('div',{class:'layout'},main,context)))));
  updateAccountButton();return main;
 }
@@ -312,8 +312,9 @@ async function render({live=false,publicationRevision}={}){
  if(route==='/help'){
   shell('Help and privacy');
   const section=(heading,...copy)=>el('section',{class:'context-panel'},el('h2',{},heading),...copy.map(value=>typeof value==='string'?el('p',{},value):value));
-  main.append(section('What privacy means here','rollingchat is a private messaging board on the Aztec network. Your Ethereum wallet funds a private Aztec account; posts, replies, tips and names are published from that account. Nothing on-chain links them to your wallet, and other readers cannot tell which posts share an account.','Ethereum funding addresses, amounts and timing are public. This version uses a trusted proving service that can see the private data it processes. Hosting, network and RPC providers can see connection information; this site is not a network anonymity tool.'),
+  main.append(section('What privacy means here','rollingchat is a private messaging board on the Aztec network. Your Ethereum wallet funds a private Aztec account; posts, replies, tips and names are published from that account. Your wallet address is not published with your posts. Posts using the same name, replies and quotes are publicly linked. Amounts, timing and what you write can still reveal connections.','Ethereum funding addresses, amounts and timing are public. This version uses a trusted proving service that can see the private data it processes. Hosting, network and RPC providers can see connection information; this site is not a network anonymity tool.'),
    section('Before you post','Posts, replies and their timing are public. A name is optional. Content and writing style can identify you, and hiding a post here cannot erase it from chain history.'),
+   section('Names, follows and gifts','Choose Anonymous or create multiple posting names from the Post as menu. A name groups its posts publicly; it does not reveal your other names.','Click a name or avatar, then Follow name. Anonymous posts have no shared public profile to follow; you can bookmark a post instead.','The heart sends a 20.00-credit gift to the author, plus a network fee. The count shows gifts, not free likes.'),
    section('Usage measurement','We collect daily totals for visits, reading activity, account setup, successful posting and broad referral categories. We do not build visitor profiles or put wallet addresses, post text, IP addresses or browsing histories into analytics. No analytics cookie or persistent visitor identifier is created.','Daily analytics totals expire after 90 days. Encrypted operational backups have a separate seven-day retention policy. Do Not Track and Global Privacy Control disable collection.'),
    section('Wallet and payment help','If an action is waiting for confirmation, keep its existing transaction and check the displayed status before trying again. Never share your seed phrase, private key, wallet signature or account storage with someone offering help.'),
    section('Report a problem',el('p',{},'For technical problems or concerns about a public post, ',el('a',{href:'https://github.com/zac-williamson/aztec_experiments/issues',target:'_blank',rel:'noopener noreferrer'},'open an issue on GitHub'),' with only the public link and a short description. GitHub reports are public and use your GitHub account. Do not include private wallet data or sensitive personal information.')));

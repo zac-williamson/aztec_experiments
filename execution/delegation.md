@@ -630,3 +630,6 @@ provenance, protected paths, full build and real release gate remain unchanged.
 
 ## 2 November — requested UI changes
 Root integrates conversation navigation, fee presentation and tip confirmation. fast_reply_review implements read-only worker estimation in isolated /private/tmp/rolling-estimate-worker; deployment_review investigates the prior release failure read-only. No contract deployment or historical performance campaign.
+
+## 3 November — David/Tyler feedback and PR11
+Root integrates PR11 and Slack UX feedback. pr11_build_fix repairs generated-consumer drift in isolated checkout; rabby_payment_fix investigates Rabby payment in isolated checkout; pr11_review reviews status, grouping and privacy claims read-only. No contract deployment.

@@ -157,7 +157,7 @@ export const BRAND_TAGLINE = 'Private messaging board';
 // transaction has travelled; the headline and help come from the caller. The
 // privacy line is always present, so the loader itself says the action is private.
 export const TRANSACTION_STAGES = Object.freeze([['prepare', 'Prepare'], ['prove', 'Prove'], ['submit', 'Send'], ['included', 'Included'], ['confirmed', 'Confirmed']]);
-export const TRANSACTION_PRIVACY = 'Private: sent from your Aztec account. Nothing on-chain links it to your wallet or your other posts.';
+export const TRANSACTION_PRIVACY = 'Posts are public; your wallet address is not attached to them.';
 export function createTransactionStatus({ icon = createIcon, dismissible = false, onDismiss = () => {} } = {}) {
   const make = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
   const node = make('section', 'tx-status'); node.setAttribute('aria-label', 'Transaction status'); node.hidden = true;

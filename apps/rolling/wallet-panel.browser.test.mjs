@@ -1657,6 +1657,10 @@ for(const outcome of ['confirmed','error'])test(`regular post becomes visible at
  });
  await open(page,{type:'post'});await page.getByLabel('Message',{exact:true}).fill('My ordinary message');
  await page.getByRole('button',{name:'Post',exact:true}).click();await page.waitForFunction(()=>typeof test.release==='function');
+ await page.evaluate(()=>test.sessionProgress({stage:'confirming'}));
+ assert.equal(await page.locator('.tx-status').getAttribute('data-stage'),'submit','node acknowledgement must not claim block inclusion');
+ assert.match(await page.locator('.tx-status').innerText(),/Waiting for Aztec to include/);
+ assert.equal(await page.locator('#included-post').count(),0);
  await page.evaluate(()=>{
   test.inclusion={stage:'included',intentId:'42',txHash:'0x'+'c'.repeat(64),blockNumber:108,blockHash:'0x'+'d'.repeat(64)};
   test.sessionProgress({...test.inclusion,intentId:'not-this-operation'});
