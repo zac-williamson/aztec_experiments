@@ -1,0 +1,46 @@
+{
+  "id": "0xe5aa2c823641a6a20ec321b46b2c723beffc699e487424a689cbb68c1db200b5",
+  "postId": "0x059568cbae8753a3352e4714933a0b7745fcaee4163c579b5a3e5ab2c25f1323",
+  "threadId": "0x2595f3d67aa76432972f908be7bfbb28ed3a9fcb1836b8f572b93c1cdc1c6c16",
+  "budget": "8967766",
+  "phase": "published",
+  "calls": [
+    {
+      "call": 1,
+      "maximum": "372736",
+      "maxTokens": 65536,
+      "phase": "received",
+      "charge": "46819",
+      "finishReason": "tool_calls"
+    },
+    {
+      "call": 2,
+      "maximum": "372736",
+      "maxTokens": 65536,
+      "phase": "received",
+      "charge": "8514",
+      "finishReason": "tool_calls"
+    }
+  ],
+  "remaining": "8912433",
+  "result": {
+    "replyText": "Application published.\nApp: https://dy2q03rao3se7.cloudfront.net/t/40a19fe52ef2682e8bde542bee6b426f61035bf980b9ef91ea43359c50513c34/latest/\nSource: https://dy2q03rao3se7.cloudfront.net/t/40a19fe52ef2682e8bde542bee6b426f61035bf980b9ef91ea43359c50513c34/source.json",
+    "revision": {
+      "repositoryId": "47670823c6141c3d0c6041cd7d0de6fe1699d476c24f38e57a939086152813f3",
+      "acceptedRevision": "0461f669b3ee18662b903af34414b165f70b18bf"
+    }
+  },
+  "servedRevision": "0461f669b3ee18662b903af34414b165f70b18bf",
+  "verification": {
+    "testsPassed": true,
+    "buildPassed": true,
+    "browserPassed": true,
+    "browserChecks": 26,
+    "workerHealth": "ready",
+    "temporaryCredentialsRemoved": true,
+    "temporaryServiceOverrideRemoved": true
+  },
+  "billing": "Operator-funded replay; original finalized user escrow untouched; additional user balance charge zero",
+  "providerCostMicroUsd": 55333,
+  "boardReply": "No new on-chain reply; existing stable app URL updated"
+}
