@@ -9845,12 +9845,12 @@
   "current_operating_request": {
     "date": "2026-11-03",
     "task": "Repair Bok funding failure and disabled modal close after failure",
-    "status": "active",
+    "status": "complete",
     "lanes": [
       "root funding diagnostics and integration",
       "independent funding lifecycle review"
     ],
-    "checkpoint": "Inspect current mainnet top-up paths and safe browser diagnostics; preserve deployed contracts"
+    "checkpoint": "Published0d475514, 119 stage/live asset hashes verified. Successful Bok funding no longer depends on balance refresh; failures unlock Close; worker busy cleanup fixed. Feedback link live. Original10USDC Ethereum deposit confirmed, managed1USDC ETH deposit confirmed.95 portal regression tests pass after stale mainnet expectations repaired. Performance remains paused."
   },
   "completed_operating_requests": [
     {

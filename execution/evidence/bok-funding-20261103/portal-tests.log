@@ -1,0 +1,162 @@
+Compiling 10 files with Solc 0.8.27
+Solc 0.8.27 finished in 3.37s
+Compiler run successful with warnings:
+Warning (2519): This declaration shadows an existing declaration.
+  --> test/PortalV2Refund.t.sol:22:23:
+   |
+22 |     function envelope(bytes32 content) private view returns(bytes32) {
+   |                       ^^^^^^^^^^^^^^^
+Note: The shadowed declaration is here:
+  --> test/PortalV2Refund.t.sol:25:5:
+   |
+25 |     function content(bytes32 domain,address owner,uint128 amount,bytes32 id) private view returns(bytes32) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (5159): "selfdestruct" has been deprecated. Note that, starting from the Cancun hard fork, the underlying opcode no longer deletes the code and data associated with an account and only transfers its Ether to the beneficiary, unless executed in the same transaction in which the contract was created (see EIP-6780). Any use in newly deployed contracts is strongly discouraged even if the new behavior is taken into account. Future changes to the EVM might further reduce the functionality of the opcode.
+  --> test/PortalV1.t.sol:67:76:
+   |
+67 | contract ForceSurplus { constructor(address payable destination) payable { selfdestruct(destination); } }
+   |                                                                            ^^^^^^^^^^^^
+
+Warning (5159): "selfdestruct" has been deprecated. Note that, starting from the Cancun hard fork, the underlying opcode no longer deletes the code and data associated with an account and only transfers its Ether to the beneficiary, unless executed in the same transaction in which the contract was created (see EIP-6780). Any use in newly deployed contracts is strongly discouraged even if the new behavior is taken into account. Future changes to the EVM might further reduce the functionality of the opcode.
+  --> test/RollingFundingRouter.t.sol:46:64:
+   |
+46 | contract FundingForce {constructor(address payable a) payable {selfdestruct(a);}}
+   |                                                                ^^^^^^^^^^^^
+
+
+Ran 4 tests for test/PortalCodecVectors.t.sol:PortalCodecVectorsTest
+[PASS] test_claim() (gas: 1592)
+[PASS] test_claim_boundary() (gas: 1570)
+[PASS] test_exit() (gas: 1539)
+[PASS] test_ready() (gas: 1548)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 5.05ms (1.59ms CPU time)
+
+Ran 4 tests for test/PluginPayments.t.sol:PluginPaymentsTest
+[PASS] testDuplicateRejected() (gas: 91677)
+[PASS] testDustCannotConsumeInvocation() (gas: 91447)
+[PASS] testOnlyOwnerWithdraws() (gas: 123377)
+[PASS] testWrongHashCannotPoisonLegitimatePayment() (gas: 158945)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 5.15ms (697.63µs CPU time)
+
+Ran 3 tests for test/PortalArtifactRegression.t.sol:PortalSourceControlTest
+[PASS] testConfiguredMinimumRejectsBelowAndAcceptsExact() (gas: 2426960)
+[PASS] testRedepositDoesNotDoubleCountWithdrawnFunds() (gas: 2545192)
+[PASS] testWithdrawalClearsIndividualAndReducesAggregateLiabilities() (gas: 2594243)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 5.45ms (2.57ms CPU time)
+
+Ran 6 tests for test/PortalV2Refund.t.sol:PortalV2RefundTest
+[PASS] testDeploymentOperatorCannotRefundWithoutCanonicalAcknowledgement() (gas: 316890)
+[PASS] testDepositHistoryPaginationRetainsOldIdAfterFreshSignupAndRefund() (gas: 732907)
+[PASS] testFreshSignupWhileOldRefundPendingAndRefundPaysSameOwner() (gas: 568883)
+[PASS] testNormalWithdrawalAfterRefundRequestWinsWithoutDoublePayment() (gas: 406413)
+[PASS] testRefundExactIdAmountOwnerAndDomainCannotReplayAcrossDeposits() (gas: 826921)
+[PASS] testRefundRequestCanonicalInboxAndOwnerOnlyNoTimeShortcut() (gas: 322425)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 6.23ms (1.40ms CPU time)
+
+Ran 18 tests for test/PortalV1.t.sol:PortalV1Test
+[PASS] testActivationRejectsChangedChainEvenWhenBothChainsAreAllowed() (gas: 14195)
+[PASS] testActivationRejectsUnsupportedNetworksEvenForOperator() (gas: 3972418)
+[PASS] testBridgeActorsArePinnedDespiteRollupGetterChanges() (gas: 536484)
+[PASS] testCanonicalExitRefundAndRedepositRejectOldProof() (gas: 794682)
+[PASS] testCanonicalInboxMessageMatchesScopedReceiptAndEnvelope() (gas: 304820)
+[PASS] testConstructorAcceptsMaximumSupportedScalarBounds() (gas: 1994615)
+[PASS] testConstructorRejectsInvalidScopeAndEconomicBounds() (gas: 726045)
+[PASS] testCreate2FactoryIsNotDeploymentOperator() (gas: 4382097)
+[PASS] testDeploymentOperatorCannotBypassWithdrawalProofOrOwner() (gas: 276516)
+[PASS] testDisabledUntilOperatorAttestationAndActivationCannotRepeat() (gas: 337932)
+[PASS] testEachExitReceiptWordIsAuthenticatedAndFailureRollsBack() (gas: 515394)
+[PASS] testInboxFailureRollsBackReceiptValueAndTotal() (gas: 2377834)
+[PASS] testInvalidBridgeAndChangedChainReject() (gas: 190946)
+[PASS] testMinMaxSecretAndActiveReceiptBounds() (gas: 676633)
+[PASS] testRefundReentrancyBlockedAndEffectsPrecedeCallback() (gas: 767277)
+[PASS] testRejectUnsolicitedEtherAndKeepForcedSurplusSeparate() (gas: 409517)
+[PASS] testRejectedRefundRollsBackCanonicalConsumptionThenRetrySucceeds() (gas: 805915)
+[PASS] testSupportedOperatorActivationDoesNotRequirePublishedRoot() (gas: 4019477)
+Suite result: ok. 18 passed; 0 failed; 0 skipped; finished in 7.77ms (4.51ms CPU time)
+
+Ran 12 tests for test/RollingFundingRouterCredit.t.sol:RollingFundingRouterCreditTest
+[PASS] testExactBudgetNeedsNoRefund() (gas: 209624)
+[PASS] testExistingDonationsAreNotRefundedOrSpent() (gas: 302637)
+[PASS] testExpiredQuoteAndChangedChainReject() (gas: 75723)
+[PASS] testIncorrectExchangeOutputCannotSpendDonations() (gas: 203646)
+[PASS] testInvalidSecretAndInactivePortalRollback() (gas: 7163975)
+[PASS] testNoLiquidityCannotLeavePartialExchange() (gas: 169417)
+[PASS] testOnePaymentBuysExactCreditRefundsAndClearsAllowances() (gas: 231235)
+[PASS] testPortalRejectionRollsBackSwap() (gas: 226798)
+[PASS] testPurchaseAndPortalEventsBindCommitmentSecretAndSameMessage() (gas: 241153)
+[PASS] testRefundCannotReenter() (gas: 473322)
+[PASS] testRefundRejectionRollsBackPurchase() (gas: 574512)
+[PASS] testSlippageFailureRollsBackEntirePurchase() (gas: 148565)
+Suite result: ok. 12 passed; 0 failed; 0 skipped; finished in 1.73ms (1.22ms CPU time)
+
+Ran 5 tests for test/PortalReentrancy.t.sol:PortalReentrancyTest
+[PASS] testActivationNeverCallsRejectingOrReentrantOutbox() (gas: 64418)
+[PASS] testInboxDepositRejectsAllReentrantEntrypointsAfterEffects() (gas: 370612)
+[PASS] testOutboxWithdrawalRejectsAllReentrantEntrypointsAfterReceiptCleared() (gas: 420597)
+[PASS] testRejectingInboxRollsBackReceiptValueAndCanRetry() (gas: 478814)
+[PASS] testRejectingOutboxRollsBackWithdrawalAndCanRetry() (gas: 449109)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 11.60ms (1.43ms CPU time)
+
+Ran 3 tests for test/PortalArtifactRegression.t.sol:PortalKnownBadFixtureTest
+[PASS] testKnownBadFixtureAcceptsDepositBelowConfiguredMinimum() (gas: 2105767)
+[PASS] testKnownBadFixtureLeavesAggregateAfterRefund() (gas: 2184067)
+[PASS] testKnownBadFixtureRejectedByProductionArtifactGuard() (gas: 1193808)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 11.63ms (8.40ms CPU time)
+
+Ran 14 tests for test/RollingFundingRouter.t.sol:RollingFundingRouterTest
+[PASS] testCannotStealBeneficiaryOrReplayConsent() (gas: 679099)
+[PASS] testContractBeneficiaryConsentAndRejectedRefundAtomicity() (gas: 1446884)
+[PASS] testDonationRemainsSurplusAndCannotBeRefundedToUser() (gas: 553156)
+[PASS] testExactThreeDepositsRefundAndZeroApprovals() (gas: 547201)
+[PASS] testExpiredConsentAndChangedChainFail() (gas: 106384)
+[PASS] testFeeLegFailureRollsBackCollateralAndSwaps() (gas: 508757)
+[PASS] testFeeOnlyEthUsesNoCollateralConsentAndRefundsUnusedEth() (gas: 273442)
+[PASS] testInstalledFeeJuicePortalReceivesExactPaidTokens() (gas: 3767272)
+[PASS] testLastLegFailureRevertsAllSwapsDepositNonceAndFee() (gas: 561749)
+[PASS] testMisreportedSwapOutputCannotSpendDonatedTokens() (gas: 243355)
+[PASS] testSlippageCapRollsBack() (gas: 174138)
+[PASS] testUnavailableLiquidityRejectsWithoutPrincipal() (gas: 194968)
+[PASS] testZeroBokFundsRequiredLegsWhilePluginInactive() (gas: 4326302)
+[PASS] testZeroBokRejectsHiddenBudgetOrCustody() (gas: 162738)
+Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 11.85ms (13.39ms CPU time)
+
+Ran 4 tests for test/PortalV1.t.sol:PortalDepositConsentTest
+[PASS] testConsentBindsExecutorAmountSecretNonceAndDeadline() (gas: 446363)
+[PASS] testDirectDepositRejectsDuplicateCommitmentButAllowsFreshConsent() (gas: 494571)
+[PASS] testExpiredOrOtherPortalSignatureRejected() (gas: 2021005)
+[PASS] testRelayedCollateralCanOnlyWithdrawToBeneficiary() (gas: 394007)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 12.00ms (15.93ms CPU time)
+
+Ran 17 tests for test/RollingFundingRouter.t.sol:RollingUsdcFundingRouterTest
+[PASS] testAuthorizationCannotCrossRouterOrChain() (gas: 3044450)
+[PASS] testAuthorizationNonceBindsMutatedAllocationAndRelayer() (gas: 206565)
+[PASS] testDirectAuthorizationFrontRunCannotConsumeRouterPayeeNonce() (gas: 605184)
+[PASS] testDonationsAreNeverUserRefundOrFee() (gas: 632335)
+[PASS] testFeeFailureRevertsAuthorizationAndNoRelayReimbursement() (gas: 528749)
+[PASS] testFeeOnlyFailureReturnsUsdcAndDoesNotReimburseRelay() (gas: 298475)
+[PASS] testFeeOnlyRejectsHiddenCollateralAndConsent() (gas: 483664)
+[PASS] testFeeOnlyUsdcUsesOneAuthorizationNoEthAndNoCollateralConsent() (gas: 329318)
+[PASS] testLastLegRevertRestoresAuthorizationSwapCollateralAndFee() (gas: 581774)
+[PASS] testMainnetUsdcUsesReverseTwoHopAndExactAccounting() (gas: 9320105)
+[PASS] testNoLiquidityOrSlippageDoesNotConsumeAuthorization() (gas: 338175)
+[PASS] testReplayAndExpiredAuthorizationRejected() (gas: 624087)
+[PASS] testWrongCollateralConsentRollsBackAuthorizedDebit() (gas: 303320)
+[PASS] testWrongExecutorCannotTakeSignedRelayFee() (gas: 91104)
+[PASS] testZeroBokUsdcFundsCoreWithInactivePluginAndBoundReimbursement() (gas: 4402300)
+[PASS] testZeroBokUsdcRejectsHiddenCustodyAndRollsBackAuthorization() (gas: 92618)
+[PASS] testZeroEthBeneficiaryPaysExactUsdcIncludingRelayerAndRefund() (gas: 600517)
+Suite result: ok. 17 passed; 0 failed; 0 skipped; finished in 12.03ms (15.05ms CPU time)
+
+Ran 3 tests for test/PortalArtifactRegression.t.sol:PortalGeneratedArtifactTest
+[PASS] testConfiguredMinimumRejectsBelowAndAcceptsExact() (gas: 10665398)
+[PASS] testRedepositDoesNotDoubleCountWithdrawnFunds() (gas: 10776355)
+[PASS] testWithdrawalClearsIndividualAndReducesAggregateLiabilities() (gas: 10825627)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 21.42ms (38.85ms CPU time)
+
+Ran 2 tests for test/PortalConservation.t.sol:PortalConservationTest
+[PASS] testFuzzBoundedMultiuserConservation(uint256) (runs: 32, μ: 2034727, ~: 2034515)
+[PASS] testOriginalStaleAggregateRegressionAcrossRedeposit() (gas: 1022024)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 41.88ms (37.44ms CPU time)
+
+Ran 13 test suites in 48.26ms (153.78ms CPU time): 95 tests passed, 0 failed, 0 skipped (95 total tests)

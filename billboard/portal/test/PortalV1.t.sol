@@ -111,28 +111,31 @@ contract PortalV1Test is PortalFixtures {
         portal.activate();
         depositAs(portal,ALICE,2 ether); expectReceipt(ALICE,2 ether);
     }
-    function testSepoliaOperatorActivationDoesNotRequirePublishedRoot() public {
-        control.chainId(11155111);
+    function testSupportedOperatorActivationDoesNotRequirePublishedRoot() public {
+        uint256[2] memory supported=[uint256(1),uint256(11155111)];
+        for(uint256 i;i<supported.length;++i){
+        control.chainId(supported[i]);
         BillboardPortal p=new BillboardPortal(address(rollup),L2,VERSION,2 ether,3 ether,CONFIG,ALICE);
         require(p.DEPLOYMENT_OPERATOR()==ALICE,"Explicit operator lost");
         vm.expectRevert(abi.encodeWithSignature("Error(string)","Not deployment operator"));
         p.activate();
         vm.prank(ALICE); p.activate();
-        require(p.depositsEnabled(),"Sepolia activation failed");
+        require(p.depositsEnabled(),"Supported network activation failed");
+        }
     }
-    function testActivationRejectsMainnetAndOtherNetworksEvenForOperator() public {
-        uint256[3] memory chains=[uint256(1),uint256(17000),uint256(10)];
+    function testActivationRejectsUnsupportedNetworksEvenForOperator() public {
+        uint256[2] memory chains=[uint256(17000),uint256(10)];
         for(uint256 i;i<chains.length;++i){
             control.chainId(chains[i]);
             BillboardPortal p=new BillboardPortal(address(rollup),L2,VERSION,2 ether,3 ether,CONFIG,address(this));
-            vm.expectRevert(abi.encodeWithSignature("Error(string)","Test network only"));
+            vm.expectRevert(abi.encodeWithSignature("Error(string)","Unsupported network"));
             p.activate();
             require(!p.depositsEnabled(),"Other network activated");
         }
     }
     function testActivationRejectsChangedChainEvenWhenBothChainsAreAllowed() public {
         control.chainId(11155111);
-        vm.expectRevert(abi.encodeWithSignature("Error(string)","Test network only"));
+        vm.expectRevert(abi.encodeWithSignature("Error(string)","Unsupported network"));
         portal.activate();
     }
     function testCreate2FactoryIsNotDeploymentOperator() public {

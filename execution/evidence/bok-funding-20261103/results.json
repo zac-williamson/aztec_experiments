@@ -20,5 +20,10 @@
     "failed message dispatch releases busy state"
   ],
   "contractsChanged": false,
-  "reviewer": "bok_funding_review"
+  "reviewer": "bok_funding_review",
+  "liveRevision": "0d475514702b0e4dcdb4b747128272423f82f954",
+  "liveAssetsVerified": 119,
+  "stagingAssetsVerified": 119,
+  "portalTestsPassed": 95,
+  "liveServices": "application, staging, prover, query, moderator active"
 }
