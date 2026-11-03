@@ -1358,7 +1358,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    input('content',kind==='repost'?'Optional repost comment':threadPosts.length?'Post 1':'Message',{area:true,required:kind!=='repost'});
    if(canInvite){
     const invitation=el('div',{class:'bok-invitation'}),balance=el('p',{'data-composer-bok-balance':'','aria-live':'polite'});
-    const budget=input('budget','Maximum Bok cost (USDC)',{initial:'0.25'});budget.inputMode='decimal';const budgetLabel=budget.parentElement;
+    const budget=input('budget','Maximum Bok cost (up to 50 USDC)',{initial:'0.25'});budget.inputMode='decimal';const budgetLabel=budget.parentElement;
     const add=button('Add Bok credit',addBokCredit);
     invitation.append(paragraph('Bok will reply to this message. You only pay for the work it does, up to your limit.'),balance,budgetLabel,add);content.append(invitation);
     const paint=()=>{const state=bokBalance.snapshot();balance.textContent=state.phase==='ready'?`Bok balance: ${decimal(state.value.availableCredit,6)} USDC`:bokBalanceText();};
@@ -1398,8 +1398,8 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
      const row=el('section',{class:'thread-draft','aria-label':'Post '+(index+2)}),area=el('textarea',{rows:'4','data-thread-index':String(index+1),'aria-label':'Post '+(index+2)}),meter=createMessageBudget();area.value=entry.content;
      const remove=button('Remove',()=>{if(busy)return;threadPosts.splice(index,1);render();});remove.className='button thread-remove';remove.setAttribute('aria-label','Remove post '+(index+2));
      const heading=el('div',{class:'thread-draft-heading'},el('strong',{},'Post '+(index+2)),remove),toolbar=el('div',{class:'composer-tools'},meter.node);
-     const budget=el('input',{type:'text',inputmode:'decimal','aria-label':'Maximum Bok cost for post '+(index+2)+' (USDC)'});budget.value=entry.budget??'0.25';
-     const invitation=label('Maximum Bok cost (USDC)',budget);invitation.classList.add('thread-bok-budget');
+     const budget=el('input',{type:'text',inputmode:'decimal','aria-label':'Maximum Bok cost for post '+(index+2)+' (up to 50 USDC)'});budget.value=entry.budget??'0.25';
+     const invitation=label('Maximum Bok cost (up to 50 USDC)',budget);invitation.classList.add('thread-bok-budget');
      area.addEventListener('input',()=>{entry.content=area.value;validate();});budget.addEventListener('input',()=>{entry.budget=budget.value;validate();});
      threadFields.push({area,meter,budget,invitation});
      if(index===threadPosts.length-1)toolbar.append(addPost(area,entry));
@@ -1478,7 +1478,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
     for(const [index,text]of texts.entries()){
      const a=allowance(text);valid=valid&&a.valid&&text.trim().length>0&&text.isWellFormed()&&!text.includes('\0');
      if(index){const row=threadFields[index-1];row.meter.update(a);row.invitation.hidden=!mentionsBok(text);}
-     if(mentionsBok(text)){threadBokCount++;try{const budget=BigInt(units(index?threadFields[index-1].budget.value:fields.get('budget').value,6));valid=valid&&budget>0n;bokTotal+=budget;}catch{valid=false;}}
+     if(mentionsBok(text)){threadBokCount++;try{const budget=BigInt(units(index?threadFields[index-1].budget.value:fields.get('budget').value,6));valid=valid&&budget>0n&&budget<=50000000n;bokTotal+=budget;}catch{valid=false;}}
     }
     valid=valid&&bokTotal<=BigInt(bokStatus?.availableCredit??'0');
    }
@@ -1488,7 +1488,7 @@ export function mountRollingWalletPanel({loadRuntime,onPublicEffect=()=>{},onPri
    if(kind==='transfer-moderator'){const successor=fields.get('successor').value;valid=valid&&moderatorStatus?.authorized===true&&field(successor)&&BigInt(successor)>0n&&transferConsent.checked===true;}
    else if(MODERATOR_TYPES.has(kind)){valid=valid&&moderatorStatus?.authorized===true;const key=kind==='set-main-policy'?'rules':'reason',value=fields.get(key).value;valid=valid&&value.isWellFormed()&&!value.includes('\0')&&new TextEncoder().encode(value).length<=(key==='rules'?992:217);if(kind!=='set-main-policy'){const id=fields.get(kind==='moderate-post'?'post':kind==='moderate-avatar'?'name':'subboard').value;valid=valid&&field(id)&&BigInt(id)>0n;}}
    if(kind==='reply')valid=valid&&replyContext(draft);
-   if(kind==='bok'){const {parent,root,subboard}=draft;valid=valid&&field(subboard)&&field(parent)&&field(root)&&((BigInt(parent)===0n)===(BigInt(root)===0n));try{const v=BigInt(units(fields.get('budget').value,6));valid=valid&&v<(1n<<128n)&&v<=BigInt(bokStatus?.availableCredit??'0');}catch{valid=false;}}
+   if(kind==='bok'){const {parent,root,subboard}=draft;valid=valid&&field(subboard)&&field(parent)&&field(root)&&((BigInt(parent)===0n)===(BigInt(root)===0n));try{const v=BigInt(units(fields.get('budget').value,6));valid=valid&&v>0n&&v<=50000000n&&v<=BigInt(bokStatus?.availableCredit??'0');}catch{valid=false;}}
    if(kind==='bio'||kind==='avatar')valid=valid&&!!profileSnapshot&&identities.includes(draft.name)&&BigInt(profileSnapshot.name)===BigInt(draft.name)&&(kind!=='avatar'||!!avatarDraft);
    if(kind==='subboard')valid=valid&&/^[a-z0-9](?:[a-z0-9]|-(?!-)){1,38}[a-z0-9]$/.test(fields.get('slug').value);
    feePreview.update(valid&&!busy&&(dialog.open||inlineCreation)&&formEpoch===renderEpoch&&estimateEpoch===accountEpoch&&activeSession===session&&typeof activeSession?.application.estimateDraftFee==='function'?captureComposerAction():null,[estimateEpoch,status?.privateFeeCredit]);

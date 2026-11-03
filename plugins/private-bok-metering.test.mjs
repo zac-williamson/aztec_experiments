@@ -528,3 +528,14 @@ test('activated invocation with no provider calls refunds its full budget using 
 test('activation accounting never requires a reserve capability',async()=>{
  const h=activatedFixture();delete h.escrow.reserve;await invocation(h).complete(0,input);assert.equal(h.counts.execute,1);assert.equal(h.counts.reserve,0);
 });
+
+for(const budget of [9000000n,50000000n])test(`invocation accepts ${budget} USDC base units within default cap`,async()=>{
+ const h=activatedFixture();h.r.budget=h.r.reserved=budget;
+ await invocation(h).complete(0,input);assert.equal(h.counts.execute,1);
+ assert.equal(h.store.read().privateBok.reservation.maximum,String(budget));
+});
+test('invocation rejects more than 50 USDC before provider work',async()=>{
+ const h=activatedFixture();h.r.budget=h.r.reserved=50000001n;
+ await assert.rejects(invocation(h).complete(0,input),/budget failure/);
+ assert.equal(h.counts.quote,0);assert.equal(h.counts.execute,0);
+});

@@ -1456,3 +1456,13 @@ test('internally preempted fee preview automatically retries the unchanged draft
  assert.equal(attempts,2);assert.equal(painted.some(value=>value.state==='unavailable'),false);
  assert.deepEqual(painted.at(-1),{state:'ready',estimatedFee:'42'});preview.cancel();
 });
+
+test('Bok composer allows 50 USDC and blocks larger requests even with sufficient balance',async t=>{
+ const f=await fixture(t);await f.started.promise;f.balance.resolve({available:true,availableCredit:'100000000'});
+ await f.document.until(()=>f.host.textContent.includes('100 USDC available'));
+ const editor=f.document.querySelector('textarea');editor.value='@bok build this';editor.fire('input');
+ const budget=f.document.querySelector('.bok-invitation').querySelector('input');
+ budget.value='50';budget.fire('input');assert.equal(f.document.querySelector('[data-action-review]').disabled,false);
+ budget.value='50.000001';budget.fire('input');assert.equal(f.document.querySelector('[data-action-review]').disabled,true);
+ budget.value='9';budget.fire('input');assert.equal(f.document.querySelector('[data-action-review]').disabled,false);
+});

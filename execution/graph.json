@@ -9871,5 +9871,10 @@
     "execution_lane": "root deployment and integration; isolated mainnet compatibility review",
     "checkpoint": "Owner authorized mainnet deployment funded solely from existing Ethereum deployer. Mainnet compatibility integrated; 0.0015 ETH swapped for 231.685606139410393450 AZTEC and bridged to existing Aztec deployer. Fee performance work remains paused.",
     "next_action": "Deploy canonical FPC, Board, portals and Bok; switch all services and rolling.chat coherently."
+  },
+  "bok_budget_20261103": {
+    "status": "active",
+    "execution_lane": "root implementation/deploy; budget_review independent review",
+    "checkpoint": "Raise backend and frontend request cap to 50 USDC; resume unsubmitted original 9 USDC invocation."
   }
 }

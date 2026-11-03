@@ -637,3 +637,6 @@ Root integrates PR11 and Slack UX feedback. pr11_build_fix repairs generated-con
 ## 3 November: Bok funding completion and dismissal
 
 Root owns the patch and live deployment. `bok_funding_review` independently traced failure cleanup, worker busy state and successful-claim balance refresh. Review found no blocking regression. Scope includes the owner's sidebar GitHub feedback link; no contract changes.
+
+## 3 November: Bok request cap
+Root owns implementation/deployment. budget_review reviewed 50 USDC defaults and exact pre-provider journal reset read-only. No contracts change.
