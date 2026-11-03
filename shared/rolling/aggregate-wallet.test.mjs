@@ -29,7 +29,7 @@ function fixture({chainId='31337'}={}){
  let tx,receipt;
  const provider={getNetwork:async()=>({chainId:BigInt(chainId)}),getTransactionCount:async()=>state.nonce,getBlockNumber:async()=>state.landed?17:16,
   getBlock:async number=>({number:number==='latest'?16:number,hash:h(number==='latest'?16:number),parentHash:h(Number(number)-1||15),prefetchedTransactions:state.landed?[tx]:[]}),
-  getFeeData:async()=>({maxFeePerGas:2n,maxPriorityFeePerGas:1n}),estimateGas:async()=>100n,getCode:async()=> '0x6000',getTransaction:async()=>tx,getTransactionReceipt:async()=>state.landed?receipt:null,
+  getFeeData:async()=>({maxFeePerGas:2n,maxPriorityFeePerGas:1n}),estimateGas:async()=>100n,getCode:async account=>account.toLowerCase()===address?'0x':'0x6000',getTransaction:async()=>tx,getTransactionReceipt:async()=>state.landed?receipt:null,
   async send(method,params){state.reads++;
    if(method==='eth_chainId')return '0x'+BigInt(chainId).toString(16);
    if(method==='eth_getBlockByNumber'&&params[0]==='pending')return {number:null,hash:null,timestamp:'0x'+state.pendingTime.toString(16)};
@@ -1546,4 +1546,20 @@ test('starter routes mainnet AZTEC through its liquid 1% pool for either payment
   assert.equal(allocation.feePoolFee,chainId==='1'?10000:3000);
   if(asset==='USDC')assert.equal(allocation.collateralPoolFee,3000);
  }
+});
+
+test('Rabby EIP-7702 account consent reaches the ETH payment with one signature',async()=>{
+ const f=fixture(),provider=f.options.provider,originalCode=provider.getCode;
+ provider.getCode=async(address,...args)=>address===f.wallet.address?'0xef010069007702764179f14f51cdce752f4f775d74e139':originalCode(address,...args);
+ const validation=new ethers.Interface(['function isValidSignature(bytes32,bytes) view returns(bytes4)']);
+ provider.call=async({to,data})=>{
+  assert.equal(to,f.wallet.address);
+  const [hash,sig]=validation.decodeFunctionData('isValidSignature',data);
+  assert.equal(sig.slice(0,16),'0x0000000000ff00');
+  const recovered=ethers.verifyTypedData({chainId:31337,verifyingContract:to},{ReplaySafeHash:[{name:'hash',type:'bytes32'}]},{hash},'0x'+sig.slice(16));
+  assert.equal(recovered.toLowerCase(),f.wallet.address);
+  return validation.encodeFunctionResult('isValidSignature',['0x1626ba7e']);
+ };
+ const app=await f.open();await app.prepare(f.allocation);await app.confirm();
+ assert.equal(f.state.signatures,1);assert.equal(f.state.sends,1);
 });

@@ -1,3 +1,4 @@
+import {signDepositConsent} from './deposit-consent.mjs';
 import {observeRollingSetup,rollingSetupErrorCode} from './deployment.mjs';
 // Thin composition of the existing quote, custody and Ethereum journal APIs.
 // Only the owning private session calls this capability, under its account lock.
@@ -65,14 +66,14 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
  const read=async fn=>{await contextGuard();const result=await fn();await contextGuard();return result;};
  // A refused signature has no broadcast ambiguity. Normalize it only at
  // this signing boundary; transaction/relay failures keep their journal fences.
- async function signConsent(wallet,typed){
+ async function signConsent(wallet,typed,{deposit=true}={}){
   let signature;
-  try{signature=await read(()=>wallet.signer.signTypedData(typed.domain,typed.types,typed.value));}
+  try{signature=await read(()=>deposit?signDepositConsent({ethers,provider,wallet,typed}):wallet.signer.signTypedData(typed.domain,typed.types,typed.value));}
   catch(error){
    if([4001,'ACTION_REJECTED'].includes(errorValue(error,'code'))){await read(wallet.guard);throw fail('SIGNATURE_CANCELLED');}
    throw error;
   }
-  check(ethers.verifyTypedData(typed.domain,typed.types,typed.value,signature).toLowerCase()===wallet.address,'CONSENT');
+  if(!deposit)check(ethers.verifyTypedData(typed.domain,typed.types,typed.value,signature).toLowerCase()===wallet.address,'CONSENT');
   await read(wallet.guard);return signature;
  }
  const journal=depositor=>sdk.createEthereumJournal({storage,walletSecret,walletSalt,
@@ -182,7 +183,7 @@ export async function createAggregateWallet({sdk,ethers,scope,network,board,bok,
   await read(wallet.guard);await read(()=>verifyFeeCredit(feeAmount,saved.value.privateFeeCap));await read(()=>sdk.validateAggregateFundingQuote(quote));
   const consent=(quote.plan.collateral?.amount??quote.plan.collateral)==='0'?'0x':await signConsent(wallet,quote.consent);
   await read(()=>sdk.validateAggregateFundingQuote(quote));
-  const authorization=await signConsent(wallet,quote.authorization);
+  const authorization=await signConsent(wallet,quote.authorization,{deposit:false});
   await read(recheckScope);
   const tx=await read(()=>sdk.aggregateUsdcFundingTransaction(quote,consent,authorization));
   const request={from:tx.from,to:tx.to,chainId:tx.chainId,data:tx.data.toLowerCase(),value:tx.value,expected:{kind:'aggregate-usdc-funding',routerCodeHash:s.routerCodeHash,collateralPortal:s.collateralPortal,feePortal:s.feePortal,bokPortal:s.bokPortal,privateFpc:s.privateFpc,planHash:tx.planHash}};

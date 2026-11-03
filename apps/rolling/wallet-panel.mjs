@@ -163,6 +163,7 @@ function fundingFailureText(failure){
    ROLLING_FUNDING_PURCHASE_SCOPE:'The credit payment service could not be verified. No payment was sent.',
    INSUFFICIENT_FUNDS:'Your wallet needs more ETH to cover this payment and Ethereum fees.',
    PRIVATE_FEE_BALANCE_INSUFFICIENT:'Your posting balance needs credit before the Bok credit can be added. Add posting credit, then continue this top-up.',
+   ROLLING_FUNDING_CONSENT:'Your wallet could not authorize the deposit. No payment was sent.',
    ROLLING_FUNDING_SIGNATURE_CANCELLED:'Signature cancelled. No funding payment was sent. Your account remains unlocked; get a fresh quote when you are ready.',
    ROLLING_FUNDING_GAS_CHANGED:'Ethereum fees changed. Review the current cost before continuing.',
    AGGREGATE_STALE_QUOTE:'This quote has expired on Ethereum. Get a fresh quote and review the amounts before confirming again.',
